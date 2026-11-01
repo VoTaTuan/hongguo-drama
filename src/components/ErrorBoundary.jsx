@@ -12,10 +12,10 @@ export default class ErrorBoundary extends React.Component {
     if (!this.state.failed) return this.props.children;
     return <main className="error-boundary">
       <div role="alert">
-        <h1>界面出现异常</h1>
-        <p>请重新加载后继续使用。若仍出现此提示，请关闭并重新打开应用。</p>
+        <h1>Đã xảy ra lỗi giao diện</h1>
+        <p>Vui lòng tải lại để tiếp tục sử dụng. Nếu vẫn gặp thông báo này, hãy đóng và mở lại ứng dụng.</p>
       </div>
-      <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>重新加载</button>
+      <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>Tải lại trang</button>
     </main>;
   }
 }

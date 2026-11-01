@@ -28,7 +28,7 @@ export function createVideoFrameUploader(video, queue, texture, width, height) {
           if (error.name === 'SecurityError' || (error.name !== 'OperationError' && !/back resource/i.test(error.message || ''))) throw error;
           bridge = new OffscreenCanvas(width, height);
           context = bridge.getContext('2d', { alpha: false });
-          if (!context) throw new Error('此片源暂不支持画质增强；已恢复原画，可改用锐化');
+          if (!context) throw new Error('Nguồn phim này tạm thời chưa hỗ trợ tăng cường chất lượng; đã khôi phục gốc, có thể chuyển sang chế độ làm nét');
         }
       }
       context.drawImage(video, 0, 0, width, height);
@@ -56,17 +56,17 @@ struct Vertex { @builtin(position) position: vec4f, @location(0) uv: vec2f }
 
 // Own the device so all library textures are released together on source changes.
 export async function createAnime4KRenderer(video, canvas, { signal, onError }) {
-  if (!navigator.gpu) throw new Error('此运行环境未开放 WebGPU；已恢复原画，可使用锐化');
+  if (!navigator.gpu) throw new Error('Môi trường này chưa hỗ trợ WebGPU; đã khôi phục gốc, có thể dùng chế độ làm nét');
   const width = video.videoWidth;
   const height = video.videoHeight;
-  if (!width || !height) throw new Error('视频画面尚未准备好，请稍后重新启用');
+  if (!width || !height) throw new Error('Khung hình video chưa sẵn sàng, vui lòng thử lại sau');
   // shortcut: limit input to 1080p to bound GPU memory; expand after device-specific profiling.
-  if (width * height > 1920 * 1080) throw new Error('Anime4K 暂支持 1080p 及以下片源；已恢复原画');
+  if (width * height > 1920 * 1080) throw new Error('Anime4K hiện chỉ hỗ trợ nguồn phim 1080p trở xuống; đã khôi phục gốc');
   const { CNNx2M } = await import('anime4k-webgpu');
   signal.throwIfAborted();
   const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
   signal.throwIfAborted();
-  if (!adapter) throw new Error('当前显卡无法启用 WebGPU；已恢复原画，可使用锐化');
+  if (!adapter) throw new Error('Card đồ họa hiện tại không thể bật WebGPU; đã khôi phục gốc, có thể dùng chế độ làm nét');
   const device = await adapter.requestDevice();
   let context;
   let uploader;
@@ -82,14 +82,14 @@ export async function createAnime4KRenderer(video, canvas, { signal, onError }) 
   if (signal.aborted) { dispose(); signal.throwIfAborted(); }
   signal.addEventListener('abort', dispose, { once: true });
   const report = message => { if (!disposed) onError(new Error(message)); };
-  device.lost.then(info => report(`显卡增强已停止（${info.reason}）；已恢复原画`));
+  device.lost.then(info => report(`Tăng cường GPU đã dừng (${info.reason}); đã khôi phục gốc`));
   device.addEventListener('uncapturederror', event => {
     event.preventDefault();
-    report('显卡增强运算失败；已恢复原画，可改用锐化');
+    report('Tính toán tăng cường GPU thất bại; đã khôi phục gốc, có thể chuyển sang làm nét');
   });
   try {
     context = canvas.getContext('webgpu');
-    if (!context) throw new Error('无法创建增强画面；已恢复原画');
+    if (!context) throw new Error('Không thể tạo khung hình tăng cường; đã khôi phục gốc');
     device.pushErrorScope('validation');
     const input = device.createTexture({
       size: [width, height], format: 'rgba16float',
@@ -116,14 +116,14 @@ export async function createAnime4KRenderer(video, canvas, { signal, onError }) 
     });
     const error = await device.popErrorScope();
     signal.throwIfAborted();
-    if (error) throw new Error('当前显卡不支持 Anime4K 运算；已恢复原画');
+    if (error) throw new Error('Card đồ họa hiện tại không hỗ trợ xử lý Anime4K; đã khôi phục gốc');
     let lastFrameAt = -Infinity;
     let slowFrames = 0;
     return {
       dispose,
       async draw() {
         if (disposed || video.readyState < 2 || video.seeking) return false;
-        if (video.videoWidth !== width || video.videoHeight !== height) throw new Error('片源尺寸发生变化，请重新启用 Anime4K');
+        if (video.videoWidth !== width || video.videoHeight !== height) throw new Error('Kích thước nguồn phim đã thay đổi, vui lòng bật lại Anime4K');
         const started = performance.now();
         if (uploader.usesCanvas && !video.paused && started - lastFrameAt < 1000 / 30) return false;
         lastFrameAt = started;
@@ -141,7 +141,7 @@ export async function createAnime4KRenderer(video, canvas, { signal, onError }) 
         device.queue.submit([encoder.finish()]);
         await device.queue.onSubmittedWorkDone();
         slowFrames = performance.now() - started > 150 ? slowFrames + 1 : 0;
-        if (slowFrames >= 5) throw new Error('当前设备增强较慢；已恢复原画，可改用锐化');
+        if (slowFrames >= 5) throw new Error('Thiết bị xử lý tăng cường quá chậm; đã khôi phục gốc, có thể chuyển sang làm nét');
         return !disposed;
       },
     };

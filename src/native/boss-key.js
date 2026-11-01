@@ -8,13 +8,13 @@ const PAUSE_MEDIA = `(() => {
 })()`;
 
 function normalizeBossKey(value) {
-  if (!value || typeof value.enabled !== 'boolean' || typeof value.accelerator !== 'string' || value.accelerator.length > 80) throw Error('老板键设置无效');
+  if (!value || typeof value.enabled !== 'boolean' || typeof value.accelerator !== 'string' || value.accelerator.length > 80) throw Error('Cài đặt phím Boss không hợp lệ');
   const parts = value.accelerator.split('+').map(part => part.trim());
   const key = parts.pop().toUpperCase();
   const modifiers = parts.map(part => MODIFIERS[part.toLowerCase()]).map(part => part === 'CommandOrControl' ? (process.platform === 'darwin' ? 'Command' : 'Control') : part);
   if (!/^(?:[A-Z0-9]|F(?:[1-9]|1[0-2])|SPACE)$/.test(key) || modifiers.some(part => !part)
     || new Set(modifiers).size !== modifiers.length || (!/^F\d+$/.test(key) && !modifiers.some(part => part !== 'Shift'))) {
-    throw Error('请使用 Ctrl、Cmd 或 Alt 组合键，或 F1–F12；不能使用普通单键');
+    throw Error('Vui lòng dùng tổ hợp phím có Ctrl, Cmd hoặc Alt, hoặc phím F1–F12; không được dùng phím đơn thông thường');
   }
   modifiers.sort((a, b) => ['Control', 'Command', 'Alt', 'Shift'].indexOf(a) - ['Control', 'Command', 'Alt', 'Shift'].indexOf(b));
   return { enabled: value.enabled, accelerator: [...modifiers, key === 'SPACE' ? 'Space' : key].join('+') };
@@ -43,7 +43,7 @@ function createBossKeyController({ globalShortcut, getWindows, getMainWindow, st
         // A late Dock show cannot reveal an app hidden again by a rapid second press.
         if (hidden) dock.hide();
         else restoreDock = false;
-      }).catch(() => { error = 'Dock 图标暂时无法恢复，请重新打开应用'; });
+      }).catch(() => { error = 'Biểu tượng Dock tạm thời không thể khôi phục, vui lòng mở lại ứng dụng'; });
     }
     notify();
     for (const [contents, wasMuted] of mutedContents) {
@@ -85,11 +85,11 @@ function createBossKeyController({ globalShortcut, getWindows, getMainWindow, st
     if (restoreDock) dock.hide();
     return true;
   };
-  const callback = () => { try { toggle(); } catch (_) { error = '老板键暂时无法切换，请重试'; } };
+  const callback = () => { try { toggle(); } catch (_) { error = 'Phím Boss tạm thời không thể chuyển đổi, vui lòng thử lại'; } };
   const register = accelerator => {
     let accepted = false;
     try { accepted = globalShortcut.register(accelerator, callback); } catch (_) {}
-    if (!accepted) throw Error('快捷键已被占用或系统不支持，请换一组按键');
+    if (!accepted) throw Error('Phím tắt đã bị chiếm dụng hoặc hệ thống không hỗ trợ, vui lòng đổi tổ hợp phím khác');
   };
   const set = value => {
     const next = normalizeBossKey(value);

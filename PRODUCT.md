@@ -1,77 +1,60 @@
-# 红果短剧
+# Phim Ngắn Hồng Quả (Hongguo Drama)
 
-当前正式版：**5.3**。
+Phiên bản chính thức hiện tại: **5.3**.
 
-5.3（内部 `5.3.0`）已于 2026-11-01 10:07（Asia/Shanghai）正式发布，标签 `v5.3`，冻结源码 `4be719b775b4cc92233bde9e9f7790462ba87e2d`。新增下载到 NAS、同层封面/简介/NFO、规范分集命名与复用补齐。三端16附件远端大小和SHA256匹配；双Mac App与DMG四份Apple公证Accepted、签名/装订、DMG只读挂载及更新ZIP恢复通过。源码CI 41262056747、Windows CI 41262074332 通过215单元和100平台检查；Windows便携11项、安装/重装/真实1.80升级资料保留9项通过，EXE未签名。最终arm64包真实两集NAS下载、同层7文件、原生打开目录和静音约10秒播放通过；x64经Rosetta界面启动、正常退出通过。
+Bản 5.3 (nội bộ `5.3.0`) đã chính thức phát hành ngày 01-11-2026 lúc 10:07 (Asia/Shanghai), gắn thẻ `v5.3`, mã nguồn đóng băng `4be719b775b4cc92233bde9e9f7790462ba87e2d`. Bổ sung tính năng tải xuống NAS, lưu ảnh bìa/tóm tắt/NFO cùng cấp, chuẩn hóa quy tắc đặt tên tập phim và tái sử dụng/bổ sung thông tin còn thiếu. 16 tệp đính kèm trên cả 3 nền tảng đều khớp SHA256 và dung lượng từ xa; cả 2 bản Mac App và DMG đều vượt qua kiểm tra chứng thực Apple Notarization Accepted, ký tên/staple, gắn kết DMG chỉ đọc và khôi phục cập nhật ZIP. CI mã nguồn 41262056747 và CI Windows 41262074332 đã vượt qua 215 bài kiểm tra đơn vị và 100 kiểm tra nền tảng; bản di động Windows vượt qua 11 hạng mục, bản cài đặt/cài lại/nâng cấp từ 1.80 giữ nguyên dữ liệu vượt qua 9 hạng mục, tệp EXE chưa ký số. Bản arm64 chính thức đã vượt qua kiểm tra tải 2 tập thực tế xuống NAS, 7 tệp cùng cấp, mở thư mục gốc và phát video tắt tiếng khoảng 10 giây; bản x64 khởi động giao diện qua Rosetta và thoát bình thường thành công.
 
-功能与验证边界见 `docs/release-5.3.md`。
+Phạm vi tính năng và ranh giới kiểm thử xem tại `docs/release-5.3.md`.
 
-上一正式版：**5.2**。macOS 普通主窗口位置和大小恢复。
+Phiên bản chính thức trước đó: **5.2**. Khôi phục vị trí và kích thước cửa sổ chính thông thường trên macOS.
 
-5.2（内部 `5.2.0`）已于 2026-10-31 15:32（Asia/Shanghai）正式发布，标签 `v5.2`，冻结源码 `cadd99f28b6225ff873b5b7a3c836a71a4933730`。修复 macOS 普通主窗口位置和大小恢复。三端16项附件远端SHA256与大小匹配；双Mac App及DMG四份Apple公证Accepted、签名和装订，最终DMG只读挂载与更新ZIP恢复通过；源码CI 41179681402 与Windows CI 41179708157 通过215单元及98平台检查。最终arm64包窗口恢复、随机真实两集静音播放和x64 Rosetta启动退出通过；10个匿名下载入口通过。Windows EXE未签名。
+Bản 5.2 (nội bộ `5.2.0`) đã phát hành ngày 31-10-2026 lúc 15:32 (Asia/Shanghai), gắn thẻ `v5.2`, mã nguồn đóng băng `cadd99f28b6225ff873b5b7a3c836a71a4933730`. Sửa lỗi khôi phục kích thước và vị trí cửa sổ chính macOS. 16 tệp đính kèm khớp SHA256 và kích thước từ xa; chứng thực Apple Notarization, chữ ký và staple cho cả 2 ứng dụng Mac App và DMG; vượt qua kiểm tra gắn kết DMG chỉ đọc và cập nhật ZIP; CI mã nguồn 41179681402 và Windows CI 41179708157 vượt qua 215 bài kiểm tra đơn vị và 98 bài kiểm tra nền tảng. Gói arm64 hoàn tất khôi phục cửa sổ, phát tắt tiếng 2 tập thực tế ngẫu nhiên và khởi động thoát x64 Rosetta; 10 cổng tải ẩn danh hoạt động chuẩn xác. EXE Windows chưa ký số.
 
-功能与验证边界见 `docs/release-5.2.md`。
+Phạm vi tính năng và ranh giới kiểm thử xem tại `docs/release-5.2.md`.
 
-上一正式版：**5.1**。修复了已知问题。
+Phiên bản chính thức trước đó: **5.1**. Đã sửa các sự cố đã biết.
 
-5.1（内部 `5.1.0`）已于 2026-10-30 18:20（Asia/Shanghai）正式发布，标签 `v5.1`，冻结源码 `2f241b1dc096b089a060f01e4aca466111a5fbf8`。三端16项附件远端SHA256与大小匹配；双Mac App及DMG完成Developer ID签名、Apple公证Accepted和装订，最终DMG只读挂载与包内匹配通过；源码CI 41037730494 与Windows CI 41037730786 通过。10个匿名下载入口、最终包账号导航、真实素材静音播放与x64 Rosetta启动通过。Windows EXE未签名。
+Bản 5.1 (nội bộ `5.1.0`) đã phát hành ngày 30-10-2026 lúc 18:20 (Asia/Shanghai), gắn thẻ `v5.1`. 16 tệp đính kèm khớp SHA256; ký Developer ID, chứng thực Apple Notarization Accepted; CI thành công; 10 cổng tải ẩn danh, điều hướng tài khoản, phát video thực tế tắt tiếng và khởi động x64 Rosetta đã kiểm thử thành công.
 
-功能与验证边界见 `docs/release-5.1.md`。
+Phạm vi tính năng và ranh giới kiểm thử xem tại `docs/release-5.1.md`.
 
-上一正式版：**5.0**。
+Phiên bản chính thức trước đó: **5.0**.
 
-5.0（内部 `5.0.0`）已于 2026-10-30 15:21（Asia/Shanghai）正式发布，标签 `v5.0`，冻结源码 `1fa218a196478c9bd3908bea9666bc23f23b921f`。三端 16 项附件及其远端 SHA256、大小匹配；双 Mac App 与 DMG 的 Developer ID 签名、Apple 公证 Accepted、票据装订、最终 DMG 只读挂载及包内文件匹配通过；源码 CI 41016309687 与 Windows CI 41016337531 均通过；10 个匿名下载入口、Mac x64 Rosetta 启动、真实素材播放和观看记录界面验收通过。Windows EXE 未签名。
+Bản 5.0 (nội bộ `5.0.0`) đã phát hành ngày 30-10-2026 lúc 15:21 (Asia/Shanghai), gắn thẻ `v5.0`. Nhớ phạm vi kiểm tra cập nhật và cài đặt ẩn phần thấp hơn của cùng bộ phim; gợi ý các phim có khả năng là phần tiếp theo.
 
-功能与验证边界见 `docs/release-5.0.md`。
+Phạm vi tính năng và ranh giới kiểm thử xem tại `docs/release-5.0.md`.
 
-上一正式版：**4.9**。
+Phiên bản chính thức trước đó: **4.9**. Tương thích máy tính đời cũ (ưu tiên H.264), phím Boss và sửa lỗi thu nhỏ cửa sổ.
 
-4.9（内部 `4.9.0`）已于 2026-10-30 13:17（Asia/Shanghai）正式发布，标签 `v4.9`，冻结源码 `803796d29cfcb5ac5e5efb3861f46a198e4d3dba`。三端16项附件远端SHA256与大小逐项匹配。双Mac App/DMG完成Developer ID签名、Apple公证Accepted与装订；Windows CI41005635075通过真实素材便携播放、安装、重装和1.80升级资料保留，EXE未签名。
+Bản 4.9 (nội bộ `4.9.0`) đã phát hành ngày 30-10-2026 lúc 13:17 (Asia/Shanghai), gắn thẻ `v4.9`.
 
-功能与验证边界见 `docs/release-4.9.md`。
+Phạm vi tính năng và ranh giới kiểm thử xem tại `docs/release-4.9.md`.
 
-上一正式版：**4.8**。
+Phiên bản chính thức trước đó: **4.8**. Tự động ưu tiên 1080P và tự động hạ cấp chất lượng khi lỗi.
 
-4.8（内部 `4.8.0`）已于 2026-10-30 09:22（Asia/Shanghai）正式发布，标签 `v4.8`，冻结源码 `6f2d20f10df4892aa88a9942096545dfef489539`。三端16项附件远端SHA256和大小逐项匹配。双Mac App/DMG已完成Developer ID签名、Apple公证Accepted和装订；Windows CI40983555096完成真实素材便携播放、安装、重装和1.80升级资料保留，EXE未签名。
+Bản 4.8 (nội bộ `4.8.0`) đã phát hành ngày 30-10-2026 lúc 09:22 (Asia/Shanghai), gắn thẻ `v4.8`.
 
-自动1080P优先与换档验证边界见 `docs/release-4.8.md`。
+Phạm vi tính năng và ranh giới kiểm thử xem tại `docs/release-4.8.md`.
 
-上一正式版：**4.7**。
+Phiên bản chính thức trước đó: **4.7**. Thử lại khi tải lỗi và sửa lỗi hình trong hình (PiP).
+Bản 4.7 (nội bộ `4.7.0`) đã phát hành ngày 29-10-2026 lúc 21:11 (Asia/Shanghai).
 
-4.7（内部 `4.7.0`）已于 2026-10-29 21:11（Asia/Shanghai）正式发布，标签 `v4.7`，冻结源码 `4aa23b0e620b51a9cc146ccf11e84e95149eb79b`。三端16项附件远端SHA256和大小逐项匹配。双Mac App/DMG已完成Developer ID签名、Apple公证Accepted和装订；Windows CI40877020607完成真实素材便携播放、安装、重装和1.80升级资料保留，EXE未签名。
+Phiên bản chính thức trước đó: **4.6**. Thích ứng màn hình 4K và cửa sổ rộng.
+Bản 4.6 (nội bộ `4.6.0`) đã phát hành ngày 29-10-2026 lúc 17:07 (Asia/Shanghai).
 
-修复内容与验证边界见 `docs/release-4.7.md`。
-
-上一正式版：**4.6**。
-
-4.6（内部 `4.6.0`）已于 2026-10-29 17:07（Asia/Shanghai）正式发布，标签 `v4.6`，冻结源码 `e2fa54725fb8d60f8982053206e43b18d83cd829`。三端16项附件的远端SHA256与大小逐项匹配。双Mac App/DMG已完成Developer ID签名、Apple公证Accepted和装订；Windows CI40844214407完成便携播放、安装、重装和真实1.80升级资料保留，EXE未签名。
-
-4.6 优化4K与宽窗口片单排版，外观设置增加海报大小、界面与字号调节；默认100%，不根据分辨率自动放大。状态见 `docs/release-4.6.md`。
-
-4.5（内部 `4.5.0`）已于 2026-10-29 15:09（Asia/Shanghai）正式发布，标签 `v4.5`，冻结源码 `1ad8701d6be0950d5f9ba6f5ce8029df22490843`。三端16项附件远端SHA256与大小逐项匹配。双Mac App/DMG已完成Developer ID签名、Apple公证Accepted和装订；Windows CI40831162089安装、重装、真实1.80升级资料保留与静音真实素材播放检查通过，EXE未签名。
-
-分类与题材重复点击换批，四个热播榜保持热度顺序。详见 `docs/release-4.5.md`。
-
-4.4（内部 `4.4.0`）已于 2026-10-29 13:44（Asia/Shanghai）正式发布，标签 `v4.4`，冻结源码 `23860cfde09d953a7b1f1cbe9e20b433dd4b0e18`。三端 16 项附件远端 SHA256 与大小逐项匹配。双 Mac App/DMG 已完成 Developer ID 签名、Apple 公证 Accepted 和装订；Windows CI 40822817019 的便携播放、安装、重装和真实 1.80 升级资料保留通过，EXE 未签名。
-
-3.4（内部 `3.4.0`）已于 2026-10-26 正式发布，标签 `v3.4`。三端 16 项附件的 GitHub SHA256 与大小已核对；双 Mac 应用及 DMG 已完成 Developer ID 签名、Apple 公证和装订，Windows EXE 未签名。冻结源码 `241ada2d604ce65dc15d3c4df3686716ece61865`；后续文档提交不改变标签和已发布包。 Windows [本轮 CI](https://github.com/jackotom/hongguo-drama/actions/runs/40207906101) 的便携播放、新装、重装、1.80 升级与资料保留通过；Mac 冻结源码的随机两集下载、播放、定位、全屏及切集已检查，最终签名包完成 arm64 原生和 x64 Rosetta 隔离启动/退出。未覆盖实体 Intel/Windows、干净 Gatekeeper、长期播放、完整应用内跨版本更新；音轨解码不等于人工听感确认。
-
-上一正式版：3.3（内部 3.3.0，已发布）。改善红果下载自动降级与 Mac 界面缩放，见 `docs/release-3.3.md`。三端 16 项资产已公开并核对远端 SHA256；双 Mac 应用与 DMG 已完成 Developer ID 签名、Apple 公证 Accepted 和装订；Windows CI 安装、重装、跨版本升级与便携媒体检查通过，EXE 未签名。 冻结源码 `1f152862ac9bc23f0a2ad2340a32ad7a62a4aaec`；后续文档提交不改变 v3.3 标签及已发布安装包、更新包和对应源码包的字节。
-
-更早正式版：3.2（内部 3.2.0，已发布）。改善片单缓存与刷新失败恢复，更新保留选中项，错误提示不再挤走发现页海报，见 `docs/release-3.2.md`。更早正式版为 3.1。冻结源码 `fe110c68f9e2a1eceb059be222901d2d37926a5d`；后续文档提交不改变 v3.2 标签及已发布安装包、更新包和对应源码包的字节。
 <!-- impeccable:product-schema 1 -->
 
 ## Platform
 web
 
 ## Product Purpose
-面向桌面使用者的短剧浏览、搜索、在线播放与本地下载应用。Electron 承载 React 界面，支持 M 系列 Mac、Intel Mac 与 Windows x64。
+Ứng dụng xem, tìm kiếm, phát trực tuyến và tải về ngoại tuyến các bộ phim ngắn dành cho người dùng máy tính để bàn. Electron bọc giao diện React, hỗ trợ Mac chip Apple Silicon (M series), Intel Mac và Windows x64.
 
 ## Capabilities and Constraints
-提供三来源分类浏览与搜索、当天新剧补搜、红果热播榜及链接或剧集 ID 解析、选集下载、队列管理、重试、合并导出、播放续看、后续两集预取、系统画中画、全屏与主窗口小窗、观看记录、追剧提醒、横竖布局、两种画面模式、缓存清理、网络代理和软件更新提醒。剧集与播放数据来自实际服务，不提供模拟片单或假播放。不改变现有 API 与存储格式，不引入 UI 依赖。
+Cung cấp khả năng duyệt và tìm kiếm phim theo danh mục từ 3 nguồn, tìm kiếm bổ sung phim mới ra mắt hôm nay, bảng xếp hạng phim thịnh hành Hồng Quả, phân tích liên kết chia sẻ hoặc ID phim, chọn tập tải xuống, quản lý hàng đợi, thử lại tự động, gộp và xuất phim, nhớ tiến độ và tiếp tục phát từ điểm dừng, tải trước 2 tập tiếp theo, hình trong hình (PiP) hệ thống và cửa sổ nổi tích hợp, chế độ toàn màn hình và cửa sổ thu nhỏ, lịch sử xem, nhắc nhở theo dõi phim, bố cục ngang/dọc, 2 chế độ hiển thị khung hình, dọn dẹp bộ nhớ đệm, proxy mạng và thông báo cập nhật phần mềm. Dữ liệu phim và phát trực tuyến đến từ các dịch vụ thực tế, không cung cấp danh sách mô phỏng hay phát video giả. Không làm thay đổi định dạng lưu trữ và API hiện có, không đưa thêm phụ thuộc UI bên ngoài.
 
 ## Brand Commitments
-产品名称为「红果短剧」；下载是功能模块。成熟 macOS 影音应用方向：浅暖中性底色、深炭文字、克制红色重点、明确字级和留白。对用户说明作用，不用内部解密技术作为广告。
+Tên sản phẩm là "Phim Ngắn Hồng Quả"; tải xuống là một mô-đun chức năng. Định hướng ứng dụng đa phương tiện macOS hoàn thiện: màu nền trung tính ấm nhạt, chữ màu than đậm, điểm nhấn màu đỏ tiết chế, phân cấp chữ rõ ràng và khoảng trắng hợp lý. Giải thích công dụng trực quan cho người dùng, không sử dụng thuật ngữ giải mã kỹ thuật nội bộ để quảng cáo.
 
 ## Product Principles
-内容优先；常用操作直接可达；高风险删除明确确认；网络失败提供恢复路径；所有核心操作支持键盘。
+Nội dung là trên hết; các thao tác thường dùng có thể truy cập trực tiếp; thao tác xóa có rủi ro cao phải được xác nhận rõ ràng; sự cố mạng cung cấp đường dẫn khôi phục; tất cả các thao tác cốt lõi đều hỗ trợ điều hướng bằng bàn phím.

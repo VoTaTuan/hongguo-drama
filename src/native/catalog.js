@@ -26,7 +26,7 @@ function publicMetadata(item) {
 // Read only the JSON assignment; never execute scripts received from the website.
 function readRouterData(html) {
   const match = String(html).match(/(?:window\.)?_ROUTER_DATA\s*=\s*(\{)/);
-  if (!match) throw new Error('来源页面未返回目录数据，请重试或打开来源页面');
+  if (!match) throw new Error('Trang nguồn không trả về dữ liệu danh mục, vui lòng thử lại hoặc mở trang nguồn');
   const start = match.index + match[0].length - 1;
   let depth = 0, quoted = false, escaped = false;
   for (let i = start; i < html.length; i++) {
@@ -39,19 +39,19 @@ function readRouterData(html) {
     else if (char === '{') depth++;
     else if (char === '}' && --depth === 0) return JSON.parse(html.slice(start, i + 1));
   }
-  throw new Error('来源目录数据不完整，请重试');
+  throw new Error('Dữ liệu danh mục nguồn không đầy đủ, vui lòng thử lại');
 }
 
 function parseCatalog(html, category, page, sourceUrl) {
   const router = readRouterData(html);
   const data = Object.values(router.loaderData || {}).find(value => value?.categoryRoute?.contentType === category);
   if (!data || data.isSuccess === false || !Array.isArray(data.recommendList)) {
-    throw new Error('来源目录暂不可用，请重试或打开来源页面');
+    throw new Error('Danh mục nguồn tạm thời không khả dụng, vui lòng thử lại hoặc mở trang nguồn');
   }
   const pageTitle = data.seo?.title || '';
   if (category === 'comic') {
     return { success: true, results: [], page: 1, total: 0, totalPages: 0, genres: [], pageTitle, sourceUrl,
-      unsupported: true, emptyMessage: '漫画属于图文阅读，暂不支持视频播放或下载；请切换「漫剧」或打开来源页面阅读。' };
+      unsupported: true, emptyMessage: 'Truyện tranh thuộc thể loại đọc tranh chữ, tạm thời chưa hỗ trợ phát video hoặc tải về; vui lòng chuyển sang「Truyện tranh động」hoặc mở trang nguồn để đọc.' };
   }
   const seen = new Set();
   const results = data.recommendList.filter(item => {
@@ -130,7 +130,7 @@ function parseRanking(html, category, page, sourceUrl) {
       if (item) results.push(item);
     }
   }
-  if (!results.length) throw new Error('来源榜单暂不可用，请重试或打开来源页面');
+  if (!results.length) throw new Error('Bảng xếp hạng nguồn tạm thời không khả dụng, vui lòng thử lại hoặc mở trang nguồn');
   const nav = String(html).match(/<nav\b[^>]*aria-label=["']榜单分页["'][^>]*>([\s\S]*?)<\/nav>/i)?.[1] || '';
   const current = Number(data?.pagination?.pageNum) || Number(nav.match(/aria-current=["']page["'][^>]*>(\d+)/)?.[1]) || page;
   const pages = Array.from(nav.matchAll(/href=["']([^"']+)["']/g), match => {
@@ -155,24 +155,24 @@ async function fetchCatalogPageWithNet(url, signal, proxyLogin) {
       if (error) { reject(error); request.abort(); }
       else resolve(html);
     };
-    const abort = () => finish(new Error('目录加载超时，请重试'));
+    const abort = () => finish(new Error('Tải danh mục quá thời gian, vui lòng thử lại'));
     signal.addEventListener('abort', abort, { once: true });
     request.on('error', finish);
     request.on('login', (auth, callback) => proxyLogin ? proxyLogin(auth, callback) : callback());
     request.on('response', response => {
       const status = response.statusCode;
-      if (status < 200 || status >= 300) return finish(new Error(`目录请求失败（HTTP ${status}）`));
-      if (Number(response.headers['content-length']) > MAX_PAGE_BYTES) return finish(new Error('目录页面过大，请稍后重试'));
+      if (status < 200 || status >= 300) return finish(new Error(`Yêu cầu danh mục thất bại (HTTP ${status})`));
+      if (Number(response.headers['content-length']) > MAX_PAGE_BYTES) return finish(new Error('Trang danh mục quá lớn, vui lòng thử lại sau'));
       const chunks = [];
       let size = 0;
       response.on('data', chunk => {
         if (settled) return;
         size += chunk.length;
-        if (size > MAX_PAGE_BYTES) return finish(new Error('目录页面过大，请稍后重试'));
+        if (size > MAX_PAGE_BYTES) return finish(new Error('Trang danh mục quá lớn, vui lòng thử lại sau'));
         chunks.push(chunk);
       });
       response.on('error', finish);
-      response.on('aborted', () => finish(new Error('目录连接被中断，请重试或切换来源')));
+      response.on('aborted', () => finish(new Error('Kết nối danh mục bị ngắt quãng, vui lòng thử lại hoặc đổi nguồn')));
       response.on('end', () => { if (!settled) finish(null, Buffer.concat(chunks, size).toString('utf8')); });
     });
     if (signal.aborted) abort();
@@ -218,7 +218,7 @@ async function fetchCatalogPage(url, signal, proxyLogin, allowTrustedDns, parse)
 async function browseList(options = {}, proxyLogin) {
   const { category = 'real-drama', genre = '', page = 1, forceRefresh = false } = options || {};
   const ranking = RANKINGS.has(category);
-  if ((!CATEGORIES.has(category) && !ranking) || (genre && (!/^[a-z0-9-]+$/.test(genre) || ranking))) return { success: false, error: '无效的目录分类或题材' };
+  if ((!CATEGORIES.has(category) && !ranking) || (genre && (!/^[a-z0-9-]+$/.test(genre) || ranking))) return { success: false, error: 'Phân loại hoặc đề tài danh mục không hợp lệ' };
   const pg = Math.max(1, Number.parseInt(page, 10) || 1);
   const url = `${SITE}/${ranking ? 'rank' : 'category'}/${category}${genre ? `/${genre}` : ''}${pg > 1 ? `?page=${pg}` : ''}`;
   if (!forceRefresh && cache.get(url)?.expires > Date.now()) return cache.get(url).data;
@@ -230,7 +230,7 @@ async function browseList(options = {}, proxyLogin) {
     let timer;
     try {
       const timeout = new Promise((_, reject) => {
-        timer = setTimeout(() => { controller.abort(); reject(new Error('目录加载超时，请重试')); }, TIMEOUT_MS);
+        timer = setTimeout(() => { controller.abort(); reject(new Error('Tải danh mục quá thời gian, vui lòng thử lại')); }, TIMEOUT_MS);
       });
       const data = await Promise.race([fetchCatalogPage(url, controller.signal, proxyLogin, options.allowTrustedDns === true,
         html => (ranking ? parseRanking : parseCatalog)(html, category, pg, url)), timeout]);

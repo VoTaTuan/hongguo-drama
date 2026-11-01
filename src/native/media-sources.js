@@ -1,5 +1,5 @@
 const BUILTIN_SOURCES = [
-  { id: 'hongguo', label: '红果' }, { id: 'xifan', label: '西饭' }, { id: 'hema', label: '河马' },
+  { id: 'hongguo', label: 'Hồng Quả' }, { id: 'xifan', label: 'XiFan' }, { id: 'hema', label: 'Hà Mã' },
 ];
 
 function getMediaSources(settings) {
@@ -10,8 +10,8 @@ function getMediaSources(settings) {
 }
 
 function setBuiltinSourceEnabled(settings, id, enabled) {
-  if (id === 'hongguo') throw new Error('红果来源固定开启，不能关闭');
-  if (!['xifan', 'hema'].includes(id) || typeof enabled !== 'boolean') throw new Error('来源开关无效');
+  if (id === 'hongguo') throw new Error('Nguồn Hồng Quả được cố định bật, không thể tắt');
+  if (!['xifan', 'hema'].includes(id) || typeof enabled !== 'boolean') throw new Error('Công tắc nguồn không hợp lệ');
   return { ...settings, builtin_sources: { ...settings.builtin_sources, [id]: enabled } };
 }
 

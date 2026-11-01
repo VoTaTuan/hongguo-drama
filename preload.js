@@ -1,4 +1,4 @@
-// 红果短剧 5.3：桌面桥接入口，发行说明见 docs/release-5.3.md。
+// Phim Ngắn Hồng Quả 5.3: Cổng kết nối cầu nối máy tính, ghi chú phát hành xem tại docs/release-5.3.md.
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -23,7 +23,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('stealth-state', listener);
     return () => ipcRenderer.removeListener('stealth-state', listener);
   },
-  // 应用信息 / 官网链接
+  // Thông tin ứng dụng / Liên kết trang web chính thức
   checkAnnouncements: options => ipcRenderer.invoke('check-announcements', options),
   getCurrentAnnouncement: () => ipcRenderer.invoke('get-current-announcement'),
   acknowledgeAnnouncement: payload => ipcRenderer.invoke('acknowledge-announcement', payload),
@@ -55,7 +55,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url),
 
 
-  // 红果解析与下载
+  // Phân tích và tải về Hồng Quả
   hongguoResolve: (input) => ipcRenderer.invoke('hongguo-resolve', input),
   hongguoDownloadBatch: (payload) => ipcRenderer.invoke('hongguo-download-batch', payload),
   downloadSeriesToNas: (seriesId, quality) => ipcRenderer.invoke('download-series-to-nas', seriesId, quality),
@@ -65,7 +65,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('nas-export-done', listener);
   },
 
-  // 搜索（内嵌浏览器嗅探）
+  // Tìm kiếm (trình duyệt nhúng bắt gói tin)
   searchSeries: (keyword, options) => ipcRenderer.invoke('search-series', keyword, options),
   searchSeriesMore: (keyword, options) => ipcRenderer.invoke('search-series-more', keyword, options),
   findSeriesSequels: (seriesId, options) => ipcRenderer.invoke('find-series-sequels', seriesId, options),
@@ -81,7 +81,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   dismissedCount: () => ipcRenderer.invoke('dismissed-count'),
   rescanDownloads: () => ipcRenderer.invoke('rescan-downloads'),
 
-  // 在线播放（内存或临时磁盘缓存 + 自定义流协议）
+  // Phát trực tuyến (bộ nhớ hoặc đệm đĩa tạm thời + giao thức luồng tùy chỉnh)
   prepareOnlinePlay: (payload) => ipcRenderer.invoke('prepare-online-play', payload),
   releaseOnlinePlay: (payload) => ipcRenderer.invoke('release-online-play', payload),
   onlineCacheStatus: () => ipcRenderer.invoke('online-cache-status'),
@@ -92,7 +92,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('online-play-progress', listener);
   },
 
-  // 兼容模式（HEVC -> H.264 转码，解决「黑屏有声」）
+  // Chế độ tương thích (Chuyển mã HEVC -> H.264, giải quyết "màn hình đen có tiếng")
   transcodeForPlayback: (payload) => ipcRenderer.invoke('transcode-for-playback', payload),
   cancelTranscodeForPlayback: (payload) => ipcRenderer.invoke('cancel-transcode-for-playback', payload),
   compatCacheStatus: () => ipcRenderer.invoke('compat-cache-status'),
@@ -104,7 +104,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('transcode-progress', listener);
   },
 
-  // 浏览（分类页）
+  // Duyệt (Trang phân loại)
   getCustomSources: () => ipcRenderer.invoke('get-custom-sources'),
   saveCustomSource: draft => ipcRenderer.invoke('save-custom-source',draft),
   deleteCustomSource: id => ipcRenderer.invoke('delete-custom-source',id),
@@ -125,7 +125,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('navigate', listener);
   },
 
-  // 播放器
+  // Trình phát
   getSeriesEpisodes: (seriesId) => ipcRenderer.invoke('get-series-episodes', seriesId),
   downloadSingleEpisode: (seriesId, vidIndex, quality) =>
     ipcRenderer.invoke('download-single-episode', seriesId, vidIndex, quality),
@@ -133,7 +133,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('save-playback-position', seriesId, vidIndex, currentTime, metadata),
   getPlaybackPosition: (seriesId) => ipcRenderer.invoke('get-playback-position', seriesId),
 
-  // 观看记录
+  // Lịch sử xem
   getWatchHistory: () => ipcRenderer.invoke('get-watch-history'),
   refreshWatchHistory: (options) => ipcRenderer.invoke('refresh-watch-history', options),
   checkWatchHistoryItem: (seriesId) => ipcRenderer.invoke('check-watch-history-item', seriesId),
@@ -149,7 +149,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('watch-history-progress', listener);
   },
 
-  // 红果账号（网页扫码，只读同步 APP 观看记录）
+  // Tài khoản Hồng Quả (Quét mã trên web, đồng bộ chỉ đọc lịch sử xem của APP)
   getAccountStatus: () => ipcRenderer.invoke('get-account-status'),
   startAccountLogin: () => ipcRenderer.invoke('start-account-login'),
   pollAccountLogin: (loginId) => ipcRenderer.invoke('poll-account-login', loginId),
@@ -163,7 +163,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('account-updated', listener);
   },
 
-  // 一键合并
+  // Ghép nối một chạm
   getFfmpegStatus: () => ipcRenderer.invoke('get-ffmpeg-status'),
   mergeSeries: (seriesId, outputName, options) => ipcRenderer.invoke('merge-series', seriesId, outputName, options),
   cancelMerge: (id) => ipcRenderer.invoke('cancel-merge', id),
@@ -190,7 +190,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('merge-failed', listener);
   },
 
-  // 设置
+  // Cài đặt
   selectFolder: () => ipcRenderer.invoke('select-folder'),
   getWindowLayout: () => ipcRenderer.invoke('get-window-layout'),
   setWindowLayout: (mode) => ipcRenderer.invoke('set-window-layout', mode),
@@ -211,16 +211,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('storage-error', listener);
   },
 
-  // 网络代理
+  // Proxy mạng
   getProxyStatus: () => ipcRenderer.invoke('get-proxy-status'),
   testProxy: (draft) => ipcRenderer.invoke('test-proxy', draft),
 
-  // 下载管理
+  // Quản lý tải về
   getDownloadTasks: () => ipcRenderer.invoke('get-download-tasks'),
   deleteTask: (taskId) => ipcRenderer.invoke('delete-task', taskId),
   deleteTasks: (taskIds) => ipcRenderer.invoke('delete-tasks', taskIds),
 
-  // 文件清理
+  // Dọn dẹp tệp
   deleteTaskWithFiles: (taskId, deleteFiles) => ipcRenderer.invoke('delete-task', taskId, { deleteFiles }),
   deleteTasksWithFiles: (taskIds, deleteFiles) => ipcRenderer.invoke('delete-tasks', taskIds, { deleteFiles }),
   deleteSeriesFiles: (seriesId, options) => ipcRenderer.invoke('delete-series-files', seriesId, options),
@@ -233,12 +233,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openFolder: (taskId) => ipcRenderer.invoke('open-folder', taskId),
   showInFolder: (filePath) => ipcRenderer.invoke('show-in-folder', filePath),
 
-  // 一键启动 / 一键暂停 / 队列状态
+  // Bắt đầu một chạm / Tạm dừng một chạm / Trạng thái hàng đợi
   pauseAll: () => ipcRenderer.invoke('pause-all'),
   resumeAll: () => ipcRenderer.invoke('resume-all'),
   getQueueStatus: () => ipcRenderer.invoke('get-queue-status'),
 
-  // 事件监听
+  // Lắng nghe sự kiện
   onDownloadProgress: (cb) => {
     const listener = (_e, data) => cb(data);
     ipcRenderer.on('download-progress', listener);

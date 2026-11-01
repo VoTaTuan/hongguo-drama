@@ -15,7 +15,7 @@ function readMergeInfo(data) {
     videoBitrate: Number(video.bit_rate) || Math.max(0, formatBitrate - (Number(audio?.bit_rate) || (audio ? 96000 : 0))) };
 }
 function buildMergePlan(infos, { compatible = false } = {}) {
-  if (!infos.length || infos.some(info => !info || !(info.duration > 0) || !(info.w > 0) || !(info.h > 0))) throw new Error('分集缺少有效时长或画面尺寸');
+  if (!infos.length || infos.some(info => !info || !(info.duration > 0) || !(info.w > 0) || !(info.h > 0))) throw new Error('Các tập phim thiếu thời lượng hoặc kích thước hình ảnh hợp lệ');
   const first = infos[0], totalDuration = infos.reduce((sum, info) => sum + info.duration, 0);
   const sameCodec = ['h264', 'hevc'].includes(first.codec) && infos.every(info => info.codec === first.codec);
   const videoMode = sameCodec && !(compatible && first.codec !== 'h264') ? 'copy' : 'encode';

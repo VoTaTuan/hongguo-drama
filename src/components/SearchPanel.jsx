@@ -89,7 +89,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
       setHistory([]);
       setHistoryError('');
     } catch {
-      setHistoryError('搜索历史清除失败，请重试。');
+      setHistoryError('Xóa lịch sử tìm kiếm thất bại, vui lòng thử lại.');
     }
   };
 
@@ -98,7 +98,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
       setHistory(removeSearchTerm(term));
       setHistoryError('');
     } catch {
-      setHistoryError('这条搜索历史删除失败，请重试。');
+      setHistoryError('Xóa mục lịch sử tìm kiếm này thất bại, vui lòng thử lại.');
     }
   };
 
@@ -106,7 +106,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
     if (sourcesLoading) return;
     const kw = keyword.trim();
     if (!kw) {
-      setError('请输入剧名关键词');
+      setError('Vui lòng nhập từ khóa tên phim');
       return;
     }
     const key = JSON.stringify([source, kw]);
@@ -144,20 +144,20 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
       sources.forEach((searchSource, index) => {
         const entry = settled[index];
         if (!entry) {
-          if (timedOut) failures.push(`${mediaSourceLabel(searchSource, mediaSources)}：搜索超时，未返回结果`);
+          if (timedOut) failures.push(`${mediaSourceLabel(searchSource, mediaSources)}: Tìm kiếm quá thời gian, không có kết quả trả về`);
           return;
         }
         if (entry.status === 'fulfilled') {
           merged.push(...(entry.value.results || []).map(item => ({ ...item, source: searchSource })));
-          if (entry.value.partial) warnings.push(`${mediaSourceLabel(searchSource, mediaSources)}：${entry.value.error || '补充搜索未完成，可稍后重试。'}`);
-          if (entry.value.meta?.relaxed) warnings.push(`${mediaSourceLabel(searchSource, mediaSources)}：没有完整剧名匹配，已用「${entry.value.meta.relaxedQuery}」补搜。`);
-          if (entry.value.meta?.newRelease && entry.value.via !== 'app-new') warnings.push(`${mediaSourceLabel(searchSource, mediaSources)}：官网暂未返回同名结果，已从 App 上新补搜到 ${entry.value.meta.newRelease} 部。`);
+          if (entry.value.partial) warnings.push(`${mediaSourceLabel(searchSource, mediaSources)}: ${entry.value.error || 'Tìm kiếm bổ sung chưa hoàn thành, có thể thử lại sau.'}`);
+          if (entry.value.meta?.relaxed) warnings.push(`${mediaSourceLabel(searchSource, mediaSources)}: Không có phim khớp chính xác tên, đã dùng「${entry.value.meta.relaxedQuery}」để tìm bổ sung.`);
+          if (entry.value.meta?.newRelease && entry.value.via !== 'app-new') warnings.push(`${mediaSourceLabel(searchSource, mediaSources)}: Trang web tạm thời không trả về kết quả cùng tên, đã tìm bổ sung ${entry.value.meta.newRelease} bộ từ phim mới trên App.`);
           if (sources.length === 1) setPageTitle(entry.value.pageTitle || '');
           if (entry.value.channel && entry.value.channel !== 'dom' && entry.value.hasMore) {
             nextMore[searchSource] = { channel: entry.value.channel, cursor: entry.value.cursor || null, page: entry.value.page || 1, hasMore: true };
           }
         } else {
-          failures.push(`${mediaSourceLabel(searchSource, mediaSources)}：${entry.reason?.message || '搜索失败'}`);
+          failures.push(`${mediaSourceLabel(searchSource, mediaSources)}: ${entry.reason?.message || 'Tìm kiếm thất bại'}`);
         }
       });
       rememberCatalogTitles(merged);
@@ -166,13 +166,13 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
           setHistory(saveSearchTerm(kw));
           setHistoryError('');
         } catch {
-          setHistoryError('搜索结果已显示，但本机搜索历史保存失败。');
+          setHistoryError('Kết quả tìm kiếm đã hiển thị, nhưng lưu lịch sử tìm kiếm vào máy thất bại.');
         }
       }
       setResults(rankSearchResults(merged, kw));
       setMore(nextMore);
-      setSearchWarning(warnings.join('；'));
-      if (failures.length) setError(`${failures.join('；')}。${merged.length ? '已显示其他来源的结果。' : ''}请重试或切换来源。`);
+      setSearchWarning(warnings.join('; '));
+      if (failures.length) setError(`${failures.join('; ')}. ${merged.length ? 'Đã hiển thị kết quả từ nguồn khác. ' : ''}Vui lòng thử lại hoặc đổi nguồn.`);
     };
     const safety = setTimeout(() => {
       if (request !== requestVersion.current) return;
@@ -185,7 +185,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
       // 每个来源完成就记下来；总超时到达时仍能展示已完成来源的结果。
       const responses = await Promise.allSettled(sources.map((searchSource, index) => window.electronAPI.searchSeries(kw, { source: searchSource })
         .then(res => {
-          if (!res?.success) throw new Error(res?.error || '搜索失败，请重试');
+          if (!res?.success) throw new Error(res?.error || 'Tìm kiếm thất bại, vui lòng thử lại');
           const entry = { status: 'fulfilled', value: res };
           settled[index] = entry;
           publishPartial();
@@ -225,10 +225,10 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
       if (res && res.success && res.data) {
         onSelectSeries(res.data);
       } else {
-        setError((res && res.error) || '拉取分集失败');
+        setError((res && res.error) || 'Lấy danh sách tập thất bại');
       }
     } catch (e) {
-      if (request === requestVersion.current) setError('拉取分集异常: ' + e.message);
+      if (request === requestVersion.current) setError('Lỗi lấy danh sách tập: ' + e.message);
     } finally {
       if (request === requestVersion.current) setPickingId('');
     }
@@ -239,8 +239,8 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
       const term = (searchedKeyword || keyword).trim();
       const sourceUrl = term ? `https://hongguoduanju.com/search/${encodeURIComponent(term)}` : undefined;
       const res = await window.electronAPI.searchWindowShow(true, sourceUrl);
-      if (res?.success === false) throw new Error(res.error || '来源页面打开失败');
-    } catch (e) { setError(e.message || '来源页面打开失败，请重试'); }
+      if (res?.success === false) throw new Error(res.error || 'Mở trang nguồn thất bại');
+    } catch (e) { setError(e.message || 'Mở trang nguồn thất bại, vui lòng thử lại'); }
   };
 
   const loadMore = async () => {
@@ -261,7 +261,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
           if (response.hasMore) nextMore[searchSource] = { channel: response.channel || state.channel, cursor: response.cursor || null, page: response.page || state.page + 1, hasMore: true };
           else delete nextMore[searchSource];
         } else {
-          errors.push(`${mediaSourceLabel(searchSource, mediaSources)}：${response?.error || (timedOut && !response ? '加载更多超时，请重试' : '加载更多失败')}`);
+          errors.push(`${mediaSourceLabel(searchSource, mediaSources)}: ${response?.error || (timedOut && !response ? 'Tải thêm quá thời gian, vui lòng thử lại' : 'Tải thêm thất bại')}`);
         }
       }
       if (additions.length) {
@@ -272,7 +272,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
         });
       }
       setMore(nextMore);
-      setMoreError(errors.join('；'));
+      setMoreError(errors.join('; '));
       setMoreLoading(false);
     };
     // Preserve completed sources at the deadline; late IPC replies cannot alter the next request.
@@ -296,21 +296,21 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
     <div className="hongguo-card">
       <div className="card-header-title">
         <Search size={18} />
-        <span>搜索短剧</span>
-        <label className="source-control">来源<select className="input-field" aria-label="短剧来源" value={source} onChange={(e) => switchSource(e.target.value)}><option value="all">全部来源</option>{mediaSources.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}</select></label>
+        <span>Tìm kiếm phim ngắn</span>
+        <label className="source-control">Nguồn<select className="input-field" aria-label="Nguồn phim ngắn" value={source} onChange={(e) => switchSource(e.target.value)}><option value="all">Tất cả nguồn</option>{mediaSources.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}</select></label>
       </div>
 
-      {sourcesError && <p className="settings-hint" role="status">来源列表更新失败，暂用上次列表；可在设置重新保存来源后重试。</p>}
+      {sourcesError && <p className="settings-hint" role="status">Cập nhật danh sách nguồn thất bại, tạm dùng danh sách cũ; có thể lưu lại nguồn trong cài đặt rồi thử lại.</p>}
       <div className="input-group">
         <input
           type="text"
           className="input-field"
-          aria-label="搜索短剧名称"
+          aria-label="Tìm kiếm tên phim ngắn"
           aria-describedby="search-suggestions-hint"
           ref={inputRef}
           list="local-search-suggestions"
           autoComplete="off"
-          placeholder="输入剧名，例如：一村人养一个神"
+          placeholder="Nhập tên phim ngắn, ví dụ: Nhất Thôn Nhân Dưỡng Nhất Cá Thần"
           value={keyword}
           onChange={(e) => changeKeyword(e.target.value)}
           onKeyDown={(e) => isSubmitKey(e) && doSearch()}
@@ -319,12 +319,12 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
           {loading ? (
             <>
               <RefreshCw size={16} className="spin" />
-              <span>搜索中...</span>
+              <span>Đang tìm...</span>
             </>
           ) : (
             <>
               <Search size={16} />
-              <span>搜索</span>
+              <span>Tìm kiếm</span>
             </>
           )}
         </button>
@@ -332,40 +332,40 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
       <datalist id="local-search-suggestions">
         {suggestions.map(({ term, source: origin }) => <option key={term} value={term} label={origin} />)}
       </datalist>
-      <p className="settings-hint search-suggestions-hint" id="search-suggestions-hint">本机联想：匹配搜索历史和本次浏览过的真实剧名。</p>
+      <p className="settings-hint search-suggestions-hint" id="search-suggestions-hint">Gợi ý trên máy: Khớp với lịch sử tìm kiếm và các tên phim thực tế đã duyệt lần này.</p>
       {history.length > 0 && <div className="search-history">
-        <div className="search-history-heading"><span>本机搜索历史</span><button type="button" className="btn-chip" onClick={clearHistory}>清除历史</button></div>
-        <div className="search-history-terms">{history.map((term) => <span className="search-history-term" key={term}><button type="button" className="btn-chip" title={term} onClick={() => { changeKeyword(term); inputRef.current?.focus(); }}>{term}</button><button type="button" className="search-history-remove" aria-label={`删除搜索历史：${term}`} title="删除这条搜索历史" onClick={() => removeHistory(term)}>×</button></span>)}</div>
+        <div className="search-history-heading"><span>Lịch sử tìm kiếm</span><button type="button" className="btn-chip" onClick={clearHistory}>Xóa lịch sử</button></div>
+        <div className="search-history-terms">{history.map((term) => <span className="search-history-term" key={term}><button type="button" className="btn-chip" title={term} onClick={() => { changeKeyword(term); inputRef.current?.focus(); }}>{term}</button><button type="button" className="search-history-remove" aria-label={`Xóa lịch sử tìm kiếm: ${term}`} title="Xóa mục lịch sử này" onClick={() => removeHistory(term)}>×</button></span>)}</div>
       </div>}
       {historyError && <p className="search-history-error" role="alert">{historyError}</p>}
       <p className="settings-hint" style={{ marginTop: 8 }}>
-        {source === 'all' ? '同时搜索所有已启用来源，结果标明来源；选择一部即可查看全部剧集。' : '按剧名查找，选择一部即可查看全部剧集。'}
+        {source === 'all' ? 'Đồng thời tìm kiếm trên tất cả nguồn đã bật, kết quả có đánh dấu nguồn; chọn một bộ để xem toàn bộ tập.' : 'Tìm kiếm theo tên phim, chọn một bộ để xem toàn bộ tập.'}
       </p>
 
       {results === null && !loading && !error && (
-        <div className="search-welcome"><Search size={36} /><h3>好故事，从一个名字开始</h3><p>输入完整剧名或关键词，发现你想看的短剧。</p></div>
+        <div className="search-welcome"><Search size={36} /><h3>Câu chuyện hay, bắt đầu từ một cái tên</h3><p>Nhập tên phim đầy đủ hoặc từ khóa để tìm phim ngắn bạn muốn xem.</p></div>
       )}
       {error && <div className="alert alert-error" role="alert">{error}</div>}
-      {searchWarning && <p className="settings-hint" role="status">{searchWarning} 已显示本次查到的结果。</p>}
+      {searchWarning && <p className="settings-hint" role="status">{searchWarning} Đã hiển thị kết quả tìm được đợt này.</p>}
 
       {loading && (
         <div className="search-loading">
           <RefreshCw size={18} className="spin" />
-          <span>正在寻找相关短剧，首次加载可能需要几秒…</span>
+          <span>Đang tìm kiếm phim ngắn liên quan, lần tải đầu tiên có thể mất vài giây…</span>
         </div>
       )}
 
       {results && results.length === 0 && !loading && !error && (
         <div className="search-empty">
-          <p>没有找到相关短剧{pageTitle ? `（页面标题：${pageTitle}）` : ''}</p>
+          <p>Không tìm thấy phim ngắn liên quan{pageTitle ? ` (Tiêu đề trang: ${pageTitle})` : ''}</p>
           <div className="search-empty-actions">
             {source === 'hongguo' && <button className="btn btn-outline" onClick={showBrowser}>
               <ExternalLink size={15} />
-              打开来源页面
+              Mở trang nguồn
             </button>}
             {source === 'hongguo' && onSwitchToInput && (
               <button className="btn btn-outline" onClick={onSwitchToInput}>
-                改用链接 / ID 下载
+                Chuyển sang Tải bằng liên kết / ID
               </button>
             )}
           </div>
@@ -374,7 +374,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
 
       {results && results.length > 0 && (
         <>
-          <div className="search-count">找到 {matchedCount} 部标题匹配短剧{contentCount ? `，另有 ${contentCount} 部剧情提到该词（排在后面）` : ''}{fuzzyCount ? `，另有 ${fuzzyCount} 部补搜结果` : ''}{otherCount ? `，另有 ${otherCount} 部来源返回的其他结果（排在后面）` : ''}</div>
+          <div className="search-count">Tìm thấy {matchedCount} phim khớp tiêu đề{contentCount ? `, thêm ${contentCount} phim có cốt truyện nhắc đến từ này (xếp sau)` : ''}{fuzzyCount ? `, thêm ${fuzzyCount} kết quả tìm bổ sung` : ''}{otherCount ? `, thêm ${otherCount} kết quả khác do nguồn trả về (xếp sau)` : ''}</div>
           <div className="search-grid">
             {results.map((item) => (
               <button
@@ -383,7 +383,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
                 key={`${item.source}:${item.series_id}`}
                 className={`search-card ${pickingId === item.series_id ? 'picking' : ''}`}
                 onClick={() => pickingId === '' && pick(item)}
-                title={`点击查看并下载：${item.series_title}`}
+                title={`Nhấn để xem và tải về: ${item.series_title}`}
               >
                 <div className="search-cover">
                   {item.cover ? (
@@ -399,10 +399,10 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
                   <div className="search-card-sub">
                     {pickingId === item.series_id ? (
                       <>
-                        <RefreshCw size={13} className="spin" /> 正在拉取分集…
+                        <RefreshCw size={13} className="spin" /> Đang lấy danh sách tập…
                       </>
                     ) : (
-                      <><span className="badge">{mediaSourceLabel(item.source, mediaSources)}</span>{item.new_release && <span className="badge-new">{item.released_today ? '今日上新' : 'App 新剧'}</span>}{item.fuzzy ? '补搜结果 · 查看剧集' : item.relevance === 2 ? '剧情相关 · 查看剧集' : item.relevance > 2 ? '其他结果 · 查看剧集' : '查看剧集'}</>
+                      <><span className="badge">{mediaSourceLabel(item.source, mediaSources)}</span>{item.new_release && <span className="badge-new">{item.released_today ? 'Mới hôm nay' : 'Phim mới trên App'}</span>}{item.fuzzy ? 'Tìm bổ sung · Xem các tập' : item.relevance === 2 ? 'Liên quan cốt truyện · Xem các tập' : item.relevance > 2 ? 'Kết quả khác · Xem các tập' : 'Xem các tập'}</>
                     )}
                   </div>
                 </div>
@@ -412,7 +412,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
           {Object.values(more).some(state => state.hasMore) && (
             <div className="search-more">
               <button type="button" className="btn btn-outline" disabled={moreLoading} onClick={loadMore}>
-                {moreLoading ? '加载中…' : '加载更多'}
+                {moreLoading ? 'Đang tải…' : 'Tải thêm'}
               </button>
               {moreError && <span role="alert">{moreError}</span>}
             </div>

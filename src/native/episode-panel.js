@@ -2,7 +2,7 @@ function createEpisodePanelController({ ipcMain, screen, getMainWindow, getLayou
   let expansion = null;
   const requireMain = event => {
     const win = getMainWindow();
-    if (!win || win.isDestroyed() || event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame) throw new Error('窗口请求无效');
+    if (!win || win.isDestroyed() || event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame) throw new Error('Yêu cầu cửa sổ không hợp lệ');
     return win;
   };
   const close = () => {
@@ -21,15 +21,15 @@ function createEpisodePanelController({ ipcMain, screen, getMainWindow, getLayou
   ipcMain.handle('get-always-on-top', event => requireMain(event).isAlwaysOnTop());
   ipcMain.handle('set-always-on-top', (event, value) => {
     const main = requireMain(event);
-    if (typeof value !== 'boolean') throw new Error('置顶状态无效');
+    if (typeof value !== 'boolean') throw new Error('Trạng thái ghim không hợp lệ');
     main.setAlwaysOnTop(value);
     return main.isAlwaysOnTop();
   });
   ipcMain.handle('set-episode-panel-open', (event, value) => {
     const main = requireMain(event);
-    if (typeof value !== 'boolean') throw new Error('选集状态无效');
+    if (typeof value !== 'boolean') throw new Error('Trạng thái chọn tập không hợp lệ');
     if (!value) return close();
-    if (getLayout() !== 'portrait') throw new Error('请在竖屏模式打开选集');
+    if (getLayout() !== 'portrait') throw new Error('Vui lòng mở chọn tập ở chế độ màn hình dọc');
     if (expansion) return expansion.width;
     const current = main.getBounds();
     const area = screen.getDisplayMatching(current).workArea;

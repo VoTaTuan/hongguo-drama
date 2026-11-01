@@ -25,7 +25,7 @@ async function registerPlaybackDevice(requestJson) {
             const now = Date.now();
             const cdid = crypto.randomUUID();
             const header = {
-                display_name: '红果免费短剧', update_version_code: 73932, manifest_version_code: 73932,
+                display_name: 'Phim Ngắn Miễn Phí Hồng Quả', update_version_code: 73932, manifest_version_code: 73932,
                 app_version_minor: '7.3.9.32', aid: 8662, channel: 'update_64', package: 'com.phoenix.read',
                 app_version: '7.3.9.32', version_code: 73932, sdk_version: '3.7.0-rc.34-fanqie-xiaoshuo',
                 sdk_target_version: 29, git_hash: '3a88f4e', os: 'Android', os_version: '16', os_api: 36,
@@ -72,7 +72,7 @@ async function registerPlaybackDevice(requestJson) {
             : ['ECONNABORTED', 'ETIMEDOUT'].includes(error?.code) ? 'TIMEOUT'
             : ['ENOTFOUND', 'EAI_AGAIN', 'ECONNRESET', 'ECONNREFUSED', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE', 'ERR_NETWORK', 'ERR_CANCELED'].includes(error?.code) ? 'NETWORK_ERROR'
             : ['EMPTY_RESPONSE', 'INVALID_RESPONSE', 'BUSINESS_REJECTED', 'SECURITY_BLOCKED'].includes(error?.code) ? error.code : 'UNKNOWN';
-        throw Object.assign(new Error('匿名播放设备注册失败，请检查网络，10 秒后重试'), {
+        throw Object.assign(new Error('Đăng ký thiết bị phát ẩn danh thất bại, vui lòng kiểm tra mạng, thử lại sau 10 giây'), {
             code: 'DEVICE_REGISTRATION_FAILED', registrationFailure,
         });
     }

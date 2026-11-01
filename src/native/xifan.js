@@ -11,7 +11,7 @@ function plainText(value) {
 function parseId(value, episode = false) {
   const parts = String(value || '').split(':');
   if (parts[0] !== 'xifan' || parts.length !== (episode ? 4 : 3) || !parts.slice(1).every(part => ID.test(part))) {
-    throw new Error('西饭剧集编号无效');
+    throw new Error('Mã phim XiFan không hợp lệ');
   }
   return { source: parts[1], duanjuId: parts[2], episodeId: parts[3], seriesId: parts.slice(0, 3).join(':') };
 }
@@ -25,7 +25,7 @@ function httpsUrl(value) {
 
 async function request(apiPath, params, options = {}) {
   const remaining = Number(options.deadline) > 0 ? options.deadline - Date.now() : 10000;
-  if (remaining <= 0) throw new Error('西饭加载超时，请重试');
+  if (remaining <= 0) throw new Error('XiFan tải quá thời gian, vui lòng thử lại');
   const timeout = Math.min(10000, remaining);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
@@ -38,7 +38,7 @@ async function request(apiPath, params, options = {}) {
     if (data?.ret !== 0 || !data.result || typeof data.result !== 'object') throw new Error('invalid result');
     return data.result;
   } catch (_) {
-    throw new Error(controller.signal.aborted ? '西饭加载超时，请重试' : '西饭来源暂不可用，请稍后重试');
+    throw new Error(controller.signal.aborted ? 'XiFan tải quá thời gian, vui lòng thử lại' : 'Nguồn XiFan tạm thời không khả dụng, vui lòng thử lại sau');
   } finally { clearTimeout(timer); }
 }
 
@@ -57,7 +57,7 @@ async function genres(forceRefresh) {
     .map(item => ({ slug: `${item.categoryId}-${Buffer.from(item.oppoCategory).toString('hex')}`,
       label: plainText(item.oppoCategory), categoryId: item.categoryId, version: Number(item.version) || 1 }))
     .filter(item => { if (seen.has(item.slug)) return false; seen.add(item.slug); return true; });
-  if (!items.length) throw new Error('西饭没有返回可用分类，请重试');
+  if (!items.length) throw new Error('XiFan không trả về phân loại khả dụng, vui lòng thử lại');
   genreCache = { expires: Date.now() + 300000, items };
   return items;
 }
@@ -72,7 +72,7 @@ function normalizeList(result, page, categoryItems = []) {
     .filter(item => { if (seen.has(item.series_id)) return false; seen.add(item.series_id); return true; });
   const hasMore = result.hasMore === true && results.length > 0;
   return { success: true, results, page, total: 0, totalPages: 0, hasMore, nextPage: hasMore ? page + 1 : null,
-    genres: categoryItems.map(({ slug, label }) => ({ slug, label })), pageTitle: '西饭短剧', sourceUrl: '' };
+    genres: categoryItems.map(({ slug, label }) => ({ slug, label })), pageTitle: 'Phim Ngắn XiFan', sourceUrl: '' };
 }
 
 async function browseList(options = {}) {

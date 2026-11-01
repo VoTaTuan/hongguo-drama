@@ -12,7 +12,7 @@ const { app, BrowserWindow, BaseWindow, View, WebContentsView, globalShortcut, i
 const path = require('path');
 const IS_PREVIEW = require('./package.json').name === 'hongguo-experience-preview';
 if (IS_PREVIEW) {
-  app.setName('红果短剧预览');
+  app.setName('Phim Ngắn Hồng Quả (Bản xem trước)');
   if (!app.commandLine.hasSwitch('user-data-dir')) {
     app.setPath('userData', path.join(app.getPath('appData'), 'hongguo-experience-preview'));
   }
@@ -30,10 +30,10 @@ if (hasSingleInstanceLock && !IS_PREVIEW && app.commandLine.hasSwitch?.('user-da
     // 浏览器会话数据也跟随程序目录；applyPortableDataDir 同时设置
     // userData 与 sessionData，失败时把原因留在 portableConfig.reason。
     portableConfig = applyPortableDataDir({ app, defaultUserData: app.getPath('userData'), execPath: process.execPath });
-    if (portableConfig.copied?.length) console.log('[Config] 已迁移便携版资料:', portableConfig.copied.join(', '));
+    if (portableConfig.copied?.length) console.log('[Config] Đã di chuyển dữ liệu bản di động:', portableConfig.copied.join(', '));
     if (portableConfig.reason) console.warn('[Config]', portableConfig.reason);
   } catch (error) {
-    console.warn('[Config] 便携版资料目录不可用:', error.message);
+    console.warn('[Config] Thư mục dữ liệu bản di động không khả dụng:', error.message);
   }
 }
 const fs = require('fs');
@@ -66,7 +66,7 @@ const rendererSecurity = require('./src/native/renderer-security').createRendere
 const attachFloatingPlayerWindow = require('./src/native/floating-player-window');
 const APP_VERSION = app.getVersion() || '1.0.0';
 
-const APP_TITLE = IS_PREVIEW ? '红果短剧预览' : '红果短剧';
+const APP_TITLE = IS_PREVIEW ? 'Phim Ngắn Hồng Quả (Bản xem trước)' : 'Phim Ngắn Hồng Quả';
 const { createStealthController } = require('./src/native/stealth-window');
 const { createBossKeyController } = require('./src/native/boss-key');
 
@@ -82,10 +82,10 @@ const UPDATE_BLOCKED_CHANNELS = new Set(['hongguo-download-batch', 'download-sin
 const ipcMain = {
   handle(channel, handler) {
     rawIpcMain.handle(channel, async (event, ...args) => {
-      if (!rendererSecurity.isTrustedSender(event, mainWindow)) throw new Error('窗口请求无效');
-      if (quitCleanup) return { success: false, error: '正在退出，请等待清理完成。' };
+      if (!rendererSecurity.isTrustedSender(event, mainWindow)) throw new Error('Yêu cầu từ cửa sổ không hợp lệ');
+      if (quitCleanup) return { success: false, error: 'Đang thoát, vui lòng đợi quá trình dọn dẹp hoàn tất.' };
       if (appUpdateInstaller?.getState().status === 'installing' && UPDATE_BLOCKED_CHANNELS.has(channel)) {
-        return { success: false, error: '正在安装更新，请等待应用重新启动。' };
+        return { success: false, error: 'Đang cài đặt bản cập nhật, vui lòng đợi ứng dụng khởi động lại.' };
       }
       const blocksUpdate = UPDATE_BLOCKED_CHANNELS.has(channel);
       if (blocksUpdate) pendingUpdateOperations++;
@@ -347,13 +347,13 @@ function resolveProxyConfig(settings) {
 function publicProxyUrl(value) {
   if (!value) return null;
   try { const url = new URL(value); url.username = ''; url.password = ''; return url.toString(); }
-  catch (_) { return '(代理地址已隐藏)'; }
+  catch (_) { return '(địa chỉ proxy đã ẩn)'; }
 }
 
 function publicProxyError(message, settings, resolved) {
-  let text = String(message || '代理连接失败').replace(/([a-z]+:\/\/)[^\s/]*@/gi, '$1[认证已隐藏]@');
+  let text = String(message || 'Kết nối proxy thất bại').replace(/([a-z]+:\/\/)[^\s/]*@/gi, '$1[xác thực đã ẩn]@');
   for (const secret of [settings.proxy_username, settings.proxy_password, resolved.url]) {
-    if (secret) for (const value of new Set([String(secret), encodeURIComponent(String(secret))])) text = text.split(value).join('[已隐藏]');
+    if (secret) for (const value of new Set([String(secret), encodeURIComponent(String(secret))])) text = text.split(value).join('[đã ẩn]');
   }
   return text;
 }
@@ -401,7 +401,7 @@ async function applyProxyToSession(resolved, sessions = [session.defaultSession,
   let config = { mode: resolved.mode === 'direct' ? 'direct' : 'system' };
   if (resolved.mode === 'custom' && resolved.url) {
     const built = proxyRuleForSession(resolved);
-    if (!built) throw new Error('代理地址无效');
+    if (!built) throw new Error('Địa chỉ proxy không hợp lệ');
     auth = built.auth;
     config = { mode: 'fixed_servers', proxyRules: built.rule };
   }
@@ -416,7 +416,7 @@ async function applyProxyToSession(resolved, sessions = [session.defaultSession,
       // Electron cannot cancel setProxy; a late completion must restore the newest choice.
       sessionProxyConfigs.delete(ses);
       await applyProxyToSession(desiredProxyConfig, [ses], proxyApplyVersion);
-      throw new Error('代理设置已被更新');
+      throw new Error('Cài đặt proxy đã được cập nhật');
     }
     sessionProxyConfigs.set(ses, key);
   }));
@@ -441,8 +441,8 @@ async function applyProxySettings(settings) {
   const version = ++proxyApplyVersion;
   desiredProxyConfig = resolved;
   try { await applyProxyToSession(resolved, undefined, version); }
-  catch (_) { throw new Error('设置网络代理失败，请重试。'); }
-  if (version !== proxyApplyVersion) throw new Error('代理设置已被更新');
+  catch (_) { throw new Error('Thiết lập proxy mạng thất bại, vui lòng thử lại.'); }
+  if (version !== proxyApplyVersion) throw new Error('Cài đặt proxy đã được cập nhật');
   applyProxyToEnv(resolved);
   console.log(`[Proxy] mode=${resolved.mode}`);
   return resolved;
@@ -453,22 +453,22 @@ function validateProxyDraft(settings) {
   const s = settings || {};
   if (s.proxy_enabled !== true) return;
   const mode = s.proxy_mode || 'system';
-  if (!['system', 'custom', 'direct'].includes(mode)) throw new Error('不支持的代理模式');
+  if (!['system', 'custom', 'direct'].includes(mode)) throw new Error('Chế độ proxy không được hỗ trợ');
   if (mode !== 'custom') return;
   const resolved = resolveProxyConfig(s);
-  if (!resolved.url) throw new Error('请填写完整的代理地址与端口');
+  if (!resolved.url) throw new Error('Vui lòng điền đầy đủ địa chỉ proxy và cổng');
   let url;
-  try { url = new URL(resolved.url); } catch (_) { throw new Error('代理地址格式无效'); }
-  if (!['http:', 'https:', 'socks4:', 'socks5:'].includes(url.protocol)) throw new Error('仅支持 HTTP、HTTPS、SOCKS4 或 SOCKS5 代理');
-  if (!url.hostname) throw new Error('代理地址格式无效');
-  if (!proxyRuleForSession(resolved)) throw new Error('代理地址无法用于系统网络设置');
+  try { url = new URL(resolved.url); } catch (_) { throw new Error('Định dạng địa chỉ proxy không hợp lệ'); }
+  if (!['http:', 'https:', 'socks4:', 'socks5:'].includes(url.protocol)) throw new Error('Chỉ hỗ trợ proxy HTTP, HTTPS, SOCKS4 hoặc SOCKS5');
+  if (!url.hostname) throw new Error('Định dạng địa chỉ proxy không hợp lệ');
+  if (!proxyRuleForSession(resolved)) throw new Error('Địa chỉ proxy không thể dùng cho cài đặt mạng hệ thống');
 }
 
 function applyProxyWithTimeout(settings, timeoutMs) {
   let timer;
   return Promise.race([
     applyProxySettings(settings),
-    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('代理启动超时')), timeoutMs); }),
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Khởi động proxy quá thời gian')), timeoutMs); }),
   ]).finally(() => clearTimeout(timer));
 }
 
@@ -524,7 +524,7 @@ function renderName(format, seriesTitle, vidIndex, epTitle) {
     '集数': 'vid_index',
     '标题': 'ep_title',
   };
-  const zhRe = /剧名|集数|标题/g;
+  const zhRe = /剧名|集数|标题|TenPhim|Tap|TieuDe/gi;
   let name = fmt
     .replace(zhRe, (w) => zhMap[w] || w)
     .replace(/([A-Za-z]+(?:_[A-Za-z]+)*)/g, (tok) => (vars[tok] !== undefined ? (vars[tok] || '') : tok));
@@ -541,7 +541,7 @@ function loadDownloadTasks() {
     return {
       ...task,
       status: inProgress ? 'failed' : task.status,
-      error: inProgress ? '应用关闭时任务中断' : task.error,
+      error: inProgress ? 'Tác vụ bị ngắt khi đóng ứng dụng' : task.error,
       qualityNotice: task.status === 'completed' ? task.qualityNotice || '' : '',
     };
   });
@@ -560,7 +560,7 @@ function rebuildSeriesRegistryFromTasks() {
     if (!groups.has(sid)) {
       groups.set(sid, {
         series_id: sid,
-        series_title: info.series_title || '未命名短剧',
+        series_title: info.series_title || 'Phim_chua_dat_ten',
         cover: (t.videoInfo && t.videoInfo.cover) || '',
         episodes: new Map(),
       });
@@ -601,7 +601,7 @@ function rebuildSeriesRegistryFromTasks() {
   }
   if (added > 0) {
     saveSeriesRegistry();
-    console.log(`[Series] 从下载任务回填 ${added} 部短剧档案`);
+    console.log(`[Series] Đã điền lại ${added} hồ sơ phim ngắn từ tác vụ tải xuống`);
   }
 }
 
@@ -655,7 +655,7 @@ function upsertSeriesRegistry(data) {
   const idx = seriesRegistry.findIndex((s) => String(s.series_id) === sid);
   const entry = {
     series_id: sid,
-    series_title: data.series_title || '未命名短剧',
+    series_title: data.series_title || 'Phim_chua_dat_ten',
     cover: data.cover || '',
     total: data.episodes.length,
     web_accessible_episodes: data.web_accessible_episodes ?? null,
@@ -707,7 +707,7 @@ async function runTask(task) {
   try {
     await executeDownload(task);
   } catch (error) {
-    console.error('[Download Queue] 下载失败:', error);
+    console.error('[Download Queue] Tải xuống thất bại:', error);
   } finally {
     activeDownloads--;
     runningDownloads.delete(task.id);
@@ -794,8 +794,8 @@ function cancelScheduledRetries(tasks) {
   for (const task of tasks) {
     if (task.status !== 'failed' || (!task.retryAt && !sourceRetryTimers.has(task.id))) continue;
     clearSourceRetry(task);
-    const reason = String(task.error || '').replace(/ 将在 .*后自动重试（\d+\/\d+）。$/, '');
-    task.error = `${reason ? reason + '；' : ''}已取消自动重试，请手动重试`;
+    const reason = String(task.error || '').replace(/(?: 将在 .*后自动重试（\d+\/\d+）。| sẽ tự động thử lại sau .* \(\d+\/\d+\)\.)$/, '');
+    task.error = `${reason ? reason + '; ' : ''}Đã hủy tự động thử lại, vui lòng thử lại thủ công`;
     changed = true;
   }
   return changed;
@@ -811,18 +811,18 @@ function pauseAllTasks() {
     if (task.status === 'failed' && task.retryAt) {
       clearSourceRetry(task);
       task.status = 'stopped';
-      task.error = '已手动暂停';
+      task.error = 'Đã tạm dừng thủ công';
       stopped++;
     } else if (task.status === 'pending') {
       clearSourceRetry(task);
       task.status = 'stopped';
-      task.error = '已手动暂停';
+      task.error = 'Đã tạm dừng thủ công';
       task.endTime = Date.now();
       stopped++;
     } else if (task.status === 'downloading') {
       task.cancelled = true;
       if (task.cancelSource) {
-        try { task.cancelSource.cancel('用户一键暂停'); } catch (_) {}
+        try { task.cancelSource.cancel('Người dùng tạm dừng tất cả'); } catch (_) {}
       }
       if (task.writer) {
         try { task.writer.destroy(); } catch (_) {}
@@ -878,20 +878,20 @@ async function executeDownload(task) {
     await executeHongguoDownload(task);
     return;
   }
-  throw new Error('未知任务类型: ' + task.type);
+  throw new Error('Loại tác vụ không xác định: ' + task.type);
 }
 
 // ===== 红果短剧下载 =====
 function verifyDownloadDecode(file, cancelToken = null) {
   const ffmpeg = resolveFfmpeg('ffmpeg');
-  if (!ffmpeg) return Promise.reject(Object.assign(new Error('视频解码校验工具不可用，请修复安装后重试'), { code: 'LOCAL_MEDIA_TOOL_ERROR' }));
+  if (!ffmpeg) return Promise.reject(Object.assign(new Error('Công cụ kiểm tra giải mã video không khả dụng, vui lòng cài đặt lại rồi thử lại'), { code: 'LOCAL_MEDIA_TOOL_ERROR' }));
   const { execFile } = require('child_process');
   return new Promise((resolve, reject) => {
     let settled = false, child;
     const abort = () => {
       if (settled) return;
       try { child?.kill(); } catch (_) {}
-      finish(reject, Object.assign(new Error('已取消视频解码校验'), { code: 'ERR_CANCELED' }));
+      finish(reject, Object.assign(new Error('Đã hủy kiểm tra giải mã video'), { code: 'ERR_CANCELED' }));
     };
     const cleanup = () => cancelToken?.unsubscribe?.(abort);
     const finish = (settle, value) => {
@@ -901,7 +901,7 @@ function verifyDownloadDecode(file, cancelToken = null) {
       settle(value);
     };
     if (cancelToken?.reason) {
-      finish(reject, Object.assign(new Error('已取消视频解码校验'), { code: 'ERR_CANCELED' }));
+      finish(reject, Object.assign(new Error('Đã hủy kiểm tra giải mã video'), { code: 'ERR_CANCELED' }));
       return;
     }
     cancelToken?.subscribe?.(abort);
@@ -910,15 +910,15 @@ function verifyDownloadDecode(file, cancelToken = null) {
         if (error) {
           const code = String(error.code || '');
           if (error.killed || error.signal || code === 'ETIMEDOUT' || code === 'ABORT_ERR') {
-            return finish(reject, Object.assign(new Error('视频解码校验工具超时或无法运行'), { code: 'LOCAL_MEDIA_TOOL_ERROR', cause: error }));
+            return finish(reject, Object.assign(new Error('Công cụ kiểm tra giải mã video quá thời gian hoặc không thể chạy'), { code: 'LOCAL_MEDIA_TOOL_ERROR', cause: error }));
           }
           if (['ENOENT', 'EACCES', 'EPERM', 'EINVAL'].includes(code)) {
-            return finish(reject, Object.assign(new Error('视频解码校验工具不可用，请修复安装后重试'), { code: 'LOCAL_MEDIA_TOOL_ERROR', cause: error }));
+            return finish(reject, Object.assign(new Error('Công cụ kiểm tra giải mã video không khả dụng, vui lòng sửa lại cài đặt rồi thử lại'), { code: 'LOCAL_MEDIA_TOOL_ERROR', cause: error }));
           }
-          return finish(reject, Object.assign(new Error('视频解码校验失败，文件可能损坏，请重新下载'), { code: 'MEDIA_DECODE_ERROR', cause: error }));
+          return finish(reject, Object.assign(new Error('Kiểm tra giải mã video thất bại, tệp có thể bị hỏng, vui lòng tải lại'), { code: 'MEDIA_DECODE_ERROR', cause: error }));
         }
         if (String(stderr || '').trim()) {
-          return finish(reject, Object.assign(new Error('视频解码校验失败，文件可能损坏，请重新下载'), { code: 'MEDIA_DECODE_ERROR' }));
+          return finish(reject, Object.assign(new Error('Kiểm tra giải mã video thất bại, tệp có thể bị hỏng, vui lòng tải lại'), { code: 'MEDIA_DECODE_ERROR' }));
         }
         finish(resolve);
       });
@@ -928,14 +928,14 @@ function verifyDownloadDecode(file, cancelToken = null) {
 async function verifyDownloadQuality(file, quality, existing = false, verifyDecode = false, cancelToken = null) {
   quality = normalizeDownloadQuality(quality);
   const ffprobe = resolveFfmpeg('ffprobe');
-  if (!ffprobe) throw Object.assign(new Error('视频检查工具不可用，请修复安装后重试'), { code: 'LOCAL_MEDIA_TOOL_ERROR' });
+  if (!ffprobe) throw Object.assign(new Error('Công cụ kiểm tra video không khả dụng, vui lòng cài đặt lại rồi thử lại'), { code: 'LOCAL_MEDIA_TOOL_ERROR' });
   const info = await probeVideoInfo(ffprobe, file, undefined, true);
-  const prefix = existing ? '已有本地文件' : '片源文件';
+  const prefix = existing ? 'Tệp cục bộ hiện có' : 'Tệp nguồn phim';
   if (!info || ![info.w, info.h, info.duration].every(value => Number.isFinite(value) && value > 0)) {
-    throw new Error(`${prefix}缺少有效视频轨、分辨率或时长，未完成下载${existing ? '；文件已保留，请先自行检查或移除' : ''}`);
+    throw new Error(`${prefix} thiếu luồng video hợp lệ, độ phân giải hoặc thời lượng, chưa hoàn thành tải về${existing ? '; tệp được giữ lại, vui lòng tự kiểm tra hoặc xóa' : ''}`);
   }
   if (!meetsDownloadQuality({ width: info.w, height: info.h }, quality)) {
-    throw new Error(`${prefix}实际为 ${Math.min(info.w, info.h)}P（${info.w}×${info.h}），不满足 ${quality.toUpperCase()}${existing ? '；文件已保留，如需重新下载请先自行移除本地文件' : '，未自动降级'}`);
+    throw new Error(`${prefix} thực tế là ${Math.min(info.w, info.h)}P (${info.w}×${info.h}), không thỏa mãn ${quality.toUpperCase()}${existing ? '; tệp được giữ lại, nếu muốn tải lại hãy tự xóa tệp cục bộ' : ', chưa tự động hạ cấp'}`);
   }
   if (verifyDecode) await verifyDownloadDecode(file, cancelToken);
   return `${Math.min(info.w, info.h)}p`;
@@ -955,7 +955,7 @@ async function completeNasExports(task) {
       await copyNasEpisode(task, destination);
       sendToRenderer('nas-export-done', { seriesId: task.hongguoInfo.series_id, vidIndex: task.hongguoInfo.vid_index, success: true });
     } catch (_) {
-      const error = 'NAS 整理失败，请确认共享目录在线后再次点击「下载到 NAS」重试；本地视频已保留';
+      const error = 'Sắp xếp NAS thất bại, vui lòng đảm bảo thư mục chia sẻ đang trực tuyến rồi nhấn lại「Tải về NAS」để thử lại; video cục bộ được giữ lại';
       warnings.push(error);
       sendToRenderer('nas-export-done', { seriesId: task.hongguoInfo.series_id, vidIndex: task.hongguoInfo.vid_index, success: false, error });
     }
@@ -980,7 +980,7 @@ async function executeHongguoDownload(task) {
     const allowLowerQuality = quality !== 'auto' && /^\d{1,30}$/.test(String(vid));
     const notifyQuality = pixels => {
       const lower = allowLowerQuality && pixels > 0 && pixels < Number.parseInt(quality, 10);
-      const notice = lower ? `正在下载更低质量片源：${pixels}P（原选 ${quality.toUpperCase()}）` : '';
+      const notice = lower ? `Đang tải nguồn chất lượng thấp hơn: ${pixels}P (gốc chọn ${quality.toUpperCase()})` : '';
       if (task.qualityNotice === notice) return;
       task.qualityNotice = notice;
       sendToRenderer('download-progress', { id, qualityNotice: notice });
@@ -993,7 +993,7 @@ async function executeHongguoDownload(task) {
     const root = String(settings.root || '').trim() || app.getPath('downloads');
     const downloadDir = task.customDir || seriesDownloadDir(root, hongguoInfo?.series_id, series_title);
     if (task.nasDestination) {
-      if (task.pathConflict) throw new Error('NAS 文件路径与其他分集冲突，请检查所选文件夹后重试');
+      if (task.pathConflict) throw new Error('Đường dẫn tệp NAS xung đột với tập khác, vui lòng kiểm tra thư mục đã chọn rồi thử lại');
       await checkNasDirectory(task.nasDestination);
     }
     else fs.mkdirSync(downloadDir, { recursive: true });
@@ -1002,11 +1002,11 @@ async function executeHongguoDownload(task) {
     // Recheck source access before reusing an existing third-party file or URL.
     const checkedPlayInfo = /^(xifan|hema|custom):/.test(String(vid))
       ? await hongguo.fetchPlayUrlSingle(vid, hongguoInfo?.series_id, { quality }) : null;
-    if (checkedPlayInfo && !checkedPlayInfo.url) throw new Error(checkedPlayInfo.error || '来源未开放该集');
+    if (checkedPlayInfo && !checkedPlayInfo.url) throw new Error(checkedPlayInfo.error || 'Nguồn phim chưa mở tập này');
     // Existing complete files need no additional media transfer.
     source.token.throwIfRequested();
     if (fs.existsSync(finalPath)) {
-      if (!hasCompleteTaskFile(task)) throw new Error('已有本地文件不完整或路径冲突，文件已保留，请先自行检查或移除');
+      if (!hasCompleteTaskFile(task)) throw new Error('Tệp cục bộ hiện có không hoàn chỉnh hoặc đường dẫn bị xung đột, tệp được giữ lại, vui lòng tự kiểm tra hoặc xóa');
       task.actualQuality = await verifyDownloadQuality(finalPath, quality, true);
       source.token.throwIfRequested();
       await completeNasExports(task);
@@ -1067,7 +1067,7 @@ async function executeHongguoDownload(task) {
       // pipeline rejects on either side and destroys both streams (including abrupt CDN close).
       await pipeline(response.data, writer);
       source.token.throwIfRequested();
-      if (!received || (totalLength && received !== totalLength)) throw mediaTransferError('视频下载不完整，请重试');
+      if (!received || (totalLength && received !== totalLength)) throw mediaTransferError('Tải video không hoàn chỉnh, vui lòng thử lại');
       if (playInfo.contentKey) {
         const decodedPath = tmpPath + '.decoded';
         try {
@@ -1079,7 +1079,7 @@ async function executeHongguoDownload(task) {
         fs.unlinkSync(tmpPath);
       } else if (playInfo.spadeA) {
         const key = hongguo.deriveKey(playInfo.spadeA);
-        if (!key) throw new Error('Key 派生失败');
+        if (!key) throw new Error('Phái sinh Key giải mã thất bại');
         // Decrypt to another temporary file; never expose partial data as a completed MP4.
         const decodedPath = tmpPath + '.decoded';
         try {
@@ -1099,7 +1099,7 @@ async function executeHongguoDownload(task) {
     await completeNasExports(task);
     source.token.throwIfRequested();
     task.status = 'completed'; task.progress = 100; task.endTime = Date.now(); delete task.sourceRetries;
-    if (task.qualityNotice) task.qualityNotice = task.qualityNotice.replace('正在下载', '已下载');
+    if (task.qualityNotice) task.qualityNotice = task.qualityNotice.replace('正在下载', '已下载').replace('Đang tải', 'Đã tải');
     saveDownloadTasks(); sendToRenderer('download-completed', { id, path: finalPath, actualQuality: task.actualQuality, qualityNotice: task.qualityNotice || '' });
   } catch (error) {
     if (writer && !writer.destroyed) writer.destroy();
@@ -1119,8 +1119,8 @@ async function executeHongguoDownload(task) {
           ? SOURCE_RETRY_DELAYS : TRANSFER_RETRY_DELAYS;
         const delay = delays[retries];
         task.sourceRetries = retries + 1; task.retryAt = Date.now() + delay;
-        const wait = delays === SOURCE_RETRY_DELAYS ? `${delay / 60000} 分钟` : `${delay / 1000} 秒`;
-        task.error = `${error.message} 将在 ${wait}后自动重试（${retries + 1}/${SOURCE_RETRY_DELAYS.length}）。`;
+        const wait = delays === SOURCE_RETRY_DELAYS ? `${delay / 60000} phút` : `${delay / 1000} giây`;
+        task.error = `${error.message} Sẽ tự động thử lại sau ${wait} (${retries + 1}/${SOURCE_RETRY_DELAYS.length}).`;
         armSourceRetry(task);
       }
       sendToRenderer('download-failed', { id, error: task.error, retryAt: task.retryAt || null, sourceRetries: task.sourceRetries || 0, qualityNotice: '' });
@@ -1147,7 +1147,7 @@ ipcMain.handle('hongguo-resolve', async (event, input) => {
     upsertSeriesRegistry(data);
     return { success: true, data };
   } catch (error) {
-    console.error('[Hongguo] 解析失败:', error.message);
+    console.error('[Hongguo] Phân tích thất bại:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1160,7 +1160,7 @@ const SEARCH_TIMEOUT_MS = 15000;
 
 function sourcePageUrl(value) {
   const url = new URL(value);
-  if (url.origin !== SEARCH_SITE || url.username || url.password) throw new Error('仅允许打开红果来源页面');
+  if (url.origin !== SEARCH_SITE || url.username || url.password) throw new Error('Chỉ cho phép mở trang nguồn Hồng Quả');
   return url.href;
 }
 
@@ -1175,7 +1175,7 @@ function getSearchWindow(background = false) {
     width: 1100,
     height: 820,
     show: false,
-    title: '搜索 - 红果短剧',
+    title: 'Tìm kiếm - Phim Ngắn Hồng Quả',
     autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
@@ -1311,15 +1311,15 @@ async function runSniffOnUrl(url, label, { deadline = 0 } = {}) {
   // 同一窗口串行执行，避免并发导航互相打断
   const task = async () => {
     const budget = deadline > 0 ? Math.min(SEARCH_TIMEOUT_MS, deadline - Date.now()) : SEARCH_TIMEOUT_MS;
-    if (budget <= 0) throw new Error('搜索超时，请稍后重试');
+    if (budget <= 0) throw new Error('Tìm kiếm quá thời gian, vui lòng thử lại sau');
     const win = getSearchWindow(true);
     // Reserve the last part of the deadline for empty-page details.
     const pollDeadline = Date.now() + budget * 0.9;
     let expired = false;
-    const timeoutError = new Error('搜索超时，请稍后重试');
+    const timeoutError = new Error('Tìm kiếm quá thời gian, vui lòng thử lại sau');
     const assertActive = () => {
       if (expired) throw timeoutError;
-      if (win.isDestroyed()) throw new Error('搜索窗口已关闭，请重试');
+      if (win.isDestroyed()) throw new Error('Cửa sổ tìm kiếm đã đóng, vui lòng thử lại');
     };
     const evaluate = async script => {
       assertActive();
@@ -1336,12 +1336,12 @@ async function runSniffOnUrl(url, label, { deadline = 0 } = {}) {
       }, budget);
     });
     const sniff = async () => {
-      console.log(`[${label}] 打开:`, url);
+      console.log(`[${label}] Mở:`, url);
       try {
         await win.loadURL(url, { userAgent: SEARCH_UA });
       } catch (e) {
         // loadURL 在页面内有重定向/中断时也可能 reject，这里继续尝试读取 DOM
-        console.warn(`[${label}] loadURL 返回异常（继续尝试读取）:`, e.message);
+        console.warn(`[${label}] loadURL trả về bất thường (tiếp tục thử đọc):`, e.message);
       }
       assertActive();
 
@@ -1367,7 +1367,7 @@ async function runSniffOnUrl(url, label, { deadline = 0 } = {}) {
           } catch (_) { failed = false; }
           if (failed) {
             reloaded = true;
-            console.log(`[${label}] 页面加载失败，自动刷新一次`);
+            console.log(`[${label}] Tải trang thất bại, tự động làm mới một lần`);
             try { await win.loadURL(url, { userAgent: SEARCH_UA }); } catch (_) { /* 继续尝试读取 */ }
             assertActive();
             continue;
@@ -1392,7 +1392,7 @@ async function runSniffOnUrl(url, label, { deadline = 0 } = {}) {
         } catch (_) { pageFailed = false; }
         assertActive();
         // 页面明确报错时不能当成“确实没有结果”，否则搜索失败会被说成没找到。
-        if (pageFailed) return { success: false, results: [], pageTitle, meta, error: '红果搜索页面加载失败，请稍后重试' };
+        if (pageFailed) return { success: false, results: [], pageTitle, meta, error: 'Trang tìm kiếm Hồng Quả tải thất bại, vui lòng thử lại sau' };
         return { success: true, results: [], pageTitle, meta };
       }
 
@@ -1403,7 +1403,7 @@ async function runSniffOnUrl(url, label, { deadline = 0 } = {}) {
           url: `${SEARCH_SITE}/detail?series_id=${r.series_id}`,
         }));
 
-      console.log(`[${label}] 命中 ${results.length} 部`);
+      console.log(`[${label}] Khớp ${results.length} phim`);
       return { success: true, results, meta };
     };
     try { return await Promise.race([sniff(), timeout]); }
@@ -1418,11 +1418,11 @@ async function runSniffOnUrl(url, label, { deadline = 0 } = {}) {
   const remaining = deadline - Date.now();
   if (remaining <= 0) {
     queued.catch(() => {});
-    throw new Error('搜索超时，请稍后重试');
+    throw new Error('Tìm kiếm quá thời gian, vui lòng thử lại sau');
   }
   let guardTimer;
   const guard = new Promise((_, reject) => {
-    guardTimer = setTimeout(() => reject(new Error('搜索超时，请稍后重试')), remaining);
+    guardTimer = setTimeout(() => reject(new Error('Tìm kiếm quá thời gian, vui lòng thử lại sau')), remaining);
   });
   try { return await Promise.race([queued, guard]); }
   finally { clearTimeout(guardTimer); }
@@ -1434,14 +1434,14 @@ async function runSearchSniff(keyword, options = {}) {
 
 // ===== 浏览：分类页（含题材筛选与分页）=====
 const BROWSE_CATEGORIES = [
-  { slug: 'real-drama', label: '真人剧' },
-  { slug: 'comic-drama', label: '漫剧' },
-  { slug: 'ai-drama', label: 'AI剧' },
-  { slug: 'comic', label: '漫画' },
-  { slug: 'hot-drama', label: '综合热播榜', group: 'rank' },
-  { slug: 'hot-real-drama', label: '真人热播榜', group: 'rank' },
-  { slug: 'hot-comic-drama', label: '漫剧热播榜', group: 'rank' },
-  { slug: 'hot-ai-drama', label: 'AI 热播榜', group: 'rank' },
+  { slug: 'real-drama', label: 'Phim người thật đóng' },
+  { slug: 'comic-drama', label: 'Truyện tranh động (Anime)' },
+  { slug: 'ai-drama', label: 'Phim AI' },
+  { slug: 'comic', label: 'Truyện tranh' },
+  { slug: 'hot-drama', label: 'BXH Thịnh hành', group: 'rank' },
+  { slug: 'hot-real-drama', label: 'BXH Người thật đóng', group: 'rank' },
+  { slug: 'hot-comic-drama', label: 'BXH Truyện tranh động', group: 'rank' },
+  { slug: 'hot-ai-drama', label: 'BXH Phim AI', group: 'rank' },
 ];
 
 ipcMain.handle('browse-categories', async () => BROWSE_CATEGORIES);
@@ -1471,7 +1471,7 @@ ipcMain.handle('save-custom-source', async (_event,draft) => {
   try {
     const source = require('./src/native/custom-source').validateSource(draft);
     const settings = getCurrentSettings(), sources = settings.custom_sources || [];
-    if (source.id && !sources.some(item => item.id === source.id)) throw new Error('播放源不存在');
+    if (source.id && !sources.some(item => item.id === source.id)) throw new Error('Nguồn phát không tồn tại');
     source.id ||= randomUUID();
     const next = sources.some(item => item.id === source.id) ? sources.map(item => item.id === source.id ? source : item) : [...sources,source];
     store.saveSettings({...settings,custom_sources:next});
@@ -1482,7 +1482,7 @@ ipcMain.handle('save-custom-source', async (_event,draft) => {
 ipcMain.handle('delete-custom-source', async (_event,id) => {
   try {
     const settings = getCurrentSettings();
-    if (!(settings.custom_sources || []).some(source => source.id === id)) throw new Error('播放源不存在');
+    if (!(settings.custom_sources || []).some(source => source.id === id)) throw new Error('Nguồn phát không tồn tại');
     store.saveSettings({...settings,custom_sources:settings.custom_sources.filter(source => source.id !== id)});
     await invalidateCustomSource(id); return {success:true};
   } catch (error) { return {success:false,error:error.message}; }
@@ -1494,10 +1494,10 @@ ipcMain.handle('test-custom-source', async (_event,draft) => {
 
 
 ipcMain.handle('browse-list', async (_event, options) => {
-  if (['xifan', 'hema'].includes(options?.source) && getCurrentSettings().builtin_sources?.[options.source] === false) return { success: false, results: [], error: '此来源已关闭，可在设置中重新开启' };
-  if (proxyStartupFallback) return { success: false, error: '网络代理配置无效，请先在设置中修复或明确关闭代理。' };
+  if (['xifan', 'hema'].includes(options?.source) && getCurrentSettings().builtin_sources?.[options.source] === false) return { success: false, results: [], error: 'Nguồn này đã tắt, có thể bật lại trong Cài đặt' };
+  if (proxyStartupFallback) return { success: false, error: 'Cấu hình proxy mạng không hợp lệ, vui lòng sửa hoặc tắt hẳn proxy trong Cài đặt.' };
   if ((!options?.source || options.source === 'hongguo') && options?.catalogChannel != null
-    && !['app', 'web'].includes(options.catalogChannel)) return { success: false, error: '不支持的红果目录线路' };
+    && !['app', 'web'].includes(options.catalogChannel)) return { success: false, error: 'Tuyến danh mục Hồng Quả không được hỗ trợ' };
   const moduleName = String(options?.source).startsWith('custom:') ? './src/native/custom-source' : options?.source === 'hema' ? './src/native/hema'
     : options?.source === 'xifan' ? './src/native/xifan'
       : options?.catalogChannel === 'web' ? './src/native/catalog' : './src/native/hongguo-app-catalog';
@@ -1538,7 +1538,7 @@ async function searchNewReleasesForSearch(keyword, options = {}) {
   const normalized = String(keyword || '').normalize('NFKC').replace(/[\s\p{P}\p{S}]+/gu, '');
   if (normalized.length < 2) return { results: [], checked: false, error: '' };
   if (Date.now() < newReleaseCooldownUntil) {
-    return { results: [], partial: false, checked: false, error: 'App 上新补搜暂时不可用，请稍后重试' };
+    return { results: [], partial: false, checked: false, error: 'Tìm kiếm bổ sung phim mới trên App tạm thời không khả dụng, vui lòng thử lại sau' };
   }
   const budget = Number(deadline) || 0;
   if (!budget || budget - Date.now() < 900) return { results: [], checked: false, error: '' };
@@ -1553,12 +1553,12 @@ async function searchNewReleasesForSearch(keyword, options = {}) {
       results: Array.isArray(detailed?.results) ? detailed.results : [],
       partial: detailed?.partial === true,
       checked: true,
-      error: detailed?.partial ? 'App 上新目录只读取到部分分类' : '',
+      error: detailed?.partial ? 'Danh mục mới App chỉ đọc được một phần thể loại' : '',
     };
   } catch (error) {
     newReleaseCooldownUntil = Date.now() + NEW_RELEASE_COOLDOWN_MS;
-    console.warn('[Search] App 上新补搜失败:', error?.message || error);
-    return { results: [], checked: true, error: error?.message || 'App 上新补搜失败' };
+    console.warn('[Search] Tìm kiếm bổ sung phim mới trên App thất bại:', error?.message || error);
+    return { results: [], checked: true, error: error?.message || 'Tìm kiếm bổ sung phim mới trên App thất bại' };
   }
 }
 
@@ -1580,10 +1580,10 @@ function mergeNewReleases(results, extras) {
 
 async function searchAtSource(keyword, options = {}) {
   const page = options.page === undefined ? 1 : options.page;
-  if (!Number.isSafeInteger(page) || page < 1 || page > 50) throw new Error('搜索页码必须是 1 至 50 的整数');
+  if (!Number.isSafeInteger(page) || page < 1 || page > 50) throw new Error('Số trang tìm kiếm phải là số nguyên từ 1 đến 50');
   const source = options.source || 'hongguo';
-  if (['xifan', 'hema'].includes(source) && getCurrentSettings().builtin_sources?.[source] === false) throw new Error('此来源已关闭，可在设置中重新开启');
-  if (page > 1 && source !== 'hongguo' && options.channel && options.channel !== source) throw new Error('搜索通道已变化，请重新搜索');
+  if (['xifan', 'hema'].includes(source) && getCurrentSettings().builtin_sources?.[source] === false) throw new Error('Nguồn này đã tắt, có thể bật lại trong Cài đặt');
+  if (page > 1 && source !== 'hongguo' && options.channel && options.channel !== source) throw new Error('Kênh tìm kiếm đã thay đổi, vui lòng tìm kiếm lại');
   const response = await searchAtSourcePage(keyword, { ...options, page });
   if (!response?.success) return response;
   const hasMore = response.hasMore === true && page < 50;
@@ -1597,7 +1597,7 @@ async function searchAtSourcePage(keyword, options = {}) {
   if (String(options?.source).startsWith('custom:')) return require('./src/native/custom-source').searchSeries(keyword, options);
   if (options?.source === 'hema') return require('./src/native/hema').search(keyword, options.page, { deadline });
   if (options?.source === 'xifan') return require('./src/native/xifan').search(keyword, options.page, { deadline });
-  if (options?.source && options.source !== 'hongguo') throw new Error('不支持的搜索来源');
+  if (options?.source && options.source !== 'hongguo') throw new Error('Nguồn tìm kiếm không được hỗ trợ');
   const page = options.page;
   const searchQuery = normalizeSearchTitle(keyword);
   const reserveNewRelease = page === 1 && options?.fuzzy !== false && searchQuery.length >= 2;
@@ -1624,7 +1624,7 @@ async function searchAtSourcePage(keyword, options = {}) {
       const response = await searchHongguo(keyword, { ...requestOptions, page });
       return { ...response, success: true, via: 'api', channel: 'web', page, cursor: { page, nextPage: response.nextPage || null }, hasMore: !!response.hasMore, meta: { total: response.total, page, totalPages: response.totalPages, hasMore: !!response.hasMore, relaxed: false } };
     }
-    throw new Error('该搜索通道不支持加载更多，请重新搜索');
+    throw new Error('Kênh tìm kiếm này không hỗ trợ tải thêm, vui lòng tìm kiếm lại');
   }
   const appEnabled = (options?.appSearch === true || (options?.appSearch !== false && getCurrentSettings().search_app_enabled === true))
     && Date.now() >= appSearchCooldownUntil;
@@ -1638,11 +1638,11 @@ async function searchAtSourcePage(keyword, options = {}) {
         return { ...app, via: 'app', pageTitle: '', meta: { total: app.results.length, page: 1, hasMore: app.hasMore, relaxed: false } };
       }
       appSearchCooldownUntil = 0;
-      appFallbackError = app.results.length ? 'App 搜索没有标题匹配' : 'App 搜索没有返回结果';
+      appFallbackError = app.results.length ? 'Tìm kiếm App không có tiêu đề phù hợp' : 'Tìm kiếm App không trả về kết quả';
     } catch (error) {
       appSearchCooldownUntil = Date.now() + APP_SEARCH_COOLDOWN_MS;
-      appFallbackError = error.message || 'App 搜索不可用';
-      console.warn('[Search] 红果 App 搜索失败，回退官网:', appFallbackError);
+      appFallbackError = error.message || 'Tìm kiếm App không khả dụng';
+      console.warn('[Search] Tìm kiếm App Hồng Quả thất bại, quay về trang web:', appFallbackError);
     }
   }
   // 官网搜索页的结果由前端请求 /api/search/result 后渲染；直接调用接口
@@ -1655,7 +1655,7 @@ async function searchAtSourcePage(keyword, options = {}) {
       // 标点/空格让来源没搜到原名时，先用去标点全名、再用首段各补搜一次；
       // 命中完整标题或两次都失败就停止，最多两次额外请求。
       for (const relaxed of relaxedHongguoQueries(keyword)) {
-        if (deadline && Date.now() >= deadline) { fuzzyErrors.push('搜索时间预算已用完'); break; }
+        if (deadline && Date.now() >= deadline) { fuzzyErrors.push('Thời gian tìm kiếm đã hết'); break; }
         try {
           const extra = await searchHongguo(relaxed, officialRequestOptions);
           const merged = new Map(results.map(item => [String(item.series_id), item]));
@@ -1667,8 +1667,8 @@ async function searchAtSourcePage(keyword, options = {}) {
           attempted.push(relaxed);
           if (hasTitleMatch(results)) break;
         } catch (error) {
-          fuzzyErrors.push(error.message || '补搜失败');
-          console.warn('[Search] 红果模糊补搜失败:', error.message);
+          fuzzyErrors.push(error.message || 'Tìm kiếm bổ sung thất bại');
+          console.warn('[Search] Tìm kiếm mờ Hồng Quả thất bại:', error.message);
         }
       }
     }
@@ -1705,22 +1705,22 @@ async function searchAtSourcePage(keyword, options = {}) {
     const supplementalErrors = [
       ...fuzzyErrors,
       ...(newRelease.error || (newRelease.checked && newRelease.partial)
-        ? [newRelease.error || 'App 上新目录只读取到部分分类'] : []),
+        ? [newRelease.error || 'Danh mục mới App chỉ đọc được một phần thể loại'] : []),
     ];
     if (supplementalErrors.length && !results.length) {
       // 原词和补搜都没有结果，不能把服务错误说成“没有找到”。
       return { success: false, results: [], via: 'api', channel: 'web', partial: true,
-        error: `搜索未完成：${[...new Set(supplementalErrors)].join('；')}`, meta: webMeta, appError: appFallbackError };
+        error: `Tìm kiếm chưa hoàn thành: ${[...new Set(supplementalErrors)].join('; ')}`, meta: webMeta, appError: appFallbackError };
     }
     if (supplementalErrors.length) {
       return { success: true, results, pageTitle: '', via: 'api', channel: 'web', partial: true,
-        error: `补充搜索未完成：${[...new Set(supplementalErrors)].join('；')}`, meta: webMeta,
+        error: `Tìm kiếm bổ sung chưa hoàn thành: ${[...new Set(supplementalErrors)].join('; ')}`, meta: webMeta,
         hasMore: !!response.hasMore, cursor: { page: response.page, nextPage: response.nextPage || null }, appError: appFallbackError };
     }
     return { success: true, results, pageTitle: '', via: 'api', channel: 'web', meta: webMeta, hasMore: !!response.hasMore, cursor: { page: response.page, nextPage: response.nextPage || null }, appError: appFallbackError };
   } catch (error) {
-    const message = error?.message || String(error || '搜索失败');
-    console.warn('[Search] 红果接口失败:', message);
+    const message = error?.message || String(error || 'Tìm kiếm thất bại');
+    console.warn('[Search] Giao diện Hồng Quả thất bại:', message);
     if (!appEnabled && options?.appSearch !== false && Date.now() >= appSearchCooldownUntil
       && error?.kind !== 'input' && (!deadline || deadline - Date.now() >= 1000)) {
       try {
@@ -1729,24 +1729,24 @@ async function searchAtSourcePage(keyword, options = {}) {
         appSearchCooldownUntil = 0;
         if (app.results.length) {
           return { ...app, via: 'app', pageTitle: '', partial: true,
-            error: `官网搜索未完成：${message}；已自动切换 App 搜索`, apiError: message,
+            error: `Tìm kiếm trang web chưa hoàn thành: ${message}; Đã tự động chuyển sang tìm kiếm App`, apiError: message,
             meta: { total: app.results.length, page: 1, hasMore: app.hasMore, relaxed: false } };
         }
-        appFallbackError = 'App 搜索没有返回结果';
+        appFallbackError = 'Tìm kiếm App không trả về kết quả';
       } catch (appError) {
         appSearchCooldownUntil = Date.now() + APP_SEARCH_COOLDOWN_MS;
-        appFallbackError = appError?.message || 'App 搜索不可用';
-        console.warn('[Search] 官网失败后的 App 搜索也未完成:', appFallbackError);
+        appFallbackError = appError?.message || 'Tìm kiếm App không khả dụng';
+        console.warn('[Search] Tìm kiếm App sau khi trang web thất bại cũng chưa hoàn thành:', appFallbackError);
       }
     }
     // 接口 5xx/结构变化时 App 上新列表仍可能可用，能补到当天新剧就不必只报错或空等页面嗅探。
     if (page === 1 && options?.fuzzy !== false && searchQuery.length >= 2) {
       const newRelease = await searchNewReleasesForSearch(keyword, { deadline });
-      const newReleaseIssue = newRelease.error || (newRelease.partial ? 'App 上新目录只读取到部分分类' : '');
+      const newReleaseIssue = newRelease.error || (newRelease.partial ? 'Danh mục mới App chỉ đọc được một phần thể loại' : '');
       if (newRelease.results.length) {
         return { success: true, results: newRelease.results, pageTitle: '', via: 'app-new', channel: 'app-new', page: 1,
           total: newRelease.results.length, totalPages: 0, hasMore: false, nextPage: null, cursor: null, partial: true,
-          error: `官网搜索未完成：${message}；已显示 App 上新补搜结果${newReleaseIssue ? `；App 上新补搜未完成：${newReleaseIssue}` : ''}`,
+          error: `Tìm kiếm trang web chưa hoàn thành: ${message}; Đã hiển thị kết quả bổ sung từ App${newReleaseIssue ? `; Tìm kiếm bổ sung App chưa hoàn thành: ${newReleaseIssue}` : ''}`,
           meta: { total: newRelease.results.length, page: 1, totalPages: 0, hasMore: false, relaxed: false,
             newRelease: newRelease.results.length, newReleaseChecked: true, newReleasePartial: newRelease.partial === true,
             ...(newReleaseIssue ? { newReleaseError: newReleaseIssue } : {}) },
@@ -1754,7 +1754,7 @@ async function searchAtSourcePage(keyword, options = {}) {
       }
       if (newRelease.checked && newReleaseIssue) {
         return { success: false, results: [], via: 'app-new', channel: 'app-new', page: 1, partial: true,
-          error: `官网搜索未完成：${message}；App 上新补搜未完成：${newReleaseIssue}`,
+          error: `Tìm kiếm trang web chưa hoàn thành: ${message}; Tìm kiếm bổ sung App chưa hoàn thành: ${newReleaseIssue}`,
           meta: { total: 0, page: 1, totalPages: 0, hasMore: false, relaxed: false,
             newRelease: 0, newReleaseChecked: true, newReleasePartial: newRelease.partial === true,
             newReleaseError: newReleaseIssue },
@@ -1763,14 +1763,14 @@ async function searchAtSourcePage(keyword, options = {}) {
     }
     if (error.fallback !== true) throw error;
     if (deadline && Date.now() >= deadline) {
-      return { success: false, results: [], via: 'dom', partial: true, error: '搜索超时，页面兜底未开始', apiError: error.message };
+      return { success: false, results: [], via: 'dom', partial: true, error: 'Tìm kiếm quá thời gian, dự phòng trang web chưa bắt đầu', apiError: error.message };
     }
     try {
       const sniffed = await runSearchSniff(keyword, { deadline });
       return { ...sniffed, via: 'dom', channel: 'dom', hasMore: false, cursor: null, apiError: error.message, appError: appFallbackError };
     } catch (fallbackError) {
-      console.warn('[Search] 页面兜底失败:', fallbackError.message);
-      return { success: false, results: [], via: 'dom', partial: true, error: `搜索未完成：${fallbackError.message}`, apiError: error.message };
+      console.warn('[Search] Dự phòng trang web thất bại:', fallbackError.message);
+      return { success: false, results: [], via: 'dom', partial: true, error: `Tìm kiếm chưa hoàn thành: ${fallbackError.message}`, apiError: error.message };
     }
   }
 }
@@ -1780,14 +1780,14 @@ ipcMain.handle('search-series', async (event, keyword, options = {}) => {
     const deadline = Date.now() + 20000;
     return await seriesSearch.searchSeries(keyword, (kw, call) => searchAtSource(kw, { ...options, deadline, ...(call || {}) }), [], { deadline });
   } catch (error) {
-    console.error('[Search] 失败:', error.message);
+    console.error('[Search] Thất bại:', error.message);
     return { success: false, error: error.message };
   }
 });
 
 ipcMain.handle('search-series-more', async (event, keyword, options = {}) => {
   try {
-    if (!Number.isSafeInteger(options?.page) || options.page < 2 || options.page > 50) throw new Error('加载更多页码必须是 2 至 50 的整数');
+    if (!Number.isSafeInteger(options?.page) || options.page < 2 || options.page > 50) throw new Error('Số trang tải thêm phải là số nguyên từ 2 đến 50');
     const deadline = Date.now() + 12000;
     return await searchAtSource(keyword, { ...options, deadline, fuzzy: false });
   } catch (error) {
@@ -1797,7 +1797,7 @@ ipcMain.handle('search-series-more', async (event, keyword, options = {}) => {
 
 ipcMain.handle('find-series-sequels', async (_event, seriesId, options = {}) => {
   const entry = seriesRegistry.find(item => String(item.series_id) === String(seriesId));
-  if (!entry) return { success: false, results: [], error: '未找到该剧档案，请先打开剧集详情。' };
+  if (!entry) return { success: false, results: [], error: 'Không tìm thấy hồ sơ phim này, vui lòng mở chi tiết phim trước.' };
   const deadline = Date.now() + 22000;
   return seriesSearch.findSeriesSequels(entry, seriesRegistry.filter(item => !item.forgotten),
     (kw, call) => searchAtSource(kw, { source: watchHistory.sourceOf(String(entry.series_id)), deadline, ...(call || {}) }),
@@ -1807,12 +1807,12 @@ ipcMain.handle('find-series-sequels', async (_event, seriesId, options = {}) => 
 // 搜索选中某部剧后，拉取完整分集并登记档案
 ipcMain.handle('search-resolve', async (event, seriesId) => {
   try {
-    if (!seriesId) return { success: false, error: '缺少 series_id' };
+    if (!seriesId) return { success: false, error: 'Thiếu series_id' };
     const data = await hongguo.fetchEpisodeList(String(seriesId));
     upsertSeriesRegistry(data);
     return { success: true, data };
   } catch (error) {
-    console.error('[Search] 拉取分集失败:', error.message);
+    console.error('[Search] Lấy tập phim thất bại:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -1849,7 +1849,7 @@ ipcMain.handle('get-series-list', async (event, options) => {
 ipcMain.handle('remove-series', async (event, seriesId) => {
   const sid = String(seriesId);
   const entry = seriesRegistry.find((s) => String(s.series_id) === sid);
-  if (!entry) return { success: false, error: '未找到该剧' };
+  if (!entry) return { success: false, error: 'Không tìm thấy phim này' };
   entry.dismissed = true;
   saveSeriesRegistry();
   return { success: true };
@@ -1859,7 +1859,7 @@ ipcMain.handle('remove-series', async (event, seriesId) => {
 ipcMain.handle('forget-series', async (_event, seriesId) => {
   try {
     const sid = String(seriesId);
-    if (!seriesRegistry.some(entry => String(entry.series_id) === sid)) return { success: false, error: '未找到该剧' };
+    if (!seriesRegistry.some(entry => String(entry.series_id) === sid)) return { success: false, error: 'Không tìm thấy phim này' };
     const next = seriesRegistry.map(entry => String(entry.series_id) === sid ? { ...entry, dismissed: true, forgotten: true } : entry);
     store.saveSeries(next);
     seriesRegistry = next;
@@ -1919,7 +1919,7 @@ function rescanDownloadsFromDisk() {
         savePath: f.path,
         customDir: scanned.dir,
         filename: f.filename,
-        title: `《${s.series_title}》第${String(f.vid_index).padStart(3, '0')}集`,
+        title: `《${s.series_title}》Tập ${String(f.vid_index).padStart(3, '0')}`,
         platform: 'hongguo',
         type: 'hongguo',
         status: 'completed',
@@ -1929,7 +1929,7 @@ function rescanDownloadsFromDisk() {
         startTime: Date.now(),
         videoInfo: {
           author: s.series_title,
-          title: `《${s.series_title}》第${String(f.vid_index).padStart(3, '0')}集`,
+          title: `《${s.series_title}》Tập ${String(f.vid_index).padStart(3, '0')}`,
           cover: s.cover || '',
           aweme_id: ep ? ep.vid : '',
         },
@@ -1946,7 +1946,7 @@ function rescanDownloadsFromDisk() {
     }
   }
   if (added > 0) saveDownloadTasks();
-  console.log(`[Rescan] 从磁盘补回 ${added} 条下载记录`);
+  console.log(`[Rescan] Đã khôi phục ${added} bản ghi tải xuống từ đĩa`);
   return { success: true, count: added };
 }
 
@@ -1954,7 +1954,7 @@ ipcMain.handle('rescan-downloads', async () => {
   try {
     return rescanDownloadsFromDisk();
   } catch (error) {
-    console.error('[Rescan] 失败:', error.message);
+    console.error('[Rescan] Thất bại:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -2057,7 +2057,7 @@ function probeVideoInfo(ffprobePath, file, task, rejectToolErrors = false) {
         if (task?.child === child) delete task.child;
         if (err) {
           if (rejectToolErrors && (typeof err.code === 'string' || err.killed)) {
-            return reject(Object.assign(new Error('视频检查工具无法运行，请检查安装与权限后重试'), { code: 'LOCAL_MEDIA_TOOL_ERROR', cause: err }));
+            return reject(Object.assign(new Error('Công cụ kiểm tra video không thể chạy, vui lòng kiểm tra cài đặt và quyền hạn rồi thử lại'), { code: 'LOCAL_MEDIA_TOOL_ERROR', cause: err }));
           }
           return resolve(null);
         }
@@ -2123,15 +2123,15 @@ function isRecordedMediaFile(target, episode) {
 // 只定位下载目录或已登记媒体，不用 openPath，避免把缺失路径的父级当成可执行文件启动。
 ipcMain.handle('show-in-folder', async (event, filePath) => {
   try {
-    if (typeof filePath !== 'string' || !filePath.trim()) return { success: false, error: '缺少路径' };
+    if (typeof filePath !== 'string' || !filePath.trim()) return { success: false, error: 'Thiếu đường dẫn' };
     const resolved = path.resolve(filePath);
     const recorded = isRecordedMediaFile(resolved);
-    if (!isInsideMediaRoot(resolved) && !recorded) return { success: false, error: '只能打开下载目录中的文件' };
+    if (!isInsideMediaRoot(resolved) && !recorded) return { success: false, error: 'Chỉ có thể mở tệp trong thư mục tải xuống' };
     let target = resolved;
     if (!fs.existsSync(target)) target = path.dirname(resolved);
-    if ((!isInsideMediaRoot(target) && !recorded) || !fs.existsSync(target)) return { success: false, error: '路径不存在' };
+    if ((!isInsideMediaRoot(target) && !recorded) || !fs.existsSync(target)) return { success: false, error: 'Đường dẫn không tồn tại' };
     const stat = fs.statSync(target);
-    if (!stat.isFile() && !stat.isDirectory()) return { success: false, error: '路径不存在' };
+    if (!stat.isFile() && !stat.isDirectory()) return { success: false, error: 'Đường dẫn không tồn tại' };
     shell.showItemInFolder(target);
     return { success: true };
   } catch (e) {
@@ -2142,7 +2142,7 @@ ipcMain.handle('show-in-folder', async (event, filePath) => {
 ipcMain.handle('get-merge-tasks', async () => mergeTasks.map(({ child, ...rest }) => rest));
 
 function seriesDownloadDir(root, seriesId, seriesTitle) {
-  const title = sanitizeFolderName(seriesTitle) || '未命名短剧';
+  const title = sanitizeFolderName(seriesTitle) || 'Phim ngắn chưa đặt tên';
   const suffix = createHash('sha256').update(String(seriesId)).digest('hex').slice(0, 12);
   return path.join(root, String(seriesId).startsWith('hema:') ? '河马短剧' : String(seriesId).startsWith('xifan:') ? '西饭短剧' : '红果短剧', `${title}-${suffix}`);
 }
@@ -2300,12 +2300,12 @@ ipcMain.handle('merge-series', async (event, seriesId, outputName, options) => {
     if (mergeTempCleanup) await mergeTempCleanup;
     const sid = String(seriesId);
     const entry = seriesRegistry.find(s => String(s.series_id) === sid);
-    const seriesTitle = entry?.series_title || downloadTasks.find(t => String(t.hongguoInfo?.series_id) === sid)?.hongguoInfo.series_title || '未命名短剧';
+    const seriesTitle = entry?.series_title || downloadTasks.find(t => String(t.hongguoInfo?.series_id) === sid)?.hongguoInfo.series_title || 'Phim ngắn chưa đặt tên';
     const { dir, ordered } = collectSeriesEpisodeFiles(sid, seriesTitle);
-    if (!ordered.length) return { success: false, error: '该剧还没有已下载完成的分集' };
+    if (!ordered.length) return { success: false, error: 'Phim này chưa có tập nào tải xong' };
     const ffmpegPath = resolveFfmpeg('ffmpeg'), ffprobePath = resolveFfmpeg('ffprobe');
-    if (!ffmpegPath || !ffprobePath) return { success: false, error: '未找到完整 FFmpeg 工具，无法检查并合并分集' };
-    if (mergeTasks.some(t => t.status === 'running')) return { success: false, error: '已有合并任务正在运行，请等待完成或先取消' };
+    if (!ffmpegPath || !ffprobePath) return { success: false, error: 'Không tìm thấy công cụ FFmpeg đầy đủ, không thể kiểm tra và gộp các tập' };
+    if (mergeTasks.some(t => t.status === 'running')) return { success: false, error: 'Đã có tác vụ gộp đang chạy, vui lòng chờ hoàn thành hoặc hủy trước' };
     let precheckedInfos;
     if (options?.require1080 === true) {
       const below1080 = [];
@@ -2316,32 +2316,32 @@ ipcMain.handle('merge-series', async (event, seriesId, outputName, options) => {
         catch (_) { info = null; }
         if (!info || !(info.w > 0) || !(info.h > 0)) {
           return { success: false, code: 'MERGE_1080_UNAVAILABLE',
-            error: `第 ${episode.vid_index} 集视频信息读取失败，无法确认是否达到 1080P；请选择快速合并或兼容合并。` };
+            error: `Đọc thông tin video tập ${episode.vid_index} thất bại, không thể xác nhận có đạt 1080P hay không; vui lòng chọn Gộp nhanh hoặc Gộp tương thích.` };
         }
         const quality = Math.min(info.w, info.h);
         precheckedInfos.push(info);
         if (quality < 1080) below1080.push({ index: episode.vid_index, quality, w: info.w, h: info.h });
       }
       if (below1080.length) {
-        const shown = below1080.slice(0, 3).map(item => `第 ${item.index} 集实际为 ${item.quality}P（${item.w}×${item.h}）`).join('、');
-        const more = below1080.length > 3 ? `…共 ${below1080.length} 集未达到 1080P` : `；共 ${below1080.length} 集未达到 1080P`;
-        return { success: false, code: 'MERGE_1080_UNAVAILABLE', error: `${shown}${more}；请选择快速合并或兼容合并。` };
+        const shown = below1080.slice(0, 3).map(item => `Tập ${item.index} thực tế là ${item.quality}P (${item.w}×${item.h})`).join(', ');
+        const more = below1080.length > 3 ? `...tổng cộng ${below1080.length} tập chưa đạt 1080P` : `; tổng cộng ${below1080.length} tập chưa đạt 1080P`;
+        return { success: false, code: 'MERGE_1080_UNAVAILABLE', error: `${shown}${more}; vui lòng chọn Gộp nhanh hoặc Gộp tương thích.` };
       }
       // Probing yields to other IPC requests; re-check before synchronously creating and saving a task.
-      if (mergeTasks.some(t => t.status === 'running')) return { success: false, error: '已有合并任务正在运行，请等待完成或先取消' };
+      if (mergeTasks.some(t => t.status === 'running')) return { success: false, error: 'Đã có tác vụ gộp đang chạy, vui lòng chờ hoàn thành hoặc hủy trước' };
     }
     const outDir = dir || path.dirname(ordered[0].path);
-    const baseName = outputName && String(outputName).trim() ? sanitizeFolderName(outputName) : `${sanitizeFolderName(seriesTitle)}_合集`;
-    if (!baseName || baseName === '.' || baseName === '..') return { success: false, error: '请输入有效输出名称' };
+    const baseName = outputName && String(outputName).trim() ? sanitizeFolderName(outputName) : `${sanitizeFolderName(seriesTitle)}_GopTap`;
+    if (!baseName || baseName === '.' || baseName === '..') return { success: false, error: 'Vui lòng nhập tên tệp xuất hợp lệ' };
     let output = path.join(outDir, `${baseName}.mp4`);
     for (let number = 2; fs.existsSync(output); number++) output = path.join(outDir, `${baseName} (${number}).mp4`);
     const totalBytes = ordered.reduce((sum, e) => sum + fs.statSync(e.path).size, 0);
     const id = 'merge_' + randomUUID();
     const task = { id, seriesId: sid, seriesTitle, output, outputName: path.basename(output), total: ordered.length,
-      done: 0, checked: 0, progress: 0, status: 'running', stage: 'checking', stageText: '检查分集', totalBytes,
+      done: 0, checked: 0, progress: 0, status: 'running', stage: 'checking', stageText: 'Kiểm tra các tập', totalBytes,
       totalDuration: 0, codecWarning: '', error: '', startTime: Date.now(), elapsedSeconds: 0, speed: 0, etaSeconds: null };
     mergeTasks.unshift(task);
-    if (!saveMergeTasks()) { mergeTasks = mergeTasks.filter(t => t.id !== id); return { success: false, error: '无法保存合并任务，请检查存储错误提示后重试' }; }
+    if (!saveMergeTasks()) { mergeTasks = mergeTasks.filter(t => t.id !== id); return { success: false, error: 'Không thể lưu tác vụ gộp, vui lòng kiểm tra thông báo lỗi lưu trữ rồi thử lại' }; }
     sendToRenderer('merge-task-added', { ...task });
     const { runMerge } = require('./src/native/merge-runner');
     const run = (async () => {
@@ -2351,14 +2351,14 @@ ipcMain.handle('merge-series', async (event, seriesId, outputName, options) => {
           update: () => { const { child, ...data } = task; sendToRenderer('merge-progress', data); } });
       } catch (error) {
         task.status = task.cancelled ? 'stopped' : 'failed';
-        task.stage = task.status; task.stageText = task.cancelled ? '已取消' : '合并失败';
-        task.error = task.cancelled ? '已取消' : error.message;
+        task.stage = task.status; task.stageText = task.cancelled ? 'Đã hủy' : 'Gộp thất bại';
+        task.error = task.cancelled ? 'Đã hủy' : error.message;
       } finally {
         task.endTime = Date.now();
-        if (!saveMergeTasks()) task.storageWarning = '合并记录未保存，导出文件状态请以磁盘为准';
+        if (!saveMergeTasks()) task.storageWarning = 'Lịch sử gộp chưa được lưu, trạng thái tệp xuất vui lòng căn cứ theo đĩa';
         sendToRenderer(task.status === 'completed' ? 'merge-completed' : 'merge-failed', { id, path: output, error: task.error, verified: task.verified, storageWarning: task.storageWarning });
       }
-    })().catch(error => console.error('[Merge] 任务通知失败:', error.message)).finally(() => mergeRuns.delete(id));
+    })().catch(error => console.error('[Merge] Thông báo tác vụ thất bại:', error.message)).finally(() => mergeRuns.delete(id));
     mergeRuns.set(id, run);
     return { success: true, id, output, outputName: task.outputName, count: ordered.length, totalBytes, totalDuration: 0, codecWarning: '' };
   } catch (error) { return { success: false, error: error.message }; }
@@ -2366,8 +2366,8 @@ ipcMain.handle('merge-series', async (event, seriesId, outputName, options) => {
 
 ipcMain.handle('cancel-merge', async (event, id) => {
   const task = mergeTasks.find(m => m.id === id);
-  if (!task) return { success: false, error: '任务不存在' };
-  if (task.status !== 'running') return { success: false, error: '任务已结束' };
+  if (!task) return { success: false, error: 'Tác vụ không tồn tại' };
+  if (task.status !== 'running') return { success: false, error: 'Tác vụ đã kết thúc' };
   task.cancelled = true;
   require('./src/native/merge-runner').stopMergeChildren(task);
   return { success: true };
@@ -2375,26 +2375,26 @@ ipcMain.handle('cancel-merge', async (event, id) => {
 
 ipcMain.handle('delete-merge-task', async (event, id) => {
   const task = mergeTasks.find(m => m.id === id);
-  if (task?.status === 'running') return { success: false, error: '请先取消合并，再移除记录' };
+  if (task?.status === 'running') return { success: false, error: 'Vui lòng hủy gộp trước khi xóa bản ghi' };
   const previous = mergeTasks;
   mergeTasks = mergeTasks.filter(m => m.id !== id);
-  if (!saveMergeTasks()) { mergeTasks = previous; return { success: false, error: '无法保存任务记录' }; }
+  if (!saveMergeTasks()) { mergeTasks = previous; return { success: false, error: 'Không thể lưu bản ghi tác vụ' }; }
   return { success: true };
 });
 
 function saveMergeTasks() {
   try { store.saveMergeTasks(mergeTasks.map(({ child, ...rest }) => rest)); return true; }
-  catch (error) { console.error('[Merge] 保存任务失败:', error.message); return false; }
+  catch (error) { console.error('[Merge] Lưu tác vụ thất bại:', error.message); return false; }
 }
 
 function loadMergeTasks() {
   try {
     mergeTasks = (store.getMergeTasks() || []).map(t => t.status === 'running'
-      ? { ...t, status: 'stopped', stage: 'stopped', stageText: '已中断', error: '应用关闭时中断', endTime: Date.now() } : t);
+      ? { ...t, status: 'stopped', stage: 'stopped', stageText: 'Đã gián đoạn', error: 'Gián đoạn khi đóng ứng dụng', endTime: Date.now() } : t);
   } catch (_) { mergeTasks = []; }
   const directories = [...new Set(mergeTasks.filter(task => typeof task.output === 'string' && path.isAbsolute(task.output)).map(task => path.dirname(task.output)))];
   mergeTempCleanup = require('./src/native/merge-runner').cleanupMergeTemps(directories)
-    .catch(() => console.warn('[Merge] 部分遗留临时文件未能清理'))
+    .catch(() => console.warn('[Merge] Một số tệp tạm còn sót lại không thể dọn dẹp'))
     .finally(() => { mergeTempCleanup = null; });
 }
 
@@ -2429,7 +2429,7 @@ ipcMain.handle('get-series-episodes', async (event, seriesId) => {
     // 目录兜底：磁盘上可能存在没有任务记录的「孤儿」文件
     // （任务被清理、跨会话下载等），仅靠任务判断会把它们误报成「未下载」。
     const seriesTitle = (entry && entry.series_title) ||
-      (tasks[0] && tasks[0].hongguoInfo.series_title) || '未命名短剧';
+      (tasks[0] && tasks[0].hongguoInfo.series_title) || 'Phim ngắn chưa đặt tên';
     let scannedByIndex = new Map();
     let seriesDir = null;
     try {
@@ -2512,7 +2512,7 @@ ipcMain.handle('get-series-episodes', async (event, seriesId) => {
       },
     };
   } catch (error) {
-    console.error('[Player] 读取分集失败:', error.message);
+    console.error('[Player] Đọc tập phim thất bại:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -2522,7 +2522,7 @@ ipcMain.handle('save-playback-position', async (event, seriesId, vidIndex, curre
     const map = store.getPlayback() || {};
     const sid = String(seriesId);
     const series = seriesRegistry.find(item => String(item.series_id) === sid);
-    if (!series) return { success: false, error: '未找到短剧档案' };
+    if (!series) return { success: false, error: 'Không tìm thấy hồ sơ phim' };
     map[sid] = watchHistory.recordPlayback(map[sid], series, Number(vidIndex), Number(currentTime), Date.now(), metadata);
     store.savePlayback(map);
     return { success: true };
@@ -2561,7 +2561,7 @@ function navigateToPlayer(payload) {
 ipcMain.handle('play-series', async (event, payload) => {
   const { seriesId, vidIndex } = payload || {};
   const entry = seriesRegistry.find(item => String(item.series_id) === String(seriesId));
-  if (!entry) return { success: false, code: 'SERIES_NOT_FOUND', error: '未找到短剧档案，请重新打开详情' };
+  if (!entry) return { success: false, code: 'SERIES_NOT_FOUND', error: 'Không tìm thấy hồ sơ phim, vui lòng mở lại chi tiết' };
   if (entry.dismissed) {
     const wasForgotten = entry.forgotten;
     try { entry.dismissed = false; entry.forgotten = false; saveSeriesRegistry(); }
@@ -2572,8 +2572,8 @@ ipcMain.handle('play-series', async (event, payload) => {
 
 // ===== 在线播放 =====
 function playbackQuality(value = 'auto', vid = '') {
-  if (!['auto', '720p', '1080p'].includes(value)) throw new Error('在线播放清晰度无效，请选择自动、720p 或 1080p');
-  if (value !== 'auto' && /^(xifan|hema|custom):/.test(String(vid))) throw new Error('此来源暂不支持指定在线播放清晰度，请选择自动');
+  if (!['auto', '720p', '1080p'].includes(value)) throw new Error('Độ phân giải phát trực tuyến không hợp lệ, vui lòng chọn Tự động, 720p hoặc 1080p');
+  if (value !== 'auto' && /^(xifan|hema|custom):/.test(String(vid))) throw new Error('Nguồn này tạm thời chưa hỗ trợ chọn độ phân giải phát trực tuyến, vui lòng chọn Tự động');
   return value;
 }
 
@@ -2605,7 +2605,7 @@ function bufferedMediaResponse(request, buffer) {
 /** Same media headers and cancellation apply to download and playback. */
 async function requestMedia(playInfo, options = {}) {
   const url = new URL(playInfo.url);
-  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error('无效播放地址');
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error('Địa chỉ phát không hợp lệ');
   checkCustomAccess(playInfo.vid);
   const custom = playInfo.source === 'custom';
   const web = playInfo.source === 'web';
@@ -2622,7 +2622,7 @@ async function requestMedia(playInfo, options = {}) {
       const cancelled = config.signal?.aborted || config.cancelToken?.reason || axios.isCancel(error);
       if (!cancelled && (error.code === 'ERR_WEB_MEDIA_ADDRESS' || error.cause?.code === 'ERR_WEB_MEDIA_ADDRESS')) {
         hongguo.markWebMediaFailure?.(playInfo);
-        throw Object.assign(mediaTransferError('官网片源地址不安全，正在尝试其他片源'), { code: 'ERR_WEB_MEDIA_ADDRESS' });
+        throw Object.assign(mediaTransferError('Địa chỉ nguồn trang web không an toàn, đang thử nguồn khác'), { code: 'ERR_WEB_MEDIA_ADDRESS' });
       }
       const retryable = web ? [404, 410].includes(status) || status >= 500 && status <= 599 : status === 403;
       if (!cancelled && attempt === 0 && retryable) {
@@ -2632,7 +2632,7 @@ async function requestMedia(playInfo, options = {}) {
       }
       if (!cancelled && config.method === 'GET' && (retryable || status === 403)) hongguo.markWebMediaFailure?.(playInfo);
       if (!cancelled && status) {
-        const failure = new Error(`片源请求失败（HTTP ${status}），请重新连接片源`);
+        const failure = new Error(`Yêu cầu nguồn thất bại (HTTP ${status}), vui lòng kết nối lại nguồn`);
         failure.mediaRetryable = [403, 404, 408, 410].includes(status) || status >= 500 && status <= 599;
         failure.mediaStatus = status;
         throw failure;
@@ -2642,13 +2642,13 @@ async function requestMedia(playInfo, options = {}) {
   }
   if ([200, 206].includes(response.status) && /(?:text\/html|application\/json)/i.test(response.headers['content-type'] || '')) {
     response.data.destroy();
-    throw mediaTransferError('片源返回了错误页面，请重新获取片源');
+    throw mediaTransferError('Nguồn trả về trang lỗi, vui lòng lấy lại nguồn');
   }
   if (config.method === 'GET' && !config.headers.Range && response.status === 206) {
     const range = /^bytes 0-(\d+)\/(\d+)$/.exec(response.headers['content-range'] || '');
     if (!range || Number(range[1]) + 1 !== Number(range[2])) {
       response.data.destroy();
-      throw mediaTransferError('视频响应不完整，请重新获取片源');
+      throw mediaTransferError('Phản hồi video không đầy đủ, vui lòng lấy lại nguồn');
     }
     response.headers['content-length'] = range[2];
   }
@@ -2665,8 +2665,8 @@ function awaitMediaOperation(promise, signal, timeout = 0) {
     const finish = (settle, value) => {
       clearTimeout(timer); signal.removeEventListener('abort', abort); settle(value);
     };
-    const abort = () => finish(reject, Object.assign(new Error('已取消媒体请求'), { code: 'ERR_CANCELED' }));
-    if (timeout) timer = setTimeout(() => finish(reject, mediaTransferError('获取片源超时，请稍后重试')), timeout);
+    const abort = () => finish(reject, Object.assign(new Error('Đã hủy yêu cầu media'), { code: 'ERR_CANCELED' }));
+    if (timeout) timer = setTimeout(() => finish(reject, mediaTransferError('Lấy nguồn video quá thời gian, vui lòng thử lại sau')), timeout);
     signal.addEventListener('abort', abort, { once: true });
     if (signal.aborted) abort();
     // The shared provider may finish later; only this consumer's wait is cancelled.
@@ -2682,7 +2682,7 @@ async function withMediaRecovery(vid, seriesId, options, consume) {
   options.cancelToken?.subscribe(abort);
   const cancelled = () => {
     options.cancelToken?.throwIfRequested();
-    if (options.signal?.aborted || controller.signal.aborted) throw Object.assign(new Error('已取消媒体请求'), { code: 'ERR_CANCELED' });
+    if (options.signal?.aborted || controller.signal.aborted) throw Object.assign(new Error('Đã hủy yêu cầu media'), { code: 'ERR_CANCELED' });
   };
   const recoverable = error => error?.code === 'SOURCE_UNAVAILABLE'
     ? sourceFailureIsTransient(error)
@@ -2711,7 +2711,7 @@ async function withMediaRecovery(vid, seriesId, options, consume) {
       }
       cancelled();
       if (!info?.url) {
-        lastError = Object.assign(new Error(info?.error || '未获取到有效播放地址'), { code: info?.code, sources: info?.sources });
+        lastError = Object.assign(new Error(info?.error || 'Không lấy được địa chỉ phát hợp lệ'), { code: info?.code, sources: info?.sources });
         if (!recoverable(lastError) || info?.locked) throw lastError;
         continue;
       }
@@ -2808,7 +2808,7 @@ function registerStreamProtocol() {
         { playInfo: entry.playInfo, quality: entry.quality, signal: controller.signal, recover: !session.mediaStarted }, async playInfo => {
         const identity = JSON.stringify([playInfo.url, playInfo.contentKey, playInfo.spadeA]);
         const checkIdentity = () => {
-          if (session.mediaStarted && session.mediaIdentity !== identity) throw new Error('片源已变化，请重新连接播放');
+          if (session.mediaStarted && session.mediaIdentity !== identity) throw new Error('Nguồn đã thay đổi, vui lòng kết nối lại để phát');
         };
         checkIdentity();
         if (playInfo.format === 'hls') {
@@ -2824,7 +2824,7 @@ function registerStreamProtocol() {
               onlineCache.set(session.cacheKey || session.vid,entry); trimOnlineCache();
             })().catch(error => { delete entry.hlsJob; delete entry.hlsIdentity; throw error; }));
           }
-          if (entry.hlsIdentity !== identity) throw new Error('片源已变化，请重新连接播放');
+          if (entry.hlsIdentity !== identity) throw new Error('Nguồn đã thay đổi, vui lòng kết nối lại để phát');
           await entry.hlsJob; checkIdentity();
           session.mediaStarted = true; session.mediaIdentity = identity;
           cleanup(); return diskMediaResponse(request,entry,session);
@@ -2898,7 +2898,7 @@ function registerLocalProtocol() {
       try {
         size = (await fsp.stat(filePath)).size;
       } catch (_) {
-        console.warn('[Local] 文件不存在:', filePath);
+        console.warn('[Local] Tệp không tồn tại:', filePath);
         return new Response('not found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
       }
 
@@ -2926,7 +2926,7 @@ function registerLocalProtocol() {
         },
       });
     } catch (e) {
-      console.error('[Local] 读取失败:', e.message);
+      console.error('[Local] Đọc thất bại:', e.message);
       return new Response('error', { status: 500, headers: { 'Content-Type': 'text/plain' } });
     }
   }));
@@ -2934,11 +2934,11 @@ function registerLocalProtocol() {
 
 /** App CENC uses native FFmpeg for both senc and saiz/saio layouts. Never log key/args. */
 async function decryptContentKeyFile(input, output, contentKey, { signal, cancelToken } = {}) {
-  if (typeof contentKey !== 'string' || !/^[a-f\d]{32}$/i.test(contentKey)) throw new Error('片源解密密钥格式无效');
-  if (signal?.aborted) throw new Error('已取消媒体解密');
+  if (typeof contentKey !== 'string' || !/^[a-f\d]{32}$/i.test(contentKey)) throw new Error('Định dạng khóa giải mã nguồn video không hợp lệ');
+  if (signal?.aborted) throw new Error('Đã hủy giải mã media');
   cancelToken?.throwIfRequested();
   const executable = resolveFfmpeg('ffmpeg');
-  if (!executable) throw new Error('未找到内置 FFmpeg，无法准备该片源。请重新下载完整发行包并运行；若已自行安装 FFmpeg，请完全退出软件后重启再试');
+  if (!executable) throw new Error('Không tìm thấy FFmpeg tích hợp sẵn, không thể chuẩn bị nguồn này. Vui lòng tải lại gói phát hành đầy đủ; nếu đã tự cài đặt FFmpeg, vui lòng thoát hoàn toàn ứng dụng rồi khởi động lại');
   try {
     await new Promise((resolve, reject) => {
       const { spawn } = require('child_process');
@@ -2962,17 +2962,17 @@ async function decryptContentKeyFile(input, output, contentKey, { signal, cancel
       signal?.addEventListener('abort', abort, { once: true });
       cancelToken?.subscribe(abort);
       if (signal?.aborted || cancelToken?.reason) abort();
-      child.once('error', () => { cleanup(); reject(new Error('无法启动内置 FFmpeg')); });
+      child.once('error', () => { cleanup(); reject(new Error('Không thể khởi động FFmpeg tích hợp')); });
       child.once('close', code => {
         cleanup();
-        if (cancelled) reject(new Error('已取消媒体解密'));
-        else if (code !== 0) reject(new Error(`媒体解密失败（FFmpeg 退出码 ${code}），请重新获取片源后重试`));
+        if (cancelled) reject(new Error('Đã hủy giải mã media'));
+        else if (code !== 0) reject(new Error(`Giải mã media thất bại (mã thoát FFmpeg ${code}), vui lòng lấy lại nguồn rồi thử lại`));
         else resolve();
       });
     });
-    if (signal?.aborted) throw new Error('已取消媒体解密');
+    if (signal?.aborted) throw new Error('Đã hủy giải mã media');
     cancelToken?.throwIfRequested();
-    if ((await fsp.stat(output)).size === 0) throw new Error('媒体解密没有生成可用文件');
+    if ((await fsp.stat(output)).size === 0) throw new Error('Giải mã media không tạo ra tệp khả dụng');
   } catch (error) {
     try { await fsp.unlink(output); } catch (_) {}
     throw error;
@@ -2987,11 +2987,11 @@ async function fetchDecryptedEpisode(vid, onProgress, seriesId, playInfo, signal
 
 async function fetchDecryptedEpisodeOnce(vid, onProgress, seriesId, playInfo, signal, maxBytes = ONLINE_MAX_BYTES) {
   maxBytes = Math.min(maxBytes, ONLINE_MAX_BYTES);
-  const tooLarge = () => Object.assign(new Error('本集过大，请下载后播放'), { code: 'MEDIA_TOO_LARGE' });
-  if (playInfo?.format === 'hls') throw new Error('HLS 视频必须先准备为本地媒体文件');
-  if (!playInfo?.url) throw new Error(playInfo?.error || '未获取到有效播放地址');
-  if (signal?.aborted) throw new Error('已取消播放');
-  if (playInfo.contentKey && !/^[a-f\d]{32}$/i.test(playInfo.contentKey)) throw new Error('片源解密密钥格式无效');
+  const tooLarge = () => Object.assign(new Error('Tập này quá lớn, vui lòng tải về trước khi xem'), { code: 'MEDIA_TOO_LARGE' });
+  if (playInfo?.format === 'hls') throw new Error('Video HLS phải được chuẩn bị thành tệp media cục bộ trước');
+  if (!playInfo?.url) throw new Error(playInfo?.error || 'Không lấy được địa chỉ phát hợp lệ');
+  if (signal?.aborted) throw new Error('Đã hủy phát');
+  if (playInfo.contentKey && !/^[a-f\d]{32}$/i.test(playInfo.contentKey)) throw new Error('Định dạng khóa giải mã nguồn video không hợp lệ');
   const response = await requestMedia(playInfo, { signal });
   const total = Number(response.headers['content-length']) || 0;
   if (total > maxBytes) { response.data.destroy(); throw tooLarge(); }
@@ -3010,7 +3010,7 @@ async function fetchDecryptedEpisodeOnce(vid, onProgress, seriesId, playInfo, si
         }
       });
       await pipeline(response.data, fs.createWriteStream(input, { mode: 0o600 }), { signal });
-      if (!received || (total && received !== total)) throw mediaTransferError('视频下载不完整，请重试');
+      if (!received || (total && received !== total)) throw mediaTransferError('Tải video chưa hoàn tất, vui lòng thử lại');
       if (onProgress) onProgress(received, received, 'decrypting');
       await decryptContentKeyFile(input, output, playInfo.contentKey, { signal });
       if ((await fsp.stat(output)).size > maxBytes) throw tooLarge();
@@ -3028,13 +3028,13 @@ async function fetchDecryptedEpisodeOnce(vid, onProgress, seriesId, playInfo, si
       onProgress(received, total); lastProgress = Date.now();
     }
   }
-  if (signal?.aborted) throw new Error('已取消播放');
-  if (!received || (total && received !== total)) throw mediaTransferError('视频下载不完整，请重试');
+  if (signal?.aborted) throw new Error('Đã hủy phát');
+  if (!received || (total && received !== total)) throw mediaTransferError('Tải video chưa hoàn tất, vui lòng thử lại');
   let buf = Buffer.concat(chunks);
   if (playInfo.spadeA) {
     if (onProgress) onProgress(buf.length, buf.length, 'decrypting');
     const key = hongguo.deriveKey(playInfo.spadeA);
-    if (!key) throw new Error('密钥派生失败');
+    if (!key) throw new Error('Tạo khóa giải mã thất bại');
     buf = await decryptInWorker({ buffer: buf, key }, { signal });
   }
   return buf;
@@ -3046,14 +3046,14 @@ async function prepareHlsEntry(playInfo,entry,signal,onProgress) {
   try {
     await prepareHlsFile(playInfo,entry.filePath,{signal,onProgress});
     await verifyDownloadQuality(entry.filePath,entry.quality || 'auto');
-    if (signal.aborted) throw new Error('已取消播放');
+    if (signal.aborted) throw new Error('Đã hủy phát');
     entry.size = fs.statSync(entry.filePath).size;
   } catch (error) { disposeOnlineDisk(entry); throw error; }
 }
 
 ipcMain.handle('prepare-online-play', async (event, payload) => {
   const { vid, seriesId, vidIndex, requestId, prefetch = false, force = false } = payload || {};
-  if (!vid) return { success: false, error: '缺少 vid' };
+  if (!vid) return { success: false, error: 'Thiếu vid' };
   let quality;
   try { quality = playbackQuality(payload.quality, vid); } catch (error) { return { success: false, error: error.message }; }
   const sourceVid = String(vid), key = onlineCacheKey(sourceVid, quality), streamId = randomUUID();
@@ -3062,8 +3062,8 @@ ipcMain.handle('prepare-online-play', async (event, payload) => {
   try {
     checkCustomAccess(sourceVid);
     const checkedPlayInfo = /^(xifan|hema|custom):/.test(sourceVid) ? await hongguo.fetchPlayUrlSingle(sourceVid, seriesId, { force, quality }) : null;
-    if (!onlineSessions.has(streamId)) throw new Error('已取消播放');
-    if (checkedPlayInfo && !checkedPlayInfo.url) throw new Error(checkedPlayInfo.error || '来源未开放该集');
+    if (!onlineSessions.has(streamId)) throw new Error('Đã hủy phát');
+    if (checkedPlayInfo && !checkedPlayInfo.url) throw new Error(checkedPlayInfo.error || 'Nguồn phim chưa mở tập này');
     if (force) deleteOnlineCacheEntry(key);
     let entry = onlineCache.get(key), cached = !!entry;
     if (!entry) {
@@ -3086,7 +3086,7 @@ ipcMain.handle('prepare-online-play', async (event, payload) => {
               entry.buffer = await fetchDecryptedEpisodeOnce(sourceVid,progress,seriesId,playInfo,controller.signal);
               entry.size = entry.buffer.length;
             }
-            if (controller.signal.aborted) throw new Error('已取消播放');
+            if (controller.signal.aborted) throw new Error('Đã hủy phát');
             Object.assign(entry,{vid:sourceVid,source:/^custom:[^:]+/.exec(sourceVid)?.[0] || /^(xifan|hema):/.exec(sourceVid)?.[1] || 'hongguo',complete:true});
             return entry;
           });
@@ -3101,7 +3101,7 @@ ipcMain.handle('prepare-online-play', async (event, payload) => {
       session.job = job;
       entry = await job.promise;
     }
-    if (!onlineSessions.has(streamId)) throw new Error('已取消播放');
+    if (!onlineSessions.has(streamId)) throw new Error('Đã hủy phát');
     session.entry = { ...entry }; entry.lastUsed = Date.now();
     return { success: true, url: `${STREAM_SCHEME}://play/${streamId}`, streamId, size: entry.size,
       cached, streaming: !!entry.playInfo, codec: entry.codec || '' };
@@ -3153,7 +3153,7 @@ function getCompatDir() {
 
 function compatFileName(seriesId, vidIndex, quality = 'auto') {
   if (!['string', 'number'].includes(typeof vidIndex) || !/^[1-9]\d*$/.test(String(vidIndex))
-    || !Number.isSafeInteger(Number(vidIndex))) throw new Error('集数必须是有效正整数');
+    || !Number.isSafeInteger(Number(vidIndex))) throw new Error('Số tập phải là số nguyên dương hợp lệ');
   return `${sanitizeFolderName(String(seriesId))}_${String(Number(vidIndex)).padStart(3, '0')}${quality === 'auto' ? '' : `_${playbackQuality(quality)}`}.mp4`;
 }
 
@@ -3213,7 +3213,7 @@ async function pickH264Encoder(ffmpegPath, task) {
     });
     if (task) task.child = child;
   });
-  if (task?.cancelled) throw new Error('已取消');
+  if (task?.cancelled) throw new Error('Đã hủy');
 
   const candidates = (process.platform === 'darwin'
     ? ['h264_videotoolbox', 'libx264']
@@ -3235,15 +3235,15 @@ async function pickH264Encoder(ffmpegPath, task) {
     });
 
   for (const enc of candidates) {
-    if (task?.cancelled) throw new Error('已取消');
+    if (task?.cancelled) throw new Error('Đã hủy');
     if (await works(enc)) {
       compatEncoder = enc;
       break;
     }
-    console.log('[Compat] 编码器不可用，跳过:', enc);
+    console.log('[Compat] Bộ mã hóa không khả dụng, bỏ qua:', enc);
   }
   if (!compatEncoder) compatEncoder = 'libx264';
-  console.log('[Compat] 使用编码器:', compatEncoder);
+  console.log('[Compat] Sử dụng bộ mã hóa:', compatEncoder);
   return compatEncoder;
 }
 
@@ -3254,7 +3254,7 @@ async function pickH264Encoder(ffmpegPath, task) {
 const compatPreparing = new Map();
 const compatRequests = new Map();
 let compatClearing = null;
-const compatCancelled = () => ({ success: false, cancelled: true, error: '已取消转码' });
+const compatCancelled = () => ({ success: false, cancelled: true, error: 'Đã hủy chuyển mã' });
 function cancelCompatJob(job) {
   job.cancelled = true;
   job.controller.abort();
@@ -3276,17 +3276,17 @@ ipcMain.handle('cancel-transcode-for-playback', async (_event, payload = {}) => 
   return { success: true };
 });
 ipcMain.handle('transcode-for-playback', async (event, payload = {}) => {
-  if (!payload.seriesId || payload.vidIndex == null) return { success: false, error: '缺少剧集信息' };
+  if (!payload.seriesId || payload.vidIndex == null) return { success: false, error: 'Thiếu thông tin phim' };
   let key;
   try { key = compatPathFor(payload.seriesId, payload.vidIndex, playbackQuality(payload.quality, payload.vid || payload.seriesId)); }
   catch (error) { return { success: false, error: error.message }; }
   const requestId = String(payload.requestId || randomUUID());
   const existing = compatRequests.get(requestId);
-  if (existing) return existing.key === key ? existing.promise : { success: false, error: '请求标识已用于其他剧集' };
+  if (existing) return existing.key === key ? existing.promise : { success: false, error: 'Mã định danh yêu cầu đã được sử dụng cho phim khác' };
   // Register before every await, including permission lookup and a cancelled predecessor.
   const previous = compatPreparing.get(key);
   let job = previous;
-  if (job && !job.cancelled && job.sourceVid !== String(payload.vid || '')) return { success: false, error: '该集已有不同来源的准备请求，请稍后重试' };
+  if (job && !job.cancelled && job.sourceVid !== String(payload.vid || '')) return { success: false, error: 'Tập này đã có yêu cầu chuẩn bị từ nguồn khác, vui lòng thử lại sau' };
   if (!job || job.cancelled) {
     job = { controller: new AbortController(), cancelled: false, requests: new Map(), files: new Set(), sourceVid: String(payload.vid || '') };
     const clearing = compatClearing;
@@ -3313,7 +3313,7 @@ ipcMain.handle('transcode-for-playback', async (event, payload = {}) => {
 async function transcodeForPlayback(payload, job = { controller: new AbortController() }) {
   let tmpInput, tmpOut, diskInput;
   const signal = job.controller.signal;
-  const checkCancelled = () => { if (signal.aborted) throw new Error('已取消转码'); };
+  const checkCancelled = () => { if (signal.aborted) throw new Error('Đã hủy chuyển mã'); };
   const abortPreparation = () => {
     const child = job.child;
     if (!child) return;
@@ -3333,19 +3333,19 @@ async function transcodeForPlayback(payload, job = { controller: new AbortContro
     checkCancelled();
     const { seriesId, vidIndex, filePath, force } = payload || {};
     const quality = playbackQuality(payload.quality, payload.vid || seriesId);
-    if (!seriesId || vidIndex == null) return { success: false, error: '缺少剧集信息' };
+    if (!seriesId || vidIndex == null) return { success: false, error: 'Thiếu thông tin phim' };
     const out = compatPathFor(seriesId, vidIndex, quality);
     job.files ||= new Set();
     if (filePath) job.files.add(filePath);
     if (filePath && fs.existsSync(filePath) && !isInsideMediaRoot(filePath) && !isRecordedMediaFile(filePath, payload)) {
-      return { success: false, error: '只能转码下载目录中的视频' };
+      return { success: false, error: 'Chỉ có thể chuyển mã video trong thư mục tải xuống' };
     }
     if (!(filePath && fs.existsSync(filePath)) && (/^(xifan|hema|custom):/.test(String(seriesId)) || /^(xifan|hema|custom):/.test(String(payload.vid)))) {
       const current = await hongguo.fetchEpisodeList(seriesId);
       checkCancelled();
       const episode = current.episodes.find(ep => Number(ep.vid_index) === Number(vidIndex));
-      if (!episode || (payload.vid && payload.vid !== episode.vid)) return { success: false, error: '分集来源不匹配' };
-      if (episode.locked) return { success: false, error: '该集已锁定，请在来源平台解锁' };
+      if (!episode || (payload.vid && payload.vid !== episode.vid)) return { success: false, error: 'Nguồn tập phim không khớp' };
+      if (episode.locked) return { success: false, error: 'Tập này đã bị khóa, vui lòng mở khóa trên nền tảng nguồn' };
     }
 
     if (!force && fs.existsSync(out) && fs.statSync(out).size > 1024 * 100) {
@@ -3356,13 +3356,13 @@ async function transcodeForPlayback(payload, job = { controller: new AbortContro
 
     const ffmpegPath = resolveFfmpeg('ffmpeg');
     const ffprobePath = resolveFfmpeg('ffprobe');
-    if (!ffmpegPath) return { success: false, error: '未找到 ffmpeg，无法转码' };
+    if (!ffmpegPath) return { success: false, error: 'Không tìm thấy FFmpeg, không thể chuyển mã' };
 
     // 1) 优先本地原件；强制重建时跳过在线缓存，重新获取输入。
     let inputPath = filePath || null;
     if (!inputPath || !fs.existsSync(inputPath)) {
       const vid = payload.vid;
-      if (!vid) return { success: false, error: '既没有本地文件，也没有 vid' };
+      if (!vid) return { success: false, error: 'Không có tệp cục bộ và cũng không có vid' };
       const cached = !force && onlineCache.get(onlineCacheKey(vid, quality));
       if (cached?.filePath) { diskInput = cached; cached.disk.readers++; inputPath = cached.filePath; }
       else {
@@ -3419,7 +3419,7 @@ async function transcodeForPlayback(payload, job = { controller: new AbortContro
         '-f', 'mp4', tmpOut,
       ];
 
-      console.log(`[Compat] 转码 第${vidIndex}集  编码器=${encoder}  时长=${duration.toFixed(0)}s`);
+      console.log(`[Compat] Chuyển mã Tập ${vidIndex}  Bộ mã hóa=${encoder}  Thời lượng=${duration.toFixed(0)}s`);
       let stderrTail = '';
       const code = await new Promise((resolve) => {
         const child = spawn(ffmpegPath, args, { windowsHide: true });
@@ -3458,12 +3458,12 @@ async function transcodeForPlayback(payload, job = { controller: new AbortContro
       if (code !== 0 || !fs.existsSync(tmpOut)) {
         try { fs.existsSync(tmpOut) && fs.unlinkSync(tmpOut); } catch (_) {}
         const tail = stderrTail.split('\n').filter(Boolean).slice(-2).join(' ').slice(0, 300);
-        console.warn('[Compat] 转码失败 code=', code, tail);
+        console.warn('[Compat] Chuyển mã thất bại code=', code, tail);
         if (encoder !== 'libx264') {
           encoder = 'libx264';
           continue;
         }
-        return { success: false, error: `软件转码失败（ffmpeg 退出码 ${code}）${tail ? '：' + tail : ''}` };
+        return { success: false, error: `Chuyển mã phần mềm thất bại (mã thoát FFmpeg ${code})${tail ? ': ' + tail : ''}` };
       }
       break;
     }
@@ -3472,13 +3472,13 @@ async function transcodeForPlayback(payload, job = { controller: new AbortContro
     trimCompatCache(out);
     const size = fs.statSync(out).size;
     const elapsed = ((Date.now() - started) / 1000).toFixed(1);
-    console.log(`[Compat] 完成 ${(size / 1048576).toFixed(1)}MB  用时 ${elapsed}s`);
+    console.log(`[Compat] Hoàn thành ${(size / 1048576).toFixed(1)}MB  Thời gian ${elapsed}s`);
 
     reportProgress({ seriesId: String(seriesId), vidIndex: Number(vidIndex), percent: 100, done: true });
     return { success: true, url: localPlayUrl(out), size, elapsed: Number(elapsed), encoder };
   } catch (error) {
     if (signal.aborted) return compatCancelled();
-    console.error('[Compat] 转码失败:', error.message);
+    console.error('[Compat] Chuyển mã thất bại:', error.message);
     return { success: false, error: error.message, code: error.code };
   } finally {
     signal.removeEventListener('abort', abortPreparation);
@@ -3508,7 +3508,7 @@ ipcMain.handle('clear-compat-cache', async () => {
         try { const size = fs.statSync(p).size; fs.unlinkSync(p); freed += size; count++; } catch (_) { failed++; }
       }
     } catch (_) { failed++; }
-    return { success: failed === 0, count, freed, error: failed ? '部分兼容缓存删除失败，请稍后重试' : undefined };
+    return { success: failed === 0, count, freed, error: failed ? 'Xóa một phần bộ nhớ đệm tương thích thất bại, vui lòng thử lại sau' : undefined };
   }).finally(() => { if (compatClearing === clearing) compatClearing = null; });
   compatClearing = clearing;
   return clearing;
@@ -3534,12 +3534,12 @@ async function enqueueEpisodes({ seriesId, seriesTitle, episodes, cover, quality
     const current = await hongguo.fetchEpisodeList(seriesId);
     episodes = episodes.map(requested => {
       const ep = current.episodes.find(item => item.vid === requested.vid && Number(item.vid_index) === Number(requested.vid_index));
-      if (!ep) throw new Error('分集不属于所选来源，请重新打开剧集');
-      if (ep.locked) throw new Error('该集已锁定，请在来源平台解锁');
+      if (!ep) throw new Error('Tập không thuộc nguồn đã chọn, vui lòng mở lại phim');
+      if (ep.locked) throw new Error('Tập này đã bị khóa, vui lòng mở khóa trên nền tảng nguồn');
       return ep;
     });
   } else if (episodes.some(ep => /^(xifan|hema|custom):/.test(String(ep.vid)))) {
-    throw new Error('剧集来源不匹配');
+    throw new Error('Nguồn phim không khớp');
   }
 
   // Validate duplicate quality before changing the queue or files. Never replace a user's file.
@@ -3547,7 +3547,7 @@ async function enqueueEpisodes({ seriesId, seriesTitle, episodes, cover, quality
   for (const ep of episodes) {
     const dup = downloadTasks.find(t => String(t.hongguoInfo?.vid) === String(ep.vid));
     if (dup && ['pending', 'downloading'].includes(dup.status) && normalizeDownloadQuality(dup.downloadQuality) !== downloadQuality) {
-      throw new Error('同一集已有其他清晰度的下载任务，请先停止该任务再重新选择');
+      throw new Error('Tập này đã có tác vụ tải xuống với độ phân giải khác, vui lòng dừng tác vụ đó trước khi chọn lại');
     }
     if (dup?.status === 'completed' && hasCompleteTaskFile(dup)) {
       dup.actualQuality = await verifyDownloadQuality(dup.savePath, downloadQuality, true);
@@ -3555,9 +3555,9 @@ async function enqueueEpisodes({ seriesId, seriesTitle, episodes, cover, quality
     if (nasDestination) {
       const finalPath = path.join(nasDestination.directory, nasEpisodeFilename(nasDestination, ep));
       if (dup && (dup.status === 'downloading' || runningDownloads.has(dup.id)) && dup.savePath !== finalPath)
-        throw new Error('该剧正在下载到其他位置，请先暂停下载，再选择新的保存文件夹');
+        throw new Error('Phim này đang được tải xuống vị trí khác, vui lòng tạm dừng tải xuống trước khi chọn thư mục lưu mới');
       if (downloadTasks.some(task => task !== dup && task.savePath === finalPath && String(task.hongguoInfo?.vid) !== String(ep.vid)))
-        throw new Error('所选目录的视频路径与其他分集冲突，未覆盖已有文件');
+        throw new Error('Đường dẫn video trong thư mục đã chọn xung đột với tập khác, không ghi đè tệp hiện có');
       const target = await inspectNasEpisode(nasDestination, ep);
       if (target.status === 'existing') {
         await verifyDownloadQuality(target.path, downloadQuality, true);
@@ -3565,15 +3565,15 @@ async function enqueueEpisodes({ seriesId, seriesTitle, episodes, cover, quality
       } else if (dup?.status === 'completed' && hasCompleteTaskFile(dup)) {
         await copyNasEpisode(dup, nasDestination);
         nasReady.add(String(ep.vid));
-      } else if (target.status === 'conflict') throw new Error('所选目录已有无法确认的同名视频，未覆盖，请检查后重试');
+      } else if (target.status === 'conflict') throw new Error('Thư mục đã chọn có video trùng tên chưa được xác nhận, không ghi đè, vui lòng kiểm tra rồi thử lại');
     }
   }
   // No await follows this check until queue persistence, so active runs cannot be retargeted midway.
   if (nasDestination && episodes.some(ep => downloadTasks.some(task => String(task.hongguoInfo?.vid) === String(ep.vid) &&
       (task.status === 'downloading' || runningDownloads.has(task.id)) && task.savePath !== path.join(nasDestination.directory, nasEpisodeFilename(nasDestination, ep)))))
-    throw new Error('该剧正在下载到其他位置，请先暂停下载，再选择新的保存文件夹');
+    throw new Error('Phim này đang được tải xuống vị trí khác, vui lòng tạm dừng tải xuống trước khi chọn thư mục lưu mới');
   const root = (settings.root && String(settings.root).trim()) ? String(settings.root).trim() : app.getPath('downloads');
-  const cleanSeriesTitle = sanitizeFolderName(seriesTitle) || '红果短剧';
+  const cleanSeriesTitle = sanitizeFolderName(seriesTitle) || 'Phim Ngắn Hồng Quả';
   const downloadDir = nasDestination ? nasDestination.directory : seriesDownloadDir(root, seriesId, cleanSeriesTitle);
   if (!nasDestination) { try { fs.mkdirSync(downloadDir, { recursive: true }); } catch (_) {} }
 
@@ -3635,7 +3635,7 @@ async function enqueueEpisodes({ seriesId, seriesTitle, episodes, cover, quality
       batchInfo,
       savePath: finalPath,
       customDir: downloadDir,
-      title: `《${cleanSeriesTitle}》第${epIndexStr}集${ep.title ? ' ' + ep.title : ''}`,
+      title: `《${cleanSeriesTitle}》Tập ${epIndexStr}${ep.title ? ' ' + ep.title : ''}`,
       filename,
       platform: 'hongguo',
       type: 'hongguo',
@@ -3648,7 +3648,7 @@ async function enqueueEpisodes({ seriesId, seriesTitle, episodes, cover, quality
       startTime: Date.now(),
       videoInfo: {
         author: cleanSeriesTitle,
-        title: `《${cleanSeriesTitle}》第${epIndexStr}集`,
+        title: `《${cleanSeriesTitle}》Tập ${epIndexStr}`,
         cover: ep.cover || firstCover,
         aweme_id: ep.vid,
       },
@@ -3681,27 +3681,27 @@ async function enqueueEpisodes({ seriesId, seriesTitle, episodes, cover, quality
 const nasSubmissions = new Set();
 ipcMain.handle('download-series-to-nas', async (_event, seriesId, quality) => {
   const sid = String(seriesId || '');
-  if (nasSubmissions.has(sid)) return { success: false, error: '本剧正在整理到 NAS，请等待本次提交完成' };
+  if (nasSubmissions.has(sid)) return { success: false, error: 'Phim này đang được sắp xếp vào NAS, vui lòng chờ hoàn thành lần gửi này' };
   nasSubmissions.add(sid);
   try {
     const entry = seriesRegistry.find(item => String(item.series_id) === sid);
-    if (!entry?.episodes?.length) return { success: false, error: '未找到该剧档案，请先打开剧集' };
+    if (!entry?.episodes?.length) return { success: false, error: 'Không tìm thấy hồ sơ phim này, vui lòng mở phim trước' };
     const selection = await dialog.showOpenDialog(mainWindow, {
-      title: '选择已挂载的 NAS 共享文件夹', buttonLabel: '保存到此目录', properties: ['openDirectory'],
+      title: 'Chọn thư mục chia sẻ NAS đã gắn kết', buttonLabel: 'Lưu vào thư mục này', properties: ['openDirectory'],
     });
     if (selection.canceled || !selection.filePaths?.[0]) return { success: false, canceled: true };
-    const folderName = `${sanitizeFolderName(entry.series_title) || '未命名短剧'}-${createHash('sha256').update(sid).digest('hex').slice(0, 12)}`;
+    const folderName = `${sanitizeFolderName(entry.series_title) || 'Phim ngắn chưa đặt tên'}-${createHash('sha256').update(sid).digest('hex').slice(0, 12)}`;
     const { destination, warnings } = await prepareNasExport({ root: selection.filePaths[0], folderName, series: entry });
     const wanted = entry.episodes.filter(episode => !episode.locked);
     const locked = entry.episodes.length - wanted.length;
-    if (locked) warnings.push(`${locked} 集已锁定，需在来源平台解锁后再下载`);
+    if (locked) warnings.push(`${locked} tập đã bị khóa, cần mở khóa trên nền tảng nguồn trước khi tải`);
     const count = await enqueueEpisodes({ seriesId: sid, seriesTitle: entry.series_title, episodes: wanted,
       cover: entry.cover, quality, nasDestination: destination });
     const copied = wanted.filter(episode => downloadTasks.some(task => String(task.hongguoInfo?.series_id) === sid &&
       String(task.hongguoInfo?.vid) === String(episode.vid) && task.nasDestination?.directory === destination.directory &&
       task.status === 'completed' && hasCompleteTaskFile(task))).length;
     return { success: true, count, copied, warnings, directory: destination.directory };
-  } catch (error) { return { success: false, error: error.message || 'NAS 下载提交失败，请检查共享目录后重试' }; }
+  } catch (error) { return { success: false, error: error.message || 'Gửi tải về NAS thất bại, vui lòng kiểm tra thư mục chia sẻ rồi thử lại' }; }
   finally { nasSubmissions.delete(sid); }
 });
 
@@ -3709,7 +3709,7 @@ ipcMain.handle('hongguo-download-batch', async (event, payload) => {
   try {
     const { seriesId, seriesTitle, episodes, quality, export: exportKinds } = payload || {};
     if (!Array.isArray(episodes) || episodes.length === 0) {
-      return { success: false, error: '未选择集数' };
+      return { success: false, error: 'Chưa chọn số tập' };
     }
     const count = await enqueueEpisodes({ seriesId, seriesTitle, episodes, quality });
     const kinds = normalizeTextExportKinds(exportKinds);
@@ -3722,10 +3722,10 @@ ipcMain.handle('hongguo-download-batch', async (event, payload) => {
         const destinations = episodes.map(ep => {
           const task = downloadTasks.find(item => String(item.hongguoInfo?.series_id) === String(seriesId)
             && String(item.hongguoInfo?.vid) === String(ep.vid));
-          if (!task?.savePath) throw new Error('找不到分集下载路径，请重新提交');
+          if (!task?.savePath) throw new Error('Không tìm thấy đường dẫn tải tập phim, vui lòng gửi lại');
           return { vid: String(task.hongguoInfo.vid), vid_index: task.hongguoInfo.vid_index, savePath: task.savePath };
         });
-        const title = sanitizeFolderName(seriesTitle) || '红果短剧';
+        const title = sanitizeFolderName(seriesTitle) || 'Phim Ngắn Hồng Quả';
         return exportSeriesText({ seriesId: String(seriesId), seriesTitle, episodes: destinations, kinds,
           reviewsPath: path.join(path.dirname(destinations[0].savePath), `${title}.reviews.json`) });
       }).then(result => sendToRenderer('text-export-done', { ...result, requestId, seriesId, kinds }))
@@ -3735,7 +3735,7 @@ ipcMain.handle('hongguo-download-batch', async (event, payload) => {
     }
     return { success: true, count, requested: episodes.length, exportRequested, requestId };
   } catch (error) {
-    console.error('[Hongguo] 提交批量下载失败:', error.message);
+    console.error('[Hongguo] Gửi tải xuống hàng loạt thất bại:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -3744,9 +3744,9 @@ ipcMain.handle('hongguo-download-batch', async (event, payload) => {
 ipcMain.handle('download-single-episode', async (event, seriesId, vidIndex, quality) => {
   try {
     const entry = seriesRegistry.find((s) => String(s.series_id) === String(seriesId));
-    if (!entry) return { success: false, error: '未找到该剧档案，请先解析一次' };
+    if (!entry) return { success: false, error: 'Không tìm thấy hồ sơ phim này, vui lòng phân tích lại một lần' };
     const ep = entry.episodes.find((e) => Number(e.vid_index) === Number(vidIndex));
-    if (!ep) return { success: false, error: '未找到该集' };
+    if (!ep) return { success: false, error: 'Không tìm thấy tập này' };
     const count = await enqueueEpisodes({
       seriesId: entry.series_id,
       seriesTitle: entry.series_title,
@@ -3756,7 +3756,7 @@ ipcMain.handle('download-single-episode', async (event, seriesId, vidIndex, qual
     });
     return { success: true, count };
   } catch (error) {
-    console.error('[Player] 下载单集失败:', error.message);
+    console.error('[Player] Tải tập đơn thất bại:', error.message);
     return { success: false, error: error.message };
   }
 });
@@ -3804,12 +3804,12 @@ async function clearAccountCookies() {
 
 function getAccountService() {
   if (!accountService) {
-    clearAccountCookies().catch(error => console.warn('[Account] 清除旧登录 Cookie 失败:', error.message));
+    clearAccountCookies().catch(error => console.warn('[Account] Xóa Cookie đăng nhập cũ thất bại:', error.message));
     accountService = createAccountService({
       filePath: path.join(app.getPath('userData'), 'account-session.bin'), safeStorage,
       webRequest: accountWebRequest,
       onAccountExpired: () => {
-        clearAccountCookies().catch(error => console.warn('[Account] 清除登录 Cookie 失败:', error.message));
+        clearAccountCookies().catch(error => console.warn('[Account] Xóa Cookie đăng nhập thất bại:', error.message));
         sendToRenderer('account-updated', { signedIn: false });
       },
     });
@@ -3918,7 +3918,7 @@ function historySequelResult(series, deadline, retryFailed = false) {
       result = await historyTimeout(seriesSearch.findSeriesSequels(series, seriesRegistry.filter(item => !item.forgotten),
         (keyword, call) => searchAtSource(keyword, {
           source: watchHistory.sourceOf(String(series.series_id)), deadline: searchDeadline, ...(call || {}),
-        }), { deadline: searchDeadline }), Math.max(1000, searchDeadline - Date.now()), '续作搜索超时');
+        }), { deadline: searchDeadline }), Math.max(1000, searchDeadline - Date.now()), 'Tìm kiếm phần tiếp theo quá thời gian');
     } catch (error) {
       result = { success: false, results: local, candidates: local, partial: true, error: error.message };
     }
@@ -3956,8 +3956,8 @@ async function checkHistoryRow(row, context) {
     const itemDeadline = Math.min(context.deadline, historyDeadline(HISTORY_ITEM_TIMEOUT));
     try {
       const fresh = await historyTimeout(hongguo.fetchEpisodeList(sid, { force: true, deadline: itemDeadline }),
-        Math.max(1, itemDeadline - Date.now()), '分集更新检查超时');
-      if (!Array.isArray(fresh?.episodes) || !fresh.episodes.length) throw new Error('来源没有返回分集，请稍后重试');
+        Math.max(1, itemDeadline - Date.now()), 'Kiểm tra cập nhật tập phim quá thời gian');
+      if (!Array.isArray(fresh?.episodes) || !fresh.episodes.length) throw new Error('Nguồn phim không trả về tập nào, vui lòng thử lại sau');
 
       let sequelResponse = null;
       if (context.sequelPromise && context.sequelDue.has(sid)) sequelResponse = await context.sequelPromise;
@@ -3976,10 +3976,10 @@ async function checkHistoryRow(row, context) {
         next.sequels = [...combined.values()].slice(-20);
         next.similarSeries = watchHistory.findSimilarSeries(currentSeries,
           [...(Array.isArray(previousRecord.similarSeries) ? previousRecord.similarSeries : []), ...(sequelResponse.candidates || sequelResponse.results || [])]);
-        next.lastSequelCheckError = sequelResponse.partial ? (sequelResponse.error || '请稍后重试') : '';
+        next.lastSequelCheckError = sequelResponse.partial ? (sequelResponse.error || 'Vui lòng thử lại sau') : '';
         if (sequelResponse.success === true && sequelResponse.partial !== true) next.lastSequelCheckAt = Date.now();
       }
-      next.lastCheckError = next.lastSequelCheckError ? `续作检查未完成：${next.lastSequelCheckError}` : '';
+      next.lastCheckError = next.lastSequelCheckError ? `Chưa hoàn thành kiểm tra phần tiếp theo: ${next.lastSequelCheckError}` : '';
       const newEpisodes = next.knownTotal > (previousRecord.knownTotal ?? currentSeries.total ?? currentSeries.episodes?.length ?? 0);
       const knownSequels = new Set((previousRecord.sequels || []).map(item => item.series_id));
       const rowCandidates = sequelResponse
@@ -4002,9 +4002,9 @@ async function checkHistoryRow(row, context) {
       for (const item of unseenSequels) context.notifiedSequelIds.add(item.series_id);
       if ((newEpisodes || unseenSequels.length) && settings.watch_notifications_enabled === true && Notification?.isSupported()) {
         try {
-          const title = currentSeries.series_title || fresh.series_title || '短剧';
-          const notification = new Notification({ title: `${title} 有更新`,
-            body: newEpisodes ? `已更新至 ${next.knownTotal} 集，打开观看记录继续看。` : '发现疑似新一季，打开观看记录查看。' });
+          const title = currentSeries.series_title || fresh.series_title || 'Phim ngắn';
+          const notification = new Notification({ title: `${title} có bản cập nhật mới`,
+            body: newEpisodes ? `Đã cập nhật đến tập ${next.knownTotal}, mở lịch sử xem để tiếp tục.` : 'Phát hiện phần mới nghi vấn, mở lịch sử xem để kiểm tra.' });
           notification.on('click', () => {
             if (!mainWindow || mainWindow.isDestroyed()) createWindow();
             if (mainWindow.isMinimized()) mainWindow.restore();
@@ -4012,7 +4012,7 @@ async function checkHistoryRow(row, context) {
             sendToRenderer('navigate', { page: 'history' });
           });
           notification.show();
-        } catch (error) { console.warn('[History] 系统通知不可用:', error.message); }
+        } catch (error) { console.warn('[History] Thông báo hệ thống không khả dụng:', error.message); }
       }
       return { status: 'checked', hasUpdates: newEpisodes || newSequel,
         error: next.lastEpisodeCheckError || next.lastSequelCheckError || '' };
@@ -4088,7 +4088,7 @@ ipcMain.handle('check-watch-history-item', async (_event, seriesId) => {
   const sid = String(seriesId || '');
   const allRows = historyRows();
   const row = allRows.find(item => String(item.series_id) === sid);
-  if (!row) return { success: false, error: '未找到这条观看记录，请刷新后重试。' };
+  if (!row) return { success: false, error: 'Không tìm thấy lịch sử xem này, vui lòng làm mới rồi thử lại.' };
   const context = historyContext([row], allRows, true, historyDeadline(HISTORY_ITEM_TIMEOUT + HISTORY_SEQUEL_TIMEOUT), true);
   const result = await checkHistoryRow(row, context);
   sendToRenderer('watch-history-updated', {});
@@ -4133,7 +4133,7 @@ ipcMain.handle('get-account-history', async (_event, options) => accountAction(s
 ipcMain.handle('play-account-history', async (_event, seriesId) => {
   try {
     const sid = String(seriesId || '');
-    if (!/^\d{1,30}$/.test(sid)) return { success: false, error: 'APP 观看记录编号无效' };
+    if (!/^\d{1,30}$/.test(sid)) return { success: false, error: 'Mã lịch sử xem APP không hợp lệ' };
     const service = getAccountService();
     let row = service.row(sid);
     if (!row) {
@@ -4141,17 +4141,17 @@ ipcMain.handle('play-account-history', async (_event, seriesId) => {
       if (!refreshed.success) return refreshed;
       row = service.row(sid);
     }
-    if (!row) return { success: false, error: 'APP 观看记录已变化，请刷新后重试' };
+    if (!row) return { success: false, error: 'Lịch sử xem APP đã thay đổi, vui lòng làm mới rồi thử lại' };
     let entry = seriesRegistry.find(item => String(item.series_id) === sid);
     if (!entry) {
       const data = await hongguo.fetchEpisodeList(sid);
       entry = upsertSeriesRegistry(data);
     }
-    if (!entry || !entry.episodes?.length) return { success: false, error: '暂时无法读取这部剧的分集' };
+    if (!entry || !entry.episodes?.length) return { success: false, error: 'Tạm thời không thể đọc các tập của phim này' };
     const episode = entry.episodes.find(item => String(item.vid) === String(row.episode_id))
       || (row.vid_index > 0 ? entry.episodes.find(item => Number(item.vid_index) === row.vid_index) : null);
-    if (!episode) return { success: false, error: 'APP 进度对应的分集已变化，请先在 APP 中重新打开这部剧' };
-    if (episode.locked) return { success: false, error: 'APP 进度对应的分集暂不可播放' };
+    if (!episode) return { success: false, error: 'Tập tương ứng với tiến độ APP đã thay đổi, vui lòng mở lại phim này trong APP trước' };
+    if (episode.locked) return { success: false, error: 'Tập phim ứng với tiến độ APP tạm thời không thể phát' };
     if (entry.dismissed) {
       entry.dismissed = false;
       entry.forgotten = false;
@@ -4165,7 +4165,7 @@ ipcMain.handle('play-account-history', async (_event, seriesId) => {
     return navigateToPlayer({ seriesId: sid, vidIndex: episode.vid_index, resume: true });
   } catch (error) {
     accountResumePositions.delete(String(seriesId || ''));
-    return { success: false, error: accountSafeMessage(error, '打开 APP 观看记录失败') };
+    return { success: false, error: accountSafeMessage(error, 'Mở lịch sử xem của APP thất bại') };
   }
 });
 
@@ -4192,7 +4192,7 @@ function settingsForRenderer(settings) {
 function applyEditableSettings(current, incoming) {
   const source = normalizeProxySettings(incoming && typeof incoming === 'object' ? incoming : {});
   if (Object.prototype.hasOwnProperty.call(source, 'picture_in_picture_mode')
-    && !['native', 'custom'].includes(source.picture_in_picture_mode)) throw new Error('不支持的画中画小窗模式');
+    && !['native', 'custom'].includes(source.picture_in_picture_mode)) throw new Error('Chế độ cửa sổ thu nhỏ PiP không được hỗ trợ');
   const merged = { ...current };
   for (const key of SETTINGS_KEYS) {
     if (key === 'proxy_password') continue;
@@ -4265,7 +4265,7 @@ ipcMain.handle('test-proxy', async (event, draft) => {
   const settings = applyEditableSettings(getCurrentSettings(), draft);
   const resolved = resolveProxyConfig(settings);
   if (resolved.mode === 'custom' && !resolved.url) {
-    return { success: false, error: '请填写完整的代理地址与端口' };
+    return { success: false, error: 'Vui lòng điền đầy đủ địa chỉ proxy và cổng' };
   }
 
   // 只测 API/下载路由。system 使用启动快照，避免未保存的草稿读到当前手动/直连环境。
@@ -4275,7 +4275,7 @@ ipcMain.handle('test-proxy', async (event, draft) => {
       const url = new URL(resolved.url);
       proxyOption = { protocol: url.protocol.replace(':', ''), host: url.hostname, port: Number(url.port) || (url.protocol === 'https:' ? 443 : 80) };
       if (url.username) proxyOption.auth = { username: decodeURIComponent(url.username), password: decodeURIComponent(url.password) };
-    } catch (_) { return { success: false, error: '代理地址格式无效' }; }
+    } catch (_) { return { success: false, error: 'Định dạng địa chỉ proxy không hợp lệ' }; }
   }
 
   const started = Date.now();
@@ -4292,20 +4292,20 @@ ipcMain.handle('test-proxy', async (event, draft) => {
         success: true,
         elapsed: ms,
         mode: resolved.mode,
-        via: publicProxyUrl(resolved.url) || '(直连)',
-        message: `API/下载连通正常（HTTP ${res.status}，耗时 ${ms}ms）`,
+        via: publicProxyUrl(resolved.url) || '(kết nối trực tiếp)',
+        message: `Kết nối API/tải về bình thường (HTTP ${res.status}, mất ${ms}ms)`,
       };
     }
-    return { success: false, error: `请求返回 HTTP ${res.status}（耗时 ${ms}ms）` };
+    return { success: false, error: `Yêu cầu trả về HTTP ${res.status} (thời gian ${ms}ms)` };
   } catch (error) {
     const ms = Date.now() - started;
     const code = (error && error.code) || '';
     let hint = publicProxyError(error.message, settings, resolved);
-    if (code === 'ECONNREFUSED') hint = '代理端口拒绝连接，请确认代理软件已启动、端口填写正确';
-    else if (code === 'ETIMEDOUT' || code === 'ECONNABORTED') hint = '连接超时，请检查代理地址/端口或代理是否可用';
-    else if (code === 'ENOTFOUND') hint = '无法解析代理地址，请检查主机名';
-    else if (/407/.test(hint)) hint = '代理需要认证，请填写用户名与密码';
-    return { success: false, error: `${hint}（耗时 ${ms}ms）`, code };
+    if (code === 'ECONNREFUSED') hint = 'Cổng proxy từ chối kết nối, vui lòng xác nhận phần mềm proxy đã khởi động và cổng được nhập chính xác';
+    else if (code === 'ETIMEDOUT' || code === 'ECONNABORTED') hint = 'Kết nối quá thời gian, vui lòng kiểm tra địa chỉ/cổng proxy hoặc xem proxy có khả dụng không';
+    else if (code === 'ENOTFOUND') hint = 'Không thể phân giải địa chỉ proxy, vui lòng kiểm tra tên máy chủ';
+    else if (/407/.test(hint)) hint = 'Proxy yêu cầu xác thực, vui lòng điền tên người dùng và mật khẩu';
+    return { success: false, error: `${hint} (thời gian ${ms}ms)`, code };
   }
 });
 
@@ -4332,10 +4332,10 @@ ipcMain.handle('get-download-tasks', () => {
     const info = task.hongguoInfo;
     if (String(info?.series_id).startsWith('xifan:')
       && require('./src/native/xifan').episodeDisplayTitle(info.series_id, info.series_title, info.ep_title) !== info.ep_title) {
-      serializableTask.title = `《${info.series_title}》第${String(info.vid_index).padStart(3, '0')}集`;
+      serializableTask.title = `《${info.series_title}》Tập ${String(info.vid_index).padStart(3, '0')}`;
     }
     if (task.status === 'completed' && !hasCompleteTaskFile(task)) {
-      return { ...serializableTask, status: 'failed', progress: 0, qualityNotice: '', error: '本地文件已丢失或路径冲突，请重新下载' };
+      return { ...serializableTask, status: 'failed', progress: 0, qualityNotice: '', error: 'Tệp cục bộ đã mất hoặc xung đột đường dẫn, vui lòng tải lại' };
     }
     return { ...serializableTask, qualityNotice: ['downloading', 'completed'].includes(task.status) ? task.qualityNotice || '' : '' };
   });
@@ -4351,7 +4351,7 @@ function removeEpisodeFiles(paths, owners) {
     const family = episodeFilePaths(file);
     if (!ownsEpisodeFiles(file, owners) || family.some(isFileInUse)
       || owners.some(task => mergeTasks.some(merge => String(merge.seriesId) === String(task.hongguoInfo?.series_id) && merge.status === 'running'))) {
-      warning = '文件正在使用或登记给其他任务／合并产物，已保留文件和任务记录';
+      warning = 'Tệp đang được sử dụng hoặc đăng ký cho tác vụ khác / sản phẩm gộp, đã giữ lại tệp và lịch sử tác vụ';
       continue;
     }
     for (const p of family) {
@@ -4370,7 +4370,7 @@ function removeEpisodeFiles(paths, owners) {
 async function stopTaskAndWait(task) {
   clearSourceRetry(task);
   task.cancelled = true;
-  task.cancelSource?.cancel('用户删除任务');
+  task.cancelSource?.cancel('Người dùng xóa tác vụ');
   task.writer?.destroy();
   task.status = 'stopped';
   downloadQueue = downloadQueue.filter(item => item.id !== task.id);
@@ -4410,7 +4410,7 @@ async function deleteTaskRecords(taskIds, options) {
     const task = downloadTasks.find(item => item.id === id);
     if (!task) continue;
     if (deleteFiles && mergeTasks.some(merge => String(merge.seriesId) === String(task.hongguoInfo?.series_id) && merge.status === 'running')) {
-      failed++; errors.push('该剧正在合并，请完成或取消合并后再删除文件'); continue;
+      failed++; errors.push('Phim này đang được gộp, vui lòng hoàn thành hoặc hủy gộp trước khi xóa tệp'); continue;
     }
     try {
       cancelledRetries = cancelScheduledRetries([task]) || cancelledRetries;
@@ -4418,31 +4418,31 @@ async function deleteTaskRecords(taskIds, options) {
       if (isTaskInFlight(task)) {
         await stopTaskAndWait(task);
         if (!downloadTasks.includes(task) || isTaskInFlight(task) || task.cancelled === false || task.retryAt) {
-          errors.push('任务状态已变化，已保留文件和记录，请重试'); continue;
+          errors.push('Trạng thái tác vụ đã thay đổi, đã giữ lại tệp và bản ghi, vui lòng thử lại'); continue;
         }
       }
       if (deleteFiles) {
         const result = removeEpisodeFiles([task.savePath], [task]);
         freed += result.freed; fileCount += result.count; failed += result.failed;
         if (result.warning) { warnings.push(result.warning); errors.push(result.warning); }
-        if (result.failed) { errors.push('部分文件删除失败，对应任务记录已保留'); continue; }
+        if (result.failed) { errors.push('Một số tệp xóa thất bại, bản ghi tác vụ tương ứng đã được giữ lại'); continue; }
         if (result.warning) continue;
       }
       removed.push(id);
     } catch (error) { errors.push(error.message); }
   }
   try { if (removed.length || cancelledRetries) count = dropTaskRecords(removed); }
-  catch (error) { errors.push(`任务记录保存失败，原记录已保留：${error.message}${cancelledRetries ? '；自动重试取消状态未保存' : ''}`); }
+  catch (error) { errors.push(`Lưu bản ghi tác vụ thất bại, bản ghi gốc đã được giữ lại: ${error.message}${cancelledRetries ? '; trạng thái hủy tự động thử lại chưa được lưu' : ''}`); }
   return { success: errors.length === 0, count, fileCount, freed, failed, warning: warnings.length ? [...new Set(warnings)].join('；') : undefined, error: errors.length ? [...new Set(errors)].join('；') : undefined };
 }
 
 ipcMain.handle('delete-task', (_event, taskId, options) => {
-  if (!downloadTasks.some(task => task.id === taskId)) return { success: false, count: 0, fileCount: 0, freed: 0, failed: 0, error: '任务不存在' };
+  if (!downloadTasks.some(task => task.id === taskId)) return { success: false, count: 0, fileCount: 0, freed: 0, failed: 0, error: 'Tác vụ không tồn tại' };
   return deleteTaskRecords([taskId], options);
 });
 
 ipcMain.handle('delete-tasks', (_event, taskIds, options) => {
-  if (!Array.isArray(taskIds) || !taskIds.length) return { success: false, count: 0, fileCount: 0, freed: 0, failed: 0, error: '没有要删除的任务' };
+  if (!Array.isArray(taskIds) || !taskIds.length) return { success: false, count: 0, fileCount: 0, freed: 0, failed: 0, error: 'Không có tác vụ nào cần xóa' };
   return deleteTaskRecords(taskIds, options);
 });
 
@@ -4454,7 +4454,7 @@ function deleteSeriesFiles(seriesId, options) {
   try {
     const sid = String(seriesId);
     const includeMerged = !(options && options.includeMerged === false);
-    if (mergeTasks.some(task => task.seriesId === sid && task.status === 'running')) return { success: false, error: '该剧正在合并，请完成或取消合并后再清理' };
+    if (mergeTasks.some(task => task.seriesId === sid && task.status === 'running')) return { success: false, error: 'Phim này đang được ghép nối, vui lòng hoàn thành hoặc hủy ghép nối trước khi dọn dẹp' };
     const entry = seriesRegistry.find(s => String(s.series_id) === sid);
     const title = entry?.series_title || '';
     const files = collectSeriesEpisodeFiles(sid, title);
@@ -4476,8 +4476,8 @@ function deleteSeriesFiles(seriesId, options) {
     // 只移除本剧空目录；未知文件与仍在下载的临时文件会使目录保留。
     try { if (dir && fs.existsSync(dir) && fs.readdirSync(dir).length === 0) fs.rmdirSync(dir); } catch (_) {}
     try { removeFinishedRecords(sid, cancelledRetries); }
-    catch (error) { return { success: false, count, freed, failed, error: `文件清理已执行；任务记录保存失败，原记录已保留：${error.message}${cancelledRetries ? '；自动重试取消状态未保存' : ''}` }; }
-    return { success: failed === 0, count, freed, failed, error: failed ? '部分文件删除失败，对应记录已保留' : undefined };
+    catch (error) { return { success: false, count, freed, failed, error: `Đã thực hiện dọn dẹp tệp; lưu bản ghi tác vụ thất bại, bản ghi gốc đã được giữ lại: ${error.message}${cancelledRetries ? '; trạng thái hủy tự động thử lại chưa được lưu' : ''}` }; }
+    return { success: failed === 0, count, freed, failed, error: failed ? 'Một số tệp xóa thất bại, bản ghi tương ứng được giữ lại' : undefined };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -4490,9 +4490,9 @@ async function deleteEpisodeFile(seriesId, vidIndex) {
   try {
     const sid = String(seriesId);
     const idx = Number(vidIndex);
-    if (!sid || !Number.isSafeInteger(idx) || idx < 1) return { success: false, error: '剧集信息无效', count: 0, freed: 0 };
+    if (!sid || !Number.isSafeInteger(idx) || idx < 1) return { success: false, error: 'Thông tin phim không hợp lệ', count: 0, freed: 0 };
     const tasks = downloadTasks.filter(task => String(task.hongguoInfo?.series_id) === sid && Number(task.hongguoInfo?.vid_index) === idx);
-    if (tasks.some(isTaskInFlight) || mergeTasks.some(task => task.seriesId === sid && task.status === 'running')) return { success: false, error: '该集正在下载或合并，暂不删除', count: 0, freed: 0 };
+    if (tasks.some(isTaskInFlight) || mergeTasks.some(task => task.seriesId === sid && task.status === 'running')) return { success: false, error: 'Tập này đang tải hoặc đang ghép, tạm thời không xóa', count: 0, freed: 0 };
     const entry = seriesRegistry.find(item => String(item.series_id) === sid);
     const scanned = collectSeriesEpisodeFiles(sid, entry?.series_title || '');
     const paths = [...tasks.map(task => task.savePath), ...scanned.ordered.filter(episode => episode.vid_index === idx).map(episode => episode.path),
@@ -4502,9 +4502,9 @@ async function deleteEpisodeFile(seriesId, vidIndex) {
     const ids = tasks.filter(task => task.savePath && ownsEpisodeFiles(task.savePath, tasks)
       && episodeFilePaths(task.savePath).every(file => !fs.existsSync(file))).map(task => task.id);
     try { if (ids.length || cancelledRetries) dropTaskRecords(ids); }
-    catch (error) { return { ...result, success: false, error: `文件清理已执行；任务记录保存失败，原记录已保留：${error.message}${cancelledRetries ? '；自动重试取消状态未保存' : ''}` }; }
+    catch (error) { return { ...result, success: false, error: `Đã thực hiện dọn dẹp tệp; lưu bản ghi tác vụ thất bại, bản ghi gốc đã được giữ lại: ${error.message}${cancelledRetries ? '; trạng thái hủy tự động thử lại chưa được lưu' : ''}` }; }
     return { ...result, success: result.failed === 0 && !result.warning,
-      error: [result.warning, result.failed ? '文件删除失败，任务记录已保留' : ''].filter(Boolean).join('；') || undefined };
+      error: [result.warning, result.failed ? 'Xóa tệp thất bại, bản ghi tác vụ được giữ lại' : ''].filter(Boolean).join('；') || undefined };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -4516,15 +4516,15 @@ ipcMain.handle('delete-episode-file', (_event, seriesId, vidIndex) => deleteEpis
 ipcMain.handle('cleanup-watched-episode', async (_event, seriesId, vidIndex) => {
   try {
     const sid = String(seriesId), idx = Number(vidIndex);
-    if (!sid || !Number.isSafeInteger(idx) || idx < 1) return { success: false, error: '剧集信息无效' };
+    if (!sid || !Number.isSafeInteger(idx) || idx < 1) return { success: false, error: 'Thông tin tập phim không hợp lệ' };
     if (downloadTasks.some(task => String(task.hongguoInfo?.series_id) === sid && Number(task.hongguoInfo?.vid_index) === idx && task.nasDestination))
       return { success: true, count: 0, freed: 0, skipped: true };
     if (downloadTasks.some(task => String(task.hongguoInfo?.series_id) === sid && Number(task.hongguoInfo?.vid_index) === idx && task.nasWarning))
-      return { success: false, error: '本集尚未完成 NAS 整理，本地视频已保留；请再次点击「下载到 NAS」重试' };
+      return { success: false, error: 'Tập này chưa hoàn thành sắp xếp NAS, video cục bộ được giữ lại; vui lòng nhấn lại「Tải về NAS」để thử lại' };
     const matches = entry => entry && String(entry.seriesId) === sid && Number(entry.vidIndex) === idx;
     const compatFiles = ['auto', '720p', '1080p'].map(quality => compatPathFor(sid, idx, quality));
     if ([...onlineSessions.values()].some(session => matches(session.entry || session)) || compatFiles.some(file => compatPreparing.has(file))) {
-      return { success: false, error: '该集仍在播放或准备，稍后再清理' };
+      return { success: false, error: 'Tập này vẫn đang phát hoặc chuẩn bị, hãy dọn dẹp sau' };
     }
     const result = await deleteEpisodeFile(sid, idx);
     if (!result.success) return result;
@@ -4543,7 +4543,7 @@ ipcMain.handle('cleanup-watched-episode', async (_event, seriesId, vidIndex) => 
       } catch (_) { result.failed++; }
     }
     result.success = !result.failed;
-    if (!result.success) result.error = '部分缓存清理失败，请稍后重试';
+    if (!result.success) result.error = 'Dọn dẹp một phần bộ nhớ đệm thất bại, vui lòng thử lại sau';
     return result;
   } catch (error) { return { success: false, error: error.message }; }
 });
@@ -4617,7 +4617,7 @@ ipcMain.handle('delete-all-downloaded', async () => {
       freed += result.freed || 0;
       failed += result.failed ?? (result.success ? 0 : 1);
     }
-    return { success: failed === 0 && errors.length === 0, count, freed, failed, skipped, warning: skipped ? `${skipped} 部剧正在合并，已跳过` : undefined, error: (failed || errors.length) ? [...new Set(errors)].join('；') || '部分文件删除失败，对应记录已保留' : undefined };
+    return { success: failed === 0 && errors.length === 0, count, freed, failed, skipped, warning: skipped ? `${skipped} bộ phim đang được gộp, đã bỏ qua` : undefined, error: (failed || errors.length) ? [...new Set(errors)].join('; ') || 'Một số tệp xóa thất bại, bản ghi tương ứng đã được giữ lại' : undefined };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -4626,11 +4626,11 @@ ipcMain.handle('delete-all-downloaded', async () => {
 
 ipcMain.handle('stop-download', async (event, taskId) => {
   const task = downloadTasks.find((t) => t.id === taskId);
-  if (!task) return { success: false, error: '任务不存在' };
+  if (!task) return { success: false, error: 'Tác vụ không tồn tại' };
 
   clearSourceRetry(task);
   task.cancelled = true;
-  if (task.cancelSource) { try { task.cancelSource.cancel('用户停止下载'); } catch (_) {} }
+  if (task.cancelSource) { try { task.cancelSource.cancel('Người dùng dừng tải xuống'); } catch (_) {} }
   if (task.writer) { try { task.writer.destroy(); } catch (_) {} }
 
   task.status = 'stopped';
@@ -4646,8 +4646,8 @@ ipcMain.handle('stop-download', async (event, taskId) => {
 
 ipcMain.handle('retry-task', async (event, taskId) => {
   const task = downloadTasks.find((t) => t.id === taskId);
-  if (!task) return { success: false, error: '任务不存在' };
-  if (!['failed', 'stopped'].includes(task.status) && !(task.status === 'completed' && !hasCompleteTaskFile(task))) return { success: false, error: '任务仍在进行中或已完成' };
+  if (!task) return { success: false, error: 'Tác vụ không tồn tại' };
+  if (!['failed', 'stopped'].includes(task.status) && !(task.status === 'completed' && !hasCompleteTaskFile(task))) return { success: false, error: 'Tác vụ vẫn đang diễn ra hoặc đã hoàn thành' };
 
   const snapshot = snapshotQueueTasks([task]);
   clearSourceRetry(task);
@@ -4670,7 +4670,7 @@ ipcMain.handle('retry-task', async (event, taskId) => {
 });
 
 ipcMain.handle('retry-tasks', async (event, taskIds) => {
-  if (!Array.isArray(taskIds) || taskIds.length === 0) return { success: false, error: '没有要重试的任务' };
+  if (!Array.isArray(taskIds) || taskIds.length === 0) return { success: false, error: 'Không có tác vụ nào cần thử lại' };
   let count = 0;
   const changed = [];
   for (const taskId of taskIds) {
@@ -4722,7 +4722,7 @@ ipcMain.handle('open-folder', async (event, taskId) => {
 
   const nasDirectory = task.nasDestination?.directory || task.nasTargets?.at(-1)?.directory;
   if (nasDirectory) {
-    if (!fs.existsSync(nasDirectory)) return { success: false, error: 'NAS 保存目录不可用，请重新挂载后再打开' };
+    if (!fs.existsSync(nasDirectory)) return { success: false, error: 'Thư mục lưu NAS không khả dụng, vui lòng gắn kết lại rồi mở' };
     const error = await shell.openPath(nasDirectory);
     return error ? { success: false, error } : { success: true };
   }
@@ -4747,7 +4747,7 @@ ipcMain.handle('open-folder', async (event, taskId) => {
       return { success: true };
     }
   }
-  return { success: false, error: '文件夹不存在' };
+  return { success: false, error: 'Thư mục không tồn tại' };
 });
 
 // ===== 远程公告：固定公共 JSON，普通和紧急偏好独立于 settings =====
@@ -4773,11 +4773,11 @@ let updateRequest = null;
 let latestAppRelease = null;
 function appUpdateSupport() {
   let reason = '';
-  if (IS_PREVIEW || !app.isPackaged) reason = '开发或预览版本不支持应用内安装，请使用正式安装版。';
+  if (IS_PREVIEW || !app.isPackaged) reason = 'Phiên bản phát triển hoặc xem trước không hỗ trợ cài đặt trong ứng dụng, vui lòng sử dụng bản cài đặt chính thức.';
   else if (process.platform === 'win32' && (portableConfig.mode === 'portable' || portableConfig.portableDir
-    || process.env.PORTABLE_EXECUTABLE_FILE || process.env.PORTABLE_EXECUTABLE_DIR)) reason = '便携版需手动更新。请先退出旧程序，再运行发布页中的 setup 安装包，并从安装后生成的快捷方式启动；安装版支持后续应用内更新。若仍用便携版，请完整解压新版并直接运行新版文件。';
-  else if (!['darwin', 'win32'].includes(process.platform)) reason = '当前系统请前往发布页手动更新。';
-  else if (process.platform === 'darwin' && (process.execPath.startsWith('/Volumes/') || process.execPath.includes('/AppTranslocation/'))) reason = '请先将应用放入“应用程序”文件夹后重新打开，再使用应用内更新。';
+    || process.env.PORTABLE_EXECUTABLE_FILE || process.env.PORTABLE_EXECUTABLE_DIR)) reason = 'Bản di động cần cập nhật thủ công. Vui lòng thoát chương trình cũ, sau đó chạy gói cài đặt setup trên trang phát hành và khởi động từ lối tắt vừa tạo; bản cài đặt sẽ hỗ trợ cập nhật trong ứng dụng sau này. Nếu tiếp tục dùng bản di động, vui lòng giải nén toàn bộ bản mới và chạy trực tiếp tệp mới.';
+  else if (!['darwin', 'win32'].includes(process.platform)) reason = 'Hệ thống hiện tại vui lòng truy cập trang phát hành để cập nhật thủ công.';
+  else if (process.platform === 'darwin' && (process.execPath.startsWith('/Volumes/') || process.execPath.includes('/AppTranslocation/'))) reason = 'Vui lòng chuyển ứng dụng vào thư mục "Applications" rồi mở lại trước khi dùng tính năng cập nhật trong ứng dụng.';
   return { supported: !reason, reason };
 }
 function appUpdateState() {
@@ -4795,10 +4795,10 @@ function getAppUpdateInstaller() {
       currentVersion: APP_VERSION,
       isEnabled: () => !IS_PREVIEW && getCurrentSettings().app_updates_enabled !== false,
       installBlocker: () => {
-        if (pendingUpdateOperations) return '正在处理任务或保存设置，请稍后再安装更新。';
-        if (downloadRuns.size || downloadQueue.length || sourceRetryTimers.size) return '还有下载或等待重试的任务，请先在下载管理中暂停全部任务，再安装更新。';
-        if (mergeTasks.some(task => task.status === 'running') || compatPreparing.size || onlinePreparing.size) return '正在合并或准备视频，请等待完成或取消后再安装更新。';
-        if (storageError) return '本地数据保存异常，请先处理保存问题，再安装更新。';
+        if (pendingUpdateOperations) return 'Đang xử lý tác vụ hoặc lưu cài đặt, vui lòng cài đặt bản cập nhật sau.';
+        if (downloadRuns.size || downloadQueue.length || sourceRetryTimers.size) return 'Vẫn còn tác vụ đang tải hoặc đang chờ thử lại, vui lòng tạm dừng tất cả tác vụ trong Quản lý tải xuống trước khi cài đặt cập nhật.';
+        if (mergeTasks.some(task => task.status === 'running') || compatPreparing.size || onlinePreparing.size) return 'Đang gộp hoặc chuẩn bị video, vui lòng đợi hoàn thành hoặc hủy trước khi cài đặt cập nhật.';
+        if (storageError) return 'Lưu trữ dữ liệu cục bộ gặp sự cố, vui lòng xử lý vấn đề lưu trữ trước khi cài đặt cập nhật.';
         return '';
       },
       emit: state => sendToRenderer('app-update-state', state),
@@ -4810,30 +4810,30 @@ ipcMain.handle('get-app-update-state', () => appUpdateState());
 ipcMain.handle('download-app-update', async () => {
   const support = appUpdateSupport();
   if (!support.supported) return { success: false, error: support.reason };
-  if (!latestAppRelease || getCurrentSettings().app_updates_enabled === false) return { success: false, error: '更新信息已失效，请重新检查更新。' };
+  if (!latestAppRelease || getCurrentSettings().app_updates_enabled === false) return { success: false, error: 'Thông tin cập nhật đã hết hạn, vui lòng kiểm tra lại cập nhật.' };
   try {
     const request = updateDownloadGeneration;
     const installer = getAppUpdateInstaller();
     if (!['checking', 'downloading', 'downloaded', 'installing'].includes(installer.getState().status)) {
       await applyProxyToSession(desiredProxyConfig || resolveProxyConfig(getCurrentSettings()), [appUpdater.netSession]);
     }
-    if (request !== updateDownloadGeneration) return { success: false, error: '更新已取消。', state: installer.getState() };
+    if (request !== updateDownloadGeneration) return { success: false, error: 'Cập nhật đã bị hủy.', state: installer.getState() };
     return await installer.download(latestAppRelease.version);
   }
-  catch (_) { return { success: false, error: '无法准备应用内更新，请重试或前往发布页下载安装。' }; }
+  catch (_) { return { success: false, error: 'Không thể chuẩn bị cập nhật trong ứng dụng, vui lòng thử lại hoặc đến trang phát hành tải cài đặt.' }; }
 });
 ipcMain.handle('cancel-app-update', () => {
-  if (appUpdateInstaller?.getState().status === 'installing') return { success: false, error: '正在安装更新，无法取消。', state: appUpdateState() };
+  if (appUpdateInstaller?.getState().status === 'installing') return { success: false, error: 'Đang cài đặt cập nhật, không thể hủy.', state: appUpdateState() };
   updateDownloadGeneration++;
   if (!appUpdateInstaller) return { success: true, state: appUpdateState() };
   return appUpdateInstaller.cancel();
 });
 ipcMain.handle('install-app-update', () => {
-  if (!appUpdateInstaller) return { success: false, error: '请先完成更新下载。' };
+  if (!appUpdateInstaller) return { success: false, error: 'Vui lòng hoàn thành tải bản cập nhật trước.' };
   return appUpdateInstaller.install();
 });
 ipcMain.handle('check-app-update', async event => {
-  if (proxyStartupFallback) return { enabled: false, release: null, error: '请先修复或明确关闭代理。' };
+  if (proxyStartupFallback) return { enabled: false, release: null, error: 'Vui lòng sửa hoặc tắt hẳn proxy trước.' };
   if (IS_PREVIEW || !mainWindow || event.sender !== mainWindow.webContents) return { enabled: false, release: null };
   if (getCurrentSettings().app_updates_enabled === false) {
     latestAppRelease = null;
@@ -4854,7 +4854,7 @@ ipcMain.handle('check-app-update', async event => {
       if (!tag) throw new Error('Unexpected update redirect');
       return { data: { tag_name: tag[1] } };
     })).then(response => ({ release: availableRelease(response.data, APP_VERSION), error: '' }))
-      .catch(() => ({ release: null, error: '暂时无法检查更新，请检查网络后重试。' }))
+      .catch(() => ({ release: null, error: 'Tạm thời không thể kiểm tra cập nhật, vui lòng kiểm tra mạng rồi thử lại.' }))
       .finally(() => { updateRequest = null; });
   }
   const result = await updateRequest;
@@ -4864,10 +4864,10 @@ ipcMain.handle('check-app-update', async event => {
 });
 ipcMain.handle('open-app-update', async event => {
   if (IS_PREVIEW || !mainWindow || event.sender !== mainWindow.webContents || getCurrentSettings().app_updates_enabled === false) {
-    return { success: false, error: '更新信息已失效，请稍后重试' };
+    return { success: false, error: 'Thông tin cập nhật đã hết hạn, vui lòng thử lại sau' };
   }
   try { await shell.openExternal(latestAppRelease?.url || 'https://github.com/jackotom/hongguo-drama/releases/latest'); return { success: true }; }
-  catch { return { success: false, error: '无法打开浏览器，请稍后重试' }; }
+  catch { return { success: false, error: 'Không thể mở trình duyệt, vui lòng thử lại sau' }; }
 });
 
 // ===== 应用信息 =====
@@ -4899,16 +4899,16 @@ ipcMain.handle('get-app-info', async () => ({
 
 // 打开外部链接（保留给需要时调用）
 ipcMain.handle('open-external-url', async (event, url) => {
-  if (!url) return { success: false, error: '缺少链接' };
+  if (!url) return { success: false, error: 'Thiếu liên kết' };
   try {
     const target = new URL(url);
     if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password) {
-      return { success: false, error: '仅支持打开网页链接' };
+      return { success: false, error: 'Chỉ hỗ trợ mở liên kết trang web' };
     }
     await shell.openExternal(target.href);
     return { success: true };
   } catch (err) {
-    console.error('[Shell] 打开链接失败:', err.message);
+    console.error('[Shell] Mở liên kết thất bại:', err.message);
     return { success: false, error: err.message };
   }
 });
@@ -4933,7 +4933,7 @@ function syncMainWindowScale() {
   mainWindow.webContents.setZoomFactor(scale);
 }
 function changeMainWindowZoom(direction) {
-  if (!mainWindow || mainWindow.isDestroyed()) return { success: false, error: '主窗口不可用' };
+  if (!mainWindow || mainWindow.isDestroyed()) return { success: false, error: 'Cửa sổ chính không khả dụng' };
   try {
     saveWindowZoom(store, direction);
     syncMainWindowScale();
@@ -4941,15 +4941,15 @@ function changeMainWindowZoom(direction) {
     sendToRenderer('interface-zoom-changed', zoom);
     return { success: true, zoom };
   } catch (_) {
-    const error = '界面大小保存失败，请检查磁盘空间或目录权限后重试。';
+    const error = 'Lưu kích thước giao diện thất bại, vui lòng kiểm tra dung lượng đĩa hoặc quyền thư mục rồi thử lại.';
     sendToRenderer('storage-error', { error });
     return { success: false, error };
   }
 }
 ipcMain.handle('change-window-zoom', (_event, direction) => changeMainWindowZoom(direction));
 ipcMain.handle('set-stealth-mode', async (event, enabled) => {
-  if (!mainWindow || event.sender !== mainWindow.webContents || typeof enabled !== 'boolean') return { success: false, error: '无法切换小窗' };
-  if (enabled && (mainWindow.isFullScreen() || layoutChanging)) return { success: false, error: '请先退出全屏，再开启隐身小窗' };
+  if (!mainWindow || event.sender !== mainWindow.webContents || typeof enabled !== 'boolean') return { success: false, error: 'Không thể chuyển đổi cửa sổ nhỏ' };
+  if (enabled && (mainWindow.isFullScreen() || layoutChanging)) return { success: false, error: 'Vui lòng thoát toàn màn hình trước khi bật cửa sổ nhỏ ẩn danh' };
   try {
     episodePanel.close();
     stealth.setEnabled(enabled);
@@ -4961,10 +4961,10 @@ const episodePanel = createEpisodePanelController({ ipcMain, screen, getMainWind
 ipcMain.handle('get-window-layout', () => windowLayout);
 ipcMain.handle('set-window-layout', async (event, mode) => {
   if (!mainWindow || event.sender !== mainWindow.webContents || !['portrait', 'landscape'].includes(mode)) {
-    return { success: false, error: '无法切换窗口布局' };
+    return { success: false, error: 'Không thể chuyển đổi bố cục cửa sổ' };
   }
-  if (stealth.enabled) return { success: false, error: '请先退出隐身小窗' };
-  if (layoutChanging) return { success: false, error: '窗口正在切换，请稍后重试' };
+  if (stealth.enabled) return { success: false, error: 'Vui lòng thoát cửa sổ nhỏ ẩn danh trước' };
+  if (layoutChanging) return { success: false, error: 'Cửa sổ đang chuyển đổi, vui lòng thử lại sau' };
   if (mode === windowLayout) return { success: true, mode };
   layoutChanging = true;
   try {
@@ -4973,7 +4973,7 @@ ipcMain.handle('set-window-layout', async (event, mode) => {
     if (win.isFullScreen()) {
       await new Promise((resolve, reject) => {
         const done = () => { clearTimeout(timer); resolve(); };
-        const timer = setTimeout(() => { win.removeListener('leave-full-screen', done); reject(new Error('请先退出全屏后再切换')); }, 3000);
+        const timer = setTimeout(() => { win.removeListener('leave-full-screen', done); reject(new Error('Vui lòng thoát toàn màn hình trước khi chuyển đổi')); }, 3000);
         win.once('leave-full-screen', done);
         win.setFullScreen(false);
       });
@@ -5092,7 +5092,7 @@ app.on('web-contents-created', (_event, contents) => {
 });
 
 if (hasSingleInstanceLock) app.whenReady().then(async () => {
-  let startupStage = '读取本地数据';
+  let startupStage = 'Đọc dữ liệu cục bộ';
   try {
     const dataFile = path.join(app.getPath('userData'), 'data.json');
     store.init(dataFile);
@@ -5110,17 +5110,17 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     bossKey.start();
 
     // 代理必须在创建窗口、发起任何请求之前生效
-    startupStage = '初始化网络';
+    startupStage = 'Khởi tạo mạng';
     const proxyStartup = await applyProxyForStartup(settings);
     proxyStartupFallback = proxyStartup.fallback;
-    if (proxyStartup.fallback) console.warn('[Proxy] 启动代理不可用，已临时直连:', proxyStartup.reason);
+    if (proxyStartup.fallback) console.warn('[Proxy] Proxy khởi động không khả dụng, tạm thời kết nối trực tiếp:', proxyStartup.reason);
     else {
       // 启动后自动接着跑「等待中」的任务（上次未下完的队列），无需手动点启动
       // Automatic source retries scheduled before the app closed continue on the same schedule.
       for (const task of downloadTasks) if (task.status === 'failed' && task.retryAt) armSourceRetry(task);
       const resumed = enqueuePendingTasks();
       if (resumed > 0) {
-        console.log(`[Queue] 启动自动续跑 ${resumed} 个等待中任务，并发 ${MAX_CONCURRENT_DOWNLOADS}`);
+        console.log(`[Queue] Khởi động tự động tiếp tục ${resumed} tác vụ đang chờ, đồng thời ${MAX_CONCURRENT_DOWNLOADS}`);
         pumpQueue();
       }
     }
@@ -5140,33 +5140,33 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
       app.setAboutPanelOptions?.({ applicationVersion: APP_VERSION.replace(/^(\d+\.\d+)\.0$/, '$1'), version: '' });
       Menu.setApplicationMenu(Menu.buildFromTemplate([
         { label: APP_TITLE, submenu: [
-          { role: 'about', label: `关于${APP_TITLE}` },
+          { role: 'about', label: `Giới thiệu ${APP_TITLE}` },
           { type: 'separator' },
-          { role: 'services', label: '服务' },
+          { role: 'services', label: 'Dịch vụ' },
           { type: 'separator' },
-          { role: 'hide', label: '隐藏' },
-          { role: 'hideOthers', label: '隐藏其他应用' },
-          { role: 'unhide', label: '显示全部' },
+          { role: 'hide', label: 'Ẩn' },
+          { role: 'hideOthers', label: 'Ẩn các ứng dụng khác' },
+          { role: 'unhide', label: 'Hiện tất cả' },
           { type: 'separator' },
-          { role: 'quit', label: '退出' },
+          { role: 'quit', label: 'Thoát' },
         ] },
-        { label: '编辑', submenu: [
-          { role: 'undo', label: '撤销' }, { role: 'redo', label: '重做' },
+        { label: 'Chỉnh sửa', submenu: [
+          { role: 'undo', label: 'Hoàn tác' }, { role: 'redo', label: 'Làm lại' },
           { type: 'separator' },
-          { role: 'cut', label: '剪切' }, { role: 'copy', label: '复制' },
-          { role: 'paste', label: '粘贴' }, { role: 'selectAll', label: '全选' },
+          { role: 'cut', label: 'Cắt' }, { role: 'copy', label: 'Sao chép' },
+          { role: 'paste', label: 'Dán' }, { role: 'selectAll', label: 'Chọn tất cả' },
         ] },
-        { label: '视图', submenu: [
-          { label: '实际大小', accelerator: 'CmdOrCtrl+0', click: () => changeMainWindowZoom('reset') },
-          { label: '放大', accelerator: 'CmdOrCtrl+Plus', click: () => changeMainWindowZoom('in') },
-          { label: '缩小', accelerator: 'CmdOrCtrl+-', click: () => changeMainWindowZoom('out') },
-          { type: 'separator' }, { role: 'togglefullscreen', label: '全屏' },
+        { label: 'Xem', submenu: [
+          { label: 'Kích thước thực tế', accelerator: 'CmdOrCtrl+0', click: () => changeMainWindowZoom('reset') },
+          { label: 'Phóng to', accelerator: 'CmdOrCtrl+Plus', click: () => changeMainWindowZoom('in') },
+          { label: 'Thu nhỏ', accelerator: 'CmdOrCtrl+-', click: () => changeMainWindowZoom('out') },
+          { type: 'separator' }, { role: 'togglefullscreen', label: 'Toàn màn hình' },
         ] },
-        { label: '窗口', submenu: [
-          { role: 'minimize', label: '最小化' }, { role: 'close', label: '关闭窗口' },
+        { label: 'Cửa sổ', submenu: [
+          { role: 'minimize', label: 'Thu nhỏ' }, { role: 'close', label: 'Đóng cửa sổ' },
           { type: 'separator' },
-          { label: '回到主窗口', accelerator: 'CmdOrCtrl+1', click: () => app.emit('activate') },
-          { label: '退出隐身小窗', click: () => { stealth.setEnabled(false); syncMainWindowScale(); } },
+          { label: 'Quay lại cửa sổ chính', accelerator: 'CmdOrCtrl+1', click: () => app.emit('activate') },
+          { label: 'Thoát cửa sổ ẩn danh', click: () => { stealth.setEnabled(false); syncMainWindowScale(); } },
         ] },
       ]));
     }
@@ -5175,7 +5175,7 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     if (!proxyStartupFallback && resolveProxyConfig(getCurrentSettings()).mode === 'direct') {
       try { require('./src/native/web-media-guard').warmOfficialDns?.(); } catch (_) {}
     }
-    startupStage = '创建主窗口';
+    startupStage = 'Tạo cửa sổ chính';
     createWindow();
     if (proxyStartup.fallback) {
       // 只停自动任务；窗口仍打开，用户可在设置中修复代理或明确关闭代理。
@@ -5183,10 +5183,10 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
         try {
           dialog.showMessageBox(mainWindow, {
             type: 'warning',
-            title: `${APP_TITLE} 网络代理`,
-            message: '上次保存的代理配置无法生效，已临时使用直连启动。',
-            detail: `自动续下载、追剧刷新和浏览页自动请求已暂停，避免绕过你设置的代理。${proxyStartup.fallbackError ? `\n临时直连也失败：${proxyStartup.fallbackError}` : ''}\n请在设置中修复代理，或明确关闭代理后保存。`,
-            buttons: ['知道了'],
+            title: `${APP_TITLE} - Proxy mạng`,
+            message: 'Cấu hình proxy đã lưu lần trước không thể áp dụng, đã tạm thời khởi động bằng kết nối trực tiếp.',
+            detail: `Tự động tiếp tục tải, làm mới theo dõi phim và tự động yêu cầu trang duyệt phim đã tạm dừng để tránh vượt qua proxy bạn đã thiết lập.${proxyStartup.fallbackError ? `\nKết nối trực tiếp tạm thời cũng thất bại: ${proxyStartup.fallbackError}` : ''}\nVui lòng sửa proxy trong cài đặt hoặc tắt hẳn proxy rồi lưu lại.`,
+            buttons: ['Đã hiểu'],
             noLink: true,
           }).catch(() => {});
         } catch (_) { /* 无窗口环境忽略 */ }
@@ -5196,9 +5196,9 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
       setInterval(() => { void refreshWatchHistory(); }, 15 * 60 * 1000).unref();
     }
   } catch (_) {
-    console.error(`[Startup] ${startupStage}失败`);
+    console.error(`[Startup] ${startupStage} thất bại`);
     try {
-      dialog.showErrorBox(`${APP_TITLE}启动失败`, `未能完成${startupStage}。请退出后重试；若仍失败，请将此提示反馈给开发者。已有资料不会被清空。`);
+      dialog.showErrorBox(`${APP_TITLE} khởi động thất bại`, `Không thể hoàn thành ${startupStage}. Vui lòng thoát và thử lại; nếu vẫn thất bại, hãy phản hồi thông báo này cho nhà phát triển. Dữ liệu hiện có sẽ không bị xóa.`);
     } finally { app.quit(); }
   }
 });
@@ -5220,7 +5220,7 @@ app.on('before-quit', event => {
   if (downloading) {
     try { pauseAllTasks(); }
     catch (_) {
-      dialog.showErrorBox('退出未完成', '无法保存下载暂停状态，已取消本次退出。请检查本地存储后重试。');
+      dialog.showErrorBox('Thoát chưa hoàn thành', 'Không thể lưu trạng thái tạm dừng tải về, đã hủy lần thoát này. Vui lòng kiểm tra bộ nhớ cục bộ rồi thử lại.');
       return;
     }
   }
@@ -5240,6 +5240,6 @@ app.on('before-quit', event => {
     clearTimeout(timer);
     quitCleanup = null;
     if (completed) app.quit();
-    else dialog.showErrorBox('退出未完成', '任务清理超过 10 秒，已取消本次退出。应用未强制关闭，原始分集保留；任务仍在收尾，请稍后再次退出。');
+    else dialog.showErrorBox('Thoát chưa hoàn thành', 'Dọn dẹp tác vụ quá 10 giây, đã hủy lần thoát này. Ứng dụng không bị buộc đóng, các tập gốc được giữ nguyên; tác vụ đang hoàn tất, vui lòng thử thoát lại sau.');
   });
 });

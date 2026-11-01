@@ -9,7 +9,7 @@ test('source registry accepts named custom sources and filters disabled or malfo
     { ...custom, id: 'custom:bad' }, { ...custom, id: 'custom:650e8400-e29b-41d4-a716-446655440000', enabled: false }]);
   assert.deepEqual(result.map(item => item.id), ['hongguo', custom.id]);
   assert.equal(model.mediaSourceLabel(`${custom.id}:123`, result), '测试源');
-  assert.equal(model.mediaSourceLabel('custom:750e8400-e29b-41d4-a716-446655440000:1', result), '自定义源（未启用或已移除）');
+  assert.equal(model.mediaSourceLabel('custom:750e8400-e29b-41d4-a716-446655440000:1', result), 'Nguồn tùy chỉnh (chưa bật hoặc đã xóa)');
 });
 
 test('shared source loading coalesces consumers and drops responses from older refreshes', async () => {

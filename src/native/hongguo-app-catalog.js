@@ -10,7 +10,7 @@ const RANKS = { 'hot-drama': ['all', 'ranklist_hot_play_sc'], 'hot-real-drama': 
 const TIMEOUT_MS = 4000, CACHE_MS = 120000, MAX_SESSIONS = 32, MAX_PAGES = 8;
 const sessions = new Map();
 const appError = (message, code = 'APP_SCHEMA') => Object.assign(new Error(message), { code });
-const fail = (error, sourceUrl) => ({ success: false, error: `${error.message}，可重试或切换官网`, code: error.code || 'APP_NETWORK', sourceUrl });
+const fail = (error, sourceUrl) => ({ success: false, error: `${error.message}, có thể thử lại hoặc chuyển sang trang web chính thức`, code: error.code || 'APP_NETWORK', sourceUrl });
 
 function discard(key, state) {
   for (const request of state.pending.values()) request.controller.abort();
@@ -45,21 +45,21 @@ function cards(rows, contentTypes) {
 }
 
 function parsePage(payload, category, genre, page, cursor, state, sourceUrl) {
-  if (!payload || typeof payload !== 'object' || !Object.hasOwn(payload, 'code')) throw appError('App 目录返回异常数据');
-  if (Number(payload.code) !== 0) throw appError('App 目录服务暂不可用', 'APP_BUSINESS');
+  if (!payload || typeof payload !== 'object' || !Object.hasOwn(payload, 'code')) throw appError('Danh mục App trả về dữ liệu bất thường');
+  if (Number(payload.code) !== 0) throw appError('Dịch vụ danh mục App tạm thời không khả dụng', 'APP_BUSINESS');
   const data = payload.data;
-  if (!data || typeof data !== 'object') throw appError('App 目录缺少列表数据');
+  if (!data || typeof data !== 'object') throw appError('Danh mục App thiếu dữ liệu danh sách');
   const ranking = RANKS[category], view = data.cell_view;
   let rows, genres = state.genres;
   if (ranking) {
-    if (!Array.isArray(view?.cell_data)) throw appError('App 榜单结构异常');
+    if (!Array.isArray(view?.cell_data)) throw appError('Cấu trúc bảng xếp hạng App bất thường');
     const selected = view.cell_selector?.outer_row?.items?.find(item => item.is_selected === true);
     const child = selected?.sub_cell_selector?.outer_row?.items?.find(item => item.is_selected === true);
-    if (selected && (selected.selector_item_id !== ranking[0] || child?.selector_item_id !== ranking[1])) throw appError('App 返回了其他榜单');
+    if (selected && (selected.selector_item_id !== ranking[0] || child?.selector_item_id !== ranking[1])) throw appError('App đã trả về bảng xếp hạng khác');
     rows = view.cell_data.flatMap(cell => Array.isArray(cell?.video_data) ? cell.video_data : cell?.video_data ? [cell.video_data] : []);
-    if (!rows.length && view.cell_data.some(cell => cell?.ugc_user_data?.length)) throw appError('App 返回了演员榜，未作为短剧展示');
+    if (!rows.length && view.cell_data.some(cell => cell?.ugc_user_data?.length)) throw appError('App trả về bảng diễn viên, không hiển thị dưới dạng phim ngắn');
   } else {
-    if (!Array.isArray(data.video_data)) throw appError('App 分类结构异常');
+    if (!Array.isArray(data.video_data)) throw appError('Cấu trúc phân loại App bất thường');
     rows = data.video_data;
     if (Array.isArray(data.selector_rows) && (page === 1 || data.selector_rows.length)) {
       const themes = data.selector_rows.find(row => row?.type === 'category_dim_theme');
@@ -69,17 +69,17 @@ function parsePage(payload, category, genre, page, cursor, state, sourceUrl) {
         if (!/^cate_\d{1,8}$/.test(slug) || !label || seen.has(slug)) return [];
         seen.add(slug); return [{ slug, label }];
       });
-      if (genre && !genres.some(item => item.slug === genre)) throw appError('App 题材已变化，请重新加载分类', 'APP_INPUT');
+      if (genre && !genres.some(item => item.slug === genre)) throw appError('Đề tài App đã thay đổi, vui lòng tải lại phân loại', 'APP_INPUT');
     }
   }
   const liveAction = category === 'real-drama' || category === 'hot-real-drama';
   const results = cards(rows, category === 'hot-drama' ? [1, 1004] : liveAction ? [1] : [1004]);
-  if (rows.length && !results.length) throw appError('App 目录未返回有效短剧');
+  if (rows.length && !results.length) throw appError('Danh mục App không trả về phim ngắn hợp lệ');
   const more = (data.has_more ?? view?.has_more) === true;
   const offset = parseSearchInteger(data.next_offset ?? view?.next_offset);
   const sessionId = data.session_id ?? view?.session_id;
   if (more && (offset === null || offset <= cursor.offset || typeof sessionId !== 'string' || !sessionId || sessionId.length > 4096)) {
-    throw appError('App 分页游标无效，请重新加载第 1 页', 'APP_CURSOR');
+    throw appError('Con trỏ phân trang App không hợp lệ, vui lòng tải lại trang 1', 'APP_CURSOR');
   }
   return { response: { success: true, results, page, total: 0, totalPages: 0, hasMore: more && page < 50, genres, sourceUrl },
     next: more && page < 50 ? { offset, sessionId } : null };
@@ -91,10 +91,10 @@ async function browseList(options = {}) {
   const sourceUrl = `${SITE}/${ranking ? 'rank' : 'category'}/${encodeURIComponent(category)}${pg > 1 ? `?page=${pg}` : ''}`;
   if ((!Object.hasOwn(CATEGORIES, category) && !Object.hasOwn(RANKS, category) && category !== 'comic') ||
       !['default', 'browse'].includes(catalogScope) || typeof genre !== 'string' || (genre && (!/^cate_\d{1,8}$/.test(genre) || ranking)) || pg === null || pg < 1 || pg > 50) {
-    return fail(appError('App 分类、题材或页码无效', 'APP_INPUT'), sourceUrl);
+    return fail(appError('Phân loại, đề tài hoặc số trang của App không hợp lệ', 'APP_INPUT'), sourceUrl);
   }
   if (category === 'comic') return { success: true, results: [], page: 1, total: 0, totalPages: 0, hasMore: false, genres: [], sourceUrl,
-    unsupported: true, emptyMessage: '漫画属于图文阅读，暂不支持视频播放或下载；请切换「漫剧」或打开官网阅读。' };
+    unsupported: true, emptyMessage: 'Truyện tranh thuộc thể loại đọc tranh chữ, tạm thời chưa hỗ trợ phát video hoặc tải về; vui lòng chuyển sang「Truyện tranh động」hoặc mở trang web để đọc.' };
   // Recommendation refreshes must not invalidate the discovery page's cursor chain.
   const key = `${catalogScope}\0${category}\0${genre}`;
   let state = sessions.get(key);
@@ -102,7 +102,7 @@ async function browseList(options = {}) {
     discard(key, state); state = null;
   }
   if (!state) {
-    if (pg !== 1) return fail(appError('App 分页记录已失效，请重新加载第 1 页', 'APP_CURSOR'), sourceUrl);
+    if (pg !== 1) return fail(appError('Bản ghi phân trang App đã hết hạn, vui lòng tải lại trang 1', 'APP_CURSOR'), sourceUrl);
     state = { expires: Date.now() + CACHE_MS, genres: [], pages: new Map(), cursors: new Map([[1, { offset: 0, sessionId: '' }]]), pending: new Map() };
     sessions.set(key, state);
     if (sessions.size > MAX_SESSIONS) { const oldest = sessions.keys().next().value; discard(oldest, sessions.get(oldest)); }
@@ -110,7 +110,7 @@ async function browseList(options = {}) {
   if (state.pending.has(pg)) return state.pending.get(pg).promise;
   if (!forceRefresh && state.pages.has(pg)) return state.pages.get(pg);
   const cursor = state.cursors.get(pg);
-  if (!cursor) return fail(appError('App 尚无这一页的游标，请逐页浏览或重新加载第 1 页', 'APP_CURSOR'), sourceUrl);
+  if (!cursor) return fail(appError('App chưa có con trỏ cho trang này, vui lòng duyệt từng trang hoặc tải lại trang 1', 'APP_CURSOR'), sourceUrl);
   if (forceRefresh) {
     for (const cachedPage of state.pages.keys()) if (cachedPage >= pg) state.pages.delete(cachedPage);
     for (const cursorPage of state.cursors.keys()) if (cursorPage > pg) state.cursors.delete(cursorPage);
@@ -121,12 +121,12 @@ async function browseList(options = {}) {
   const controller = new AbortController(), deadline = Date.now() + TIMEOUT_MS;
   let timer, abort;
   const timeout = new Promise((_, reject) => {
-    abort = () => reject(appError('App 目录请求已取消', 'APP_CANCELLED'));
+    abort = () => reject(appError('Yêu cầu danh mục App đã bị hủy', 'APP_CANCELLED'));
     controller.signal.addEventListener('abort', abort, { once: true });
-    timer = setTimeout(() => { reject(appError('App 目录加载超时', 'APP_TIMEOUT')); controller.abort(); }, TIMEOUT_MS);
+    timer = setTimeout(() => { reject(appError('Tải danh mục App quá thời gian', 'APP_TIMEOUT')); controller.abort(); }, TIMEOUT_MS);
   });
   const task = Promise.resolve().then(async () => {
-    if (controller.signal.aborted) throw appError('App 目录请求已取消', 'APP_CANCELLED');
+    if (controller.signal.aborted) throw appError('Yêu cầu danh mục App đã bị hủy', 'APP_CANCELLED');
     let values = {}, body = null;
     if (ranking) {
       values = { tab_type: pg === 1 ? '26' : '18', client_req_type: '2', client_template: '2', background_selected_items: '',
@@ -151,7 +151,7 @@ async function browseList(options = {}) {
     return parsed.response;
   });
   const promise = Promise.race([task, timeout]).catch(error => fail(error.code?.startsWith('APP_') ? error
-    : appError(/TIMEOUT|ETIMEDOUT|ECONNABORTED/.test(error.code || '') ? 'App 目录加载超时' : 'App 目录网络请求失败',
+    : appError(/TIMEOUT|ETIMEDOUT|ECONNABORTED/.test(error.code || '') ? 'Tải danh mục App quá thời gian' : 'Yêu cầu mạng danh mục App thất bại',
       /TIMEOUT|ETIMEDOUT|ECONNABORTED/.test(error.code || '') ? 'APP_TIMEOUT' : 'APP_NETWORK'), sourceUrl))
     .finally(() => {
       clearTimeout(timer); controller.signal.removeEventListener('abort', abort);

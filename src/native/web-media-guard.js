@@ -48,7 +48,7 @@ function isPublicMediaUrl(value) {
 }
 
 function blockedAddress() {
-  return Object.assign(new Error('官网片源及其跳转、解析结果必须指向公网'), { code: 'ERR_WEB_MEDIA_ADDRESS', mediaRetryable: true });
+  return Object.assign(new Error('Nguồn video trang web và kết quả chuyển hướng/phân tích phải trỏ tới mạng công cộng'), { code: 'ERR_WEB_MEDIA_ADDRESS', mediaRetryable: true });
 }
 
 // The local VPN's Fake-IP route can return a different CDN result. Resolve only this
@@ -84,7 +84,7 @@ function resolveOfficialAddress() {
       });
     });
     requests.push(request);
-    const timer = setTimeout(() => request.destroy(Object.assign(new Error('官网安全 DNS 解析超时'), { code: 'ETIMEDOUT' })), 4000);
+    const timer = setTimeout(() => request.destroy(Object.assign(new Error('Phân giải DNS an toàn cho trang web quá thời gian'), { code: 'ETIMEDOUT' })), 4000);
     request.on('close', () => clearTimeout(timer));
     request.on('error', reject);
   }))).then(result => {
@@ -115,7 +115,7 @@ function webMediaRequestOptions(value, { trustedOfficialDns = false } = {}) {
       const finish = addresses => {
         if (settings.all) callback(null, addresses);
         else if (addresses.length) callback(null, addresses[0].address, addresses[0].family);
-        else callback(new Error('片源域名未解析到地址'));
+        else callback(new Error('Tên miền nguồn video không phân giải được địa chỉ'));
       };
       if (trustedOfficialDns && hosts.get(hostname.toLowerCase())?.origin === 'https://hongguoduanju.com') {
         if (settings.family === 6) return callback(blockedAddress());

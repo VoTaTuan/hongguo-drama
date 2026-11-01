@@ -43,6 +43,6 @@ export function getSearchSuggestions(keyword, history) {
   const terms = normalizeTerms([...history, ...catalogTitles]);
   return terms.filter((term) => !query || term.toLocaleLowerCase().includes(query)).slice(0, 12).map((term) => ({
     term,
-    source: history.includes(term) ? '搜索历史' : '本次浏览过的剧名',
+    source: history.includes(term) ? 'Lịch sử tìm kiếm' : 'Phim đã duyệt gần đây',
   }));
 }

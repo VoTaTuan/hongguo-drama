@@ -80,7 +80,7 @@ test('paged feed deduplicates IDs and stops on unchanged or cycling cursors', ()
   model.appendCommentPage(feed, page([{ id: '1', content: 'one' }, { id: '2', content: 'two' }], 'next'), DEFAULT_DANMAKU_SETTINGS);
   assert.equal(feed.comments.length, 2);
   assert.equal(feed.hasMore, false);
-  assert.match(feed.notice, /游标/);
+  assert.match(feed.notice, /Con trỏ|dừng tải/i);
   const other = model.createCommentFeed('123456', '654321');
   assert.throws(() => model.appendCommentPage(other, { ...page([], null, false), episode_id: '999999' }, DEFAULT_DANMAKU_SETTINGS));
   assert.equal(other.comments.length, 0);

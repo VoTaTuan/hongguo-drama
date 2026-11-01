@@ -38,7 +38,7 @@ function listHistory(series, playback, showSequels = true) {
 }
 
 function recordPlayback(previous, series, index, time, now = Date.now(), metadata = {}) {
-  if (!Number.isInteger(index) || index < 1 || !Number.isFinite(time) || time < 0) throw new Error('无效的播放进度');
+  if (!Number.isInteger(index) || index < 1 || !Number.isFinite(time) || time < 0) throw new Error('Tiến độ phát không hợp lệ');
   const baseline = previous?.knownTotal ?? totalEpisodes(series);
   const duration = metadata?.duration;
   const completed = metadata?.ended === true && Number.isFinite(duration) && duration > 0

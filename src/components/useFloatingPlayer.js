@@ -47,7 +47,7 @@ export default function useFloatingPlayer(title, onChange, onBeforeMove) {
   const toggle = useCallback(() => {
     if (popup.current && !popup.current.closed) { popup.current.close(); return; }
     const child = window.open('about:blank', 'hongguo-floating-player', 'popup,width=420,height=740');
-    if (!child) throw new Error('无法打开悬浮窗，请重试');
+    if (!child) throw new Error('Không thể mở cửa sổ nổi, vui lòng thử lại');
     popup.current = child;
     const restore = () => {
       if (popup.current !== child) return;
@@ -74,7 +74,7 @@ export default function useFloatingPlayer(title, onChange, onBeforeMove) {
       child.focus();
     } catch (error) {
       restore(); child.close();
-      throw new Error('悬浮窗初始化失败，请重试', { cause: error });
+      throw new Error('Khởi tạo cửa sổ nổi thất bại, vui lòng thử lại', { cause: error });
     }
   }, [host, onChange, moveHost]);
 

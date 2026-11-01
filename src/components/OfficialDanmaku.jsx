@@ -53,14 +53,14 @@ export function useOfficialDanmaku({ seriesId, vid, active, preferences }) {
         if (cancelled || currentFeed.current !== feed) return;
         if (!data || typeof data !== 'object') {
           feed.loaded = true;
-          feed.error = '弹幕接口不可用，可稍后重试';
+          feed.error = 'Giao diện danmaku không khả dụng, có thể thử lại sau';
           return;
         }
         appendOfficialPage(feed, data);
       } catch {
         if (!cancelled && currentFeed.current === feed) {
           feed.loaded = true;
-          feed.error = '弹幕加载失败，可稍后重试';
+          feed.error = 'Tải danmaku thất bại, có thể thử lại sau';
         }
       } finally {
         if (!cancelled && currentFeed.current === feed) finish();

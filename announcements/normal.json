@@ -1,6 +1,6 @@
 {
   "id": "release-5.3-20261101-01",
-  "title": "红果短剧 5.3 已更新",
-  "body": "新增「下载到 NAS」：先挂载共享目录，再为每部剧选择独立文件夹。视频与封面、简介、NFO 同层保存，规范分集命名，已有视频复用、缺失资料补齐；下载管理可直接打开所选目录。\n\n资料以来源实际提供为准，独立保存而非内嵌 MP4；实体 NAS 和媒体库识别尚未实测。\n\n完整说明和三端下载：https://github.com/jackotom/hongguo-drama/releases/tag/v5.3",
+  "title": "Phim Ngắn Hồng Quả 5.3 đã cập nhật",
+  "body": "Thêm tính năng \"Tải xuống NAS\": trước tiên hãy gắn kết (mount) thư mục chia sẻ, sau đó chọn thư mục riêng cho từng bộ phim. Video cùng ảnh bìa, tóm tắt, NFO được lưu cùng cấp, quy chuẩn đặt tên tập phim, tự động tái sử dụng video đã có và bổ sung thông tin còn thiếu; Quản lý tải xuống có thể mở trực tiếp thư mục đã chọn.\n\nThông tin phim dựa theo dữ liệu thực tế do nguồn cung cấp, lưu độc lập chứ không nhúng vào MP4; Nhận diện trên NAS vật lý và thư viện media chưa được thử nghiệm thực tế.\n\nXem mô tả đầy đủ và tải về cho cả 3 nền tảng: https://github.com/jackotom/hongguo-drama/releases/tag/v5.3",
   "active": true
 }

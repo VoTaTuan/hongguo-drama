@@ -41,7 +41,7 @@ export function useCommentDanmaku({ seriesId, episodeId, active }) {
         if (currentFeed.current !== feed) return;
         appendCommentPage(feed, data, preferencesRef.current);
       } catch {
-        if (currentFeed.current === feed) feed.error = '本集评论加载失败，可重试继续加载';
+        if (currentFeed.current === feed) feed.error = 'Tải bình luận tập này thất bại, có thể thử lại để tiếp tục tải';
       } finally {
         feed.loading = false;
         if (currentFeed.current === feed) refresh(value => value + 1);
@@ -57,12 +57,12 @@ export function useCommentDanmaku({ seriesId, episodeId, active }) {
     const validated = { enabled: next.enabled === true, ...normalizeDanmakuSettings(next) };
     setPreferences(validated);
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(validated)); setSaveError(''); }
-    catch { setSaveError('设置已生效，但本机保存失败'); }
+    catch { setSaveError('Cài đặt đã có hiệu lực nhưng lưu vào máy thất bại'); }
   };
   const settings = useMemo(() => normalizeDanmakuSettings(preferences), [preferences]);
-  const status = !supported ? '仅红果来源的当前集支持评论弹幕' : !enabled ? '开启后展示本集公开评论' : !active ? '播放本集后显示评论弹幕'
-    : !visible ? '' : feed.error || (feed.loading ? '正在加载本集后续评论…' : feed.notice) || (!feed.loaded ? '正在加载本集评论…'
-      : feed.comments.length ? `已读取本集 ${feed.comments.length} 条评论${feed.hasMore ? '，播放时继续加载' : '，当前可用评论已读取'}` : '本集暂无可显示的公开评论');
+  const status = !supported ? 'Chỉ hỗ trợ bình luận chạy chữ cho tập hiện tại từ nguồn Hồng Quả' : !enabled ? 'Bật để hiển thị bình luận công khai của tập này' : !active ? 'Hiển thị bình luận chạy chữ khi phát tập này'
+    : !visible ? '' : feed.error || (feed.loading ? 'Đang tải các bình luận tiếp theo…' : feed.notice) || (!feed.loaded ? 'Đang tải bình luận tập này…'
+      : feed.comments.length ? `Đã đọc ${feed.comments.length} bình luận của tập này${feed.hasMore ? ', tiếp tục tải khi phát' : ', đã đọc hết bình luận khả dụng'}` : 'Tập này tạm thời không có bình luận công khai nào để hiển thị');
   return { enabled, supported, running, settings, feed, comments: feed.comments, status, saveError, error: feed.error,
     loading: running && feed.loading, toggle: () => update({ enabled: !preferences.enabled }), update,
     reset: () => update(DEFAULT_DANMAKU_SETTINGS), retry: () => { feed.error = ''; feed.emptyPages = 0; refresh(value => value + 1); } };
@@ -153,23 +153,23 @@ export default function CommentDanmaku({ videoRef, source, available, danmaku })
 
 export function DanmakuSettings({ danmaku, onClose, panelRef, maxHeight }) {
   const { settings, update } = danmaku;
-  return <div className="danmaku-settings" ref={panelRef} role="dialog" aria-label="弹幕设置" data-player-menu style={{ maxHeight }}
+  return <div className="danmaku-settings" ref={panelRef} role="dialog" aria-label="Cài đặt Danmaku" data-player-menu style={{ maxHeight }}
     onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); } }}>
-    <div className="danmaku-settings-heading"><strong>{danmaku.sourceKind === 'official' ? '时间轴弹幕' : '本集评论'}</strong><button type="button" aria-label="关闭弹幕设置" onClick={onClose}>
+    <div className="danmaku-settings-heading"><strong>{danmaku.sourceKind === 'official' ? 'Danmaku theo dòng thời gian' : 'Bình luận tập này'}</strong><button type="button" aria-label="Đóng cài đặt Danmaku" onClick={onClose}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
     </button></div>
-    <label>弹幕来源<select aria-label="弹幕来源" value={danmaku.sourceKind || 'comments'} onChange={event => danmaku.setSource?.(event.target.value)}><option value="official">时间轴弹幕</option><option value="comments">本集评论（备用）</option></select></label>
-    <p>{danmaku.sourceKind === 'official' ? '按视频时间展示红果剧集弹幕，快进、回退和切集时重新对齐。接口异常时可手动切换本集评论。' : '本集公开评论依次展示，与视频时间无对应。全文可在「剧评与收藏」查看。'}</p>
-    <label>不透明度 <output>{settings.opacity}%</output><input autoFocus aria-label="弹幕不透明度" type="range" min="20" max="100" step="5" value={settings.opacity} onChange={event => update({ opacity: Number(event.target.value) })} /></label>
-    <label>字号 <output>{settings.fontSize}px</output><input aria-label="弹幕字号" type="range" min="16" max="32" step="2" value={settings.fontSize} onChange={event => update({ fontSize: Number(event.target.value) })} /></label>
-    <label>滚动速度 <output>{settings.speed}×</output><input aria-label="弹幕滚动速度" type="range" min="0.5" max="2" step="0.25" value={settings.speed} onChange={event => update({ speed: Number(event.target.value) })} /></label>
-    <label>显示区域<select aria-label="弹幕显示区域" value={settings.area} onChange={event => update({ area: event.target.value })}><option value="quarter">四分之一屏</option><option value="half">半屏</option><option value="full">全屏</option></select></label>
-    <label>弹幕密度<select aria-label="弹幕密度" value={settings.density} onChange={event => update({ density: event.target.value })}><option value="sparse">稀疏</option><option value="normal">适中</option><option value="dense">密集</option></select></label>
-    <label className="danmaku-filter-toggle">内置敏感词过滤<input aria-label="内置敏感词过滤" type="checkbox" checked={settings.sensitiveFilter} onChange={event => update({ sensitiveFilter: event.target.checked })} /></label>
-    <label>自定义屏蔽词<textarea aria-label="自定义屏蔽词" rows="3" maxLength="10000" value={settings.blockedWords} placeholder="每行一个词，也可用逗号分隔" onChange={event => update({ blockedWords: event.target.value })} /></label>
-    <p>内置词含常见涉政及辱骂词；自定义词始终生效。命中后整条隐藏，仅保存在本机。词库无法覆盖所有表达或变体。</p>
-    <p>默认在上半屏显示。跟随播放暂停与倍速；系统开启减少动态效果时，改为静态轮换。</p>
+    <label>Nguồn Danmaku<select aria-label="Nguồn Danmaku" value={danmaku.sourceKind || 'comments'} onChange={event => danmaku.setSource?.(event.target.value)}><option value="official">Danmaku theo dòng thời gian</option><option value="comments">Bình luận tập này (dự phòng)</option></select></label>
+    <p>{danmaku.sourceKind === 'official' ? 'Hiển thị bình luận chạy chữ khớp theo mốc thời gian video của Hồng Quả, tự động căn chỉnh khi tua hoặc chuyển tập. Khi gặp sự cố có thể chuyển sang chế độ bình luận tập.' : 'Bình luận công khai của tập hiển thị tuần tự, không theo mốc thời gian cụ thể. Xem toàn bộ nội dung tại mục "Bình luận & Yêu thích".'}</p>
+    <label>Độ mờ đục <output>{settings.opacity}%</output><input autoFocus aria-label="Độ mờ đục Danmaku" type="range" min="20" max="100" step="5" value={settings.opacity} onChange={event => update({ opacity: Number(event.target.value) })} /></label>
+    <label>Cỡ chữ <output>{settings.fontSize}px</output><input aria-label="Cỡ chữ Danmaku" type="range" min="16" max="32" step="2" value={settings.fontSize} onChange={event => update({ fontSize: Number(event.target.value) })} /></label>
+    <label>Tốc độ cuộn <output>{settings.speed}×</output><input aria-label="Tốc độ cuộn Danmaku" type="range" min="0.5" max="2" step="0.25" value={settings.speed} onChange={event => update({ speed: Number(event.target.value) })} /></label>
+    <label>Vùng hiển thị<select aria-label="Vùng hiển thị Danmaku" value={settings.area} onChange={event => update({ area: event.target.value })}><option value="quarter">1/4 màn hình</option><option value="half">Nửa màn hình</option><option value="full">Toàn màn hình</option></select></label>
+    <label>Mật độ<select aria-label="Mật độ Danmaku" value={settings.density} onChange={event => update({ density: event.target.value })}><option value="sparse">Thưa</option><option value="normal">Vừa phải</option><option value="dense">Dày đặc</option></select></label>
+    <label className="danmaku-filter-toggle">Bộ lọc từ nhạy cảm tích hợp<input aria-label="Bộ lọc từ nhạy cảm tích hợp" type="checkbox" checked={settings.sensitiveFilter} onChange={event => update({ sensitiveFilter: event.target.checked })} /></label>
+    <label>Từ khóa chặn tùy chỉnh<textarea aria-label="Từ khóa chặn tùy chỉnh" rows="3" maxLength="10000" value={settings.blockedWords} placeholder="Mỗi dòng một từ, hoặc phân tách bằng dấu phẩy" onChange={event => update({ blockedWords: event.target.value })} /></label>
+    <p>Từ khóa chặn tùy chỉnh luôn có hiệu lực, các bình luận chứa từ khóa sẽ bị ẩn và chỉ lưu trên máy này.</p>
+    <p>Mặc định hiển thị ở nửa trên màn hình. Tự động khớp theo trạng thái phát, tạm dừng và tốc độ phát.</p>
     <p role="status">{danmaku.saveError || danmaku.status}</p>
-    <div className="danmaku-settings-actions">{danmaku.error && <button type="button" onClick={danmaku.retry}>重试加载</button>}<button type="button" onClick={danmaku.reset}>恢复默认</button></div>
+    <div className="danmaku-settings-actions">{danmaku.error && <button type="button" onClick={danmaku.retry}>Thử tải lại</button>}<button type="button" onClick={danmaku.reset}>Khôi phục mặc định</button></div>
   </div>;
 }

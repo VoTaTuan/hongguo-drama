@@ -20,7 +20,7 @@ export default function AppearanceSettings({ active = true }) {
     window.electronAPI.getSettings().then(settings => {
       if (!cancelled && !changed) setZoom(settings.ui_zoom ?? 1);
     }).catch(() => {
-      if (!cancelled) setError('界面大小读取失败，请重新进入设置。');
+      if (!cancelled) setError('Không thể đọc tỉ lệ giao diện, vui lòng vào lại Cài đặt.');
     });
     return () => { cancelled = true; unsubscribe?.(); };
   }, [active]);
@@ -32,10 +32,10 @@ export default function AppearanceSettings({ active = true }) {
     setError('');
     try {
       const result = await window.electronAPI.changeWindowZoom(direction);
-      if (!result?.success) throw new Error(result?.error || '界面大小保存失败，请重试。');
+      if (!result?.success) throw new Error(result?.error || 'Lưu tỉ lệ giao diện thất bại, vui lòng thử lại.');
       setZoom(result.zoom);
     } catch (error) {
-      setError(error.message || '界面大小保存失败，请重试。');
+      setError(error.message || 'Lưu tỉ lệ giao diện thất bại, vui lòng thử lại.');
     } finally {
       zoomPending.current = false;
       setZoomBusy(false);
@@ -48,7 +48,7 @@ export default function AppearanceSettings({ active = true }) {
       setPosterPreference(event.target.value);
       setError('');
     } catch {
-      setError('海报大小保存失败，请重试。');
+      setError('Lưu kích thước poster thất bại, vui lòng thử lại.');
     }
   };
 
@@ -58,40 +58,40 @@ export default function AppearanceSettings({ active = true }) {
       setPreference(event.target.value);
       setError('');
     } catch {
-      setError('外观保存失败，请重试。');
+      setError('Lưu giao diện thất bại, vui lòng thử lại.');
     }
   };
 
   return (
     <>
     <div className="settings-group">
-      <label className="settings-label" htmlFor="appearance-theme">外观</label>
+      <label className="settings-label" htmlFor="appearance-theme">Chủ đề giao diện</label>
       <select id="appearance-theme" className="input-field select-field" value={preference} onChange={changeTheme} aria-describedby="appearance-hint">
-        <option value="system">跟随系统</option>
-        <option value="light">浅色</option>
-        <option value="dark">深色</option>
+        <option value="system">Theo hệ thống</option>
+        <option value="light">Sáng</option>
+        <option value="dark">Tối</option>
       </select>
-      <p className="settings-hint" id="appearance-hint">立即生效并自动保存。跟随系统时，外观会随系统切换。</p>
+      <p className="settings-hint" id="appearance-hint">Có hiệu lực ngay và tự động lưu. Khi chọn "Theo hệ thống", giao diện sẽ tự đổi theo cài đặt hệ điều hành.</p>
     </div>
     <div className="settings-group">
-      <span className="settings-label" id="appearance-zoom-label">界面与字号</span>
+      <span className="settings-label" id="appearance-zoom-label">Thu phóng giao diện & cỡ chữ</span>
       <div className="appearance-zoom" role="group" aria-labelledby="appearance-zoom-label" aria-describedby="appearance-zoom-hint">
-        <button type="button" className="btn btn-outline" aria-label="缩小界面与字号" disabled={zoomBusy || zoom === null || zoom <= 0.5} onClick={() => changeZoom('out')}>缩小</button>
-        <output aria-live="polite">{zoom === null ? '读取中…' : `${Math.round(zoom * 100)}%`}</output>
-        <button type="button" className="btn btn-outline" aria-label="放大界面与字号" disabled={zoomBusy || zoom === null || zoom >= 2} onClick={() => changeZoom('in')}>放大</button>
-        <button type="button" className="btn btn-outline" disabled={zoomBusy || zoom === null || zoom === 1} onClick={() => changeZoom('reset')}>恢复 100%</button>
+        <button type="button" className="btn btn-outline" aria-label="Thu nhỏ giao diện và cỡ chữ" disabled={zoomBusy || zoom === null || zoom <= 0.5} onClick={() => changeZoom('out')}>Thu nhỏ</button>
+        <output aria-live="polite">{zoom === null ? 'Đang đọc…' : `${Math.round(zoom * 100)}%`}</output>
+        <button type="button" className="btn btn-outline" aria-label="Phóng to giao diện và cỡ chữ" disabled={zoomBusy || zoom === null || zoom >= 2} onClick={() => changeZoom('in')}>Phóng to</button>
+        <button type="button" className="btn btn-outline" disabled={zoomBusy || zoom === null || zoom === 1} onClick={() => changeZoom('reset')}>Đặt lại 100%</button>
       </div>
-      <p className="settings-hint" id="appearance-zoom-hint">默认 100%，不会按屏幕分辨率自动放大。需要时可手动调整文字和按钮大小（50%–200%），立即生效并记住你的选择。</p>
+      <p className="settings-hint" id="appearance-zoom-hint">Mặc định 100%, không tự phóng to theo độ phân giải màn hình. Bạn có thể tự chỉnh kích cỡ chữ và nút (50%–200%), có hiệu lực ngay và ghi nhớ lựa chọn.</p>
     </div>
     <div className="settings-group">
-      <label className="settings-label" htmlFor="appearance-poster-size">海报大小</label>
+      <label className="settings-label" htmlFor="appearance-poster-size">Kích thước poster</label>
       <select id="appearance-poster-size" className="input-field select-field" value={posterSize} onChange={changePosterSize} aria-describedby="appearance-poster-hint">
-        <option value="small">小</option>
-        <option value="standard">标准</option>
-        <option value="large">大</option>
-        <option value="extra-large">特大</option>
+        <option value="small">Nhỏ</option>
+        <option value="standard">Tiêu chuẩn</option>
+        <option value="large">Lớn</option>
+        <option value="extra-large">Rất lớn</option>
       </select>
-      <p className="settings-hint" id="appearance-poster-hint">发现页海报随窗口宽度自动排列；调大后每行显示更少。保持原有比例，立即生效并自动保存。</p>
+      <p className="settings-hint" id="appearance-poster-hint">Poster ở trang Khám phá tự sắp xếp theo chiều rộng cửa sổ; khi tăng kích thước, mỗi hàng sẽ hiển thị ít mục hơn. Giữ nguyên tỷ lệ, có hiệu lực ngay và tự động lưu.</p>
       {error && <p className="appearance-error" role="alert">{error}</p>}
     </div>
     </>

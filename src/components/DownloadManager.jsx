@@ -4,11 +4,11 @@ import './DownloadManager.css';
 import { Download, Trash2, RefreshCw, X, Film, Square, Folder, Zap, CheckSquare, Play, Pause, Layers } from './icons';
 
 const STATUS_TEXT = {
-  pending: '等待中',
-  downloading: '下载中',
-  completed: '已完成',
-  failed: '失败',
-  stopped: '已停止',
+  pending: 'Đang chờ',
+  downloading: 'Đang tải',
+  completed: 'Đã hoàn thành',
+  failed: 'Thất bại',
+  stopped: 'Đã dừng',
 };
 
 const STATUS_ORDER = {
@@ -40,7 +40,7 @@ function sortTasks(list) {
 
 function fmtElapsed(seconds) {
   const value = Math.max(0, Math.floor(Number(seconds) || 0));
-  return value < 60 ? `${value} 秒` : value < 3600 ? `${Math.floor(value / 60)} 分 ${value % 60} 秒` : `${Math.floor(value / 3600)} 小时 ${Math.floor(value % 3600 / 60)} 分`;
+  return value < 60 ? `${value} giây` : value < 3600 ? `${Math.floor(value / 60)} phút ${value % 60} giây` : `${Math.floor(value / 3600)} giờ ${Math.floor(value % 3600 / 60)} phút`;
 }
 
 function fmtBytes(bytes) {
@@ -109,7 +109,7 @@ function DownloadManager({ onNavigate, active = true }) {
     try {
       const list = await window.electronAPI.getDownloadTasks();
       if (!activeRef.current || request !== requests.current.tasks) return;
-      if (!Array.isArray(list)) throw new Error('下载任务读取失败，请重试');
+      if (!Array.isArray(list)) throw new Error('Đọc tác vụ tải về thất bại, vui lòng thử lại');
       for (const task of list) if (task.status === 'completed' && task.hongguoInfo?.series_id) downloadedSeries.current.add(String(task.hongguoInfo.series_id));
       setTasks(list);
       setOrderVersion(value => value + 1);
@@ -117,7 +117,7 @@ function DownloadManager({ onNavigate, active = true }) {
       setSelected(previous => new Set([...previous].filter(id => ids.has(id))));
       setLoadError('');
     } catch (error) {
-      if (activeRef.current && request === requests.current.tasks) setLoadError(error.message || '下载任务读取失败，请重试');
+      if (activeRef.current && request === requests.current.tasks) setLoadError(error.message || 'Đọc tác vụ tải về thất bại, vui lòng thử lại');
     }
   }, []);
 
@@ -225,11 +225,11 @@ function DownloadManager({ onNavigate, active = true }) {
       }),
       window.electronAPI.onMergeCompleted((data) => {
         loadMergeTasks();
-        showToast(data.storageWarning || ('合并完成：' + (data.path ? data.path.split(/[\\/]/).pop() : '')), data.storageWarning ? 'error' : 'success');
+        showToast(data.storageWarning || ('Ghép hoàn tất: ' + (data.path ? data.path.split(/[\\/]/).pop() : '')), data.storageWarning ? 'error' : 'success');
       }),
       window.electronAPI.onMergeFailed((data) => {
         loadMergeTasks();
-        showToast('合并失败：' + (data.error || '未知错误'), 'error');
+        showToast('Ghép thất bại: ' + (data.error || 'Lỗi không xác định'), 'error');
       }),
     ];
     const timer = setInterval(() => {
@@ -284,20 +284,20 @@ function DownloadManager({ onNavigate, active = true }) {
           await Promise.all([refresh(), loadSeriesList()]);
           if (!res?.success) {
             const progress = Number.isFinite(res?.count) && Number.isFinite(res?.freed)
-              ? `已移除 ${res.count} 个任务记录，已释放 ${fmtSize(res.freed)}；` : '';
-            throw new Error(progress + (res?.error || '删除失败，请重试'));
+              ? `Đã xóa ${res.count} bản ghi tác vụ, đã giải phóng ${fmtSize(res.freed)}; ` : '';
+            throw new Error(progress + (res?.error || 'Xóa thất bại, vui lòng thử lại'));
           }
           showToast(deleteFiles
-            ? `已删除 ${res.count} 个任务，释放 ${fmtSize(res.freed)}`
-            : `已删除 ${res.count} 个任务记录（本地文件已保留）`);
-        } catch (error) { showToast(error.message || '删除失败，请重试', 'error'); }
+            ? `Đã xóa ${res.count} tác vụ, giải phóng ${fmtSize(res.freed)}`
+            : `Đã xóa ${res.count} bản ghi tác vụ (đã giữ lại tệp trên máy)`);
+        } catch (error) { showToast(error.message || 'Xóa thất bại, vui lòng thử lại', 'error'); }
       },
     });
   };
 
   const deleteSelected = async () => {
     if (selected.size === 0) return;
-    askDelete(tasks.filter((t) => selected.has(t.id)), '删除选中任务');
+    askDelete(tasks.filter((t) => selected.has(t.id)), 'Xóa các tác vụ đã chọn');
   };
   const retrySelected = async () => {
     if (selected.size === 0) return;
@@ -305,9 +305,9 @@ function DownloadManager({ onNavigate, active = true }) {
     setSelected(new Set());
     await refresh();
     if (res && res.success) {
-      showToast(res.count > 0 ? `已重新加入队列：${res.count} 项` : '选中项中没有可重试的任务');
+      showToast(res.count > 0 ? `Đã thêm lại vào hàng đợi: ${res.count} mục` : 'Trong các mục đã chọn không có tác vụ nào có thể thử lại');
     } else {
-      showToast((res && res.error) || '重试失败', 'error');
+      showToast((res && res.error) || 'Thử lại thất bại', 'error');
     }
   };
 
@@ -327,7 +327,7 @@ function DownloadManager({ onNavigate, active = true }) {
   const doMerge = async (compatible, require1080 = false) => {
     if (mergeRequestRef.current) return;
     if (!mergeSeriesId) {
-      showToast('请先选择要合并的短剧', 'error');
+      showToast('Vui lòng chọn phim ngắn cần ghép trước', 'error');
       return;
     }
     mergeRequestRef.current = true;
@@ -339,21 +339,21 @@ function DownloadManager({ onNavigate, active = true }) {
       const res = await window.electronAPI.mergeSeries(mergeSeriesId, '', options);
       if (dialogGeneration !== mergeDialogGenerationRef.current) return;
       if (!res || !res.success) {
-        setMergeError((res && res.error) || '合并失败');
+        setMergeError((res && res.error) || 'Ghép thất bại');
         return;
       }
       closeMergeDialog();
       await loadMergeTasks();
       const sizeGb = (res.totalBytes / 1073741824).toFixed(2);
-      const duration = res.totalDuration > 0 ? ` / ${fmtElapsed(res.totalDuration)}` : ' / 时长待探测';
+      const duration = res.totalDuration > 0 ? ` / ${fmtElapsed(res.totalDuration)}` : ' / Thời lượng chờ xác định';
       showToast(compatible
-        ? `开始兼容格式合并 ${res.count} 集（H.264，耗时较长）`
+        ? `Bắt đầu ghép định dạng tương thích ${res.count} tập (H.264, mất nhiều thời gian hơn)`
         : require1080
-        ? `开始高质量分辨率合并 ${res.count} 集`
-        : `开始合并 ${res.count} 集（约 ${sizeGb} GB${duration}）`);
+        ? `Bắt đầu ghép chất lượng độ phân giải cao ${res.count} tập`
+        : `Bắt đầu ghép ${res.count} tập (khoảng ${sizeGb} GB${duration})`);
       if (res.codecWarning) showToast(res.codecWarning, 'error');
     } catch (e) {
-      if (dialogGeneration === mergeDialogGenerationRef.current) setMergeError('合并异常: ' + e.message);
+      if (dialogGeneration === mergeDialogGenerationRef.current) setMergeError('Lỗi khi ghép: ' + e.message);
     } finally {
       mergeRequestRef.current = false;
       setMerging(false);
@@ -363,10 +363,10 @@ function DownloadManager({ onNavigate, active = true }) {
   const cancelMerge = async (id) => {
     try {
       const result = await window.electronAPI.cancelMerge(id);
-      if (!result?.success) throw new Error(result?.error || '取消请求失败，请重试');
-      showToast('取消请求已发送，正在等待合并停止。');
+      if (!result?.success) throw new Error(result?.error || 'Yêu cầu hủy thất bại, vui lòng thử lại');
+      showToast('Yêu cầu hủy đã được gửi, đang chờ dừng ghép.');
       await loadMergeTasks();
-    } catch (error) { showToast(error.message || '取消请求失败，请重试', 'error'); }
+    } catch (error) { showToast(error.message || 'Yêu cầu hủy thất bại, vui lòng thử lại', 'error'); }
   };
 
   const openMergedFile = async (path) => {
@@ -379,7 +379,7 @@ function DownloadManager({ onNavigate, active = true }) {
     const res = await window.electronAPI.pauseAll();
     await refresh();
     await loadQueue();
-    showToast(res && res.success ? `已暂停 ${res.count} 个任务` : '暂停失败', res && res.success ? 'success' : 'error');
+    showToast(res && res.success ? `Đã tạm dừng ${res.count} tác vụ` : 'Tạm dừng thất bại', res && res.success ? 'success' : 'error');
   };
 
   // 一键启动：把所有已停止/失败/等待中的任务重新排队开跑
@@ -387,7 +387,7 @@ function DownloadManager({ onNavigate, active = true }) {
     const res = await window.electronAPI.resumeAll();
     await refresh();
     await loadQueue();
-    showToast(res && res.success ? `已启动 ${res.count} 个任务` : '启动失败', res && res.success ? 'success' : 'error');
+    showToast(res && res.success ? `Đã khởi chạy ${res.count} tác vụ` : 'Khởi chạy thất bại', res && res.success ? 'success' : 'error');
   };
 
   // 重试失败/已停止的任务
@@ -397,9 +397,9 @@ function DownloadManager({ onNavigate, active = true }) {
     const res = await window.electronAPI.retryTasks(ids);
     await refresh();
     if (res && res.success) {
-      showToast(`已重新加入队列：${res.count} 项`);
+      showToast(`Đã thêm lại vào hàng đợi: ${res.count} mục`);
     } else {
-      showToast((res && res.error) || '重试失败', 'error');
+      showToast((res && res.error) || 'Thử lại thất bại', 'error');
     }
   };
 
@@ -407,17 +407,17 @@ function DownloadManager({ onNavigate, active = true }) {
   const selectAllFailed = () => {
     const ids = tasks.filter(needsManualRetry).map((t) => t.id);
     if (ids.length === 0) {
-      showToast('没有失败或已停止的任务');
+      showToast('Không có tác vụ nào thất bại hoặc đã dừng');
       return;
     }
     setSelected(new Set(ids));
-    showToast(`已选中 ${ids.length} 项，可点「重试选中」重新下载`);
+    showToast(`Đã chọn ${ids.length} mục, có thể nhấn "Thử lại mục đã chọn" để tải lại`);
   };
 
   const clearCompleted = async () => {
     const done = tasks.filter((t) => t.status === 'completed');
     if (done.length === 0) return;
-    askDelete(done, '清空已完成任务');
+    askDelete(done, 'Xóa sạch các tác vụ đã hoàn thành');
   };
 
   // Progress updates change row values, not the established series/episode order.
@@ -459,19 +459,19 @@ function DownloadManager({ onNavigate, active = true }) {
     <div className="dm-container">
       <div className="dm-header">
         <div className="dm-title">
-          <h2>下载管理</h2>
+          <h2>Quản lý tải về</h2>
         </div>
         <div className="dm-stats">
-          <span className="stat stat-active">进行中 {activeCount}</span>
-          {retryingCount > 0 && <span className="stat stat-active">等待重试 {retryingCount}</span>}
-          <span className="stat stat-done">已完成 {completedCount}</span>
-          <span className="stat stat-fail">失败/停止 {failedCount}</span>
+          <span className="stat stat-active">Đang xử lý {activeCount}</span>
+          {retryingCount > 0 && <span className="stat stat-active">Chờ thử lại {retryingCount}</span>}
+          <span className="stat stat-done">Đã hoàn thành {completedCount}</span>
+          <span className="stat stat-fail">Thất bại/Dừng {failedCount}</span>
         </div>
       </div>
 
-      <div className="dm-usage-notice" role="note" aria-label="下载风险与使用倡议">
-        <p><strong>临时故障会自动重试。</strong>红果片源下载遇到断网、超时或传输不完整时，最多追加 3 次重试，分别等待 10、30、60 秒；取源暂不可用时等待 3、8、15 分钟。等待期间可停止或立即重试。权限限制、磁盘错误等需手动处理；重试后仍失败的任务会保留。</p>
-        <p>本软件用于学习研究，建议体验后 24 小时内自行删除；请勿冒充官方或以虚假授权名义收费。开源权利义务以 GPLv3 为准。上述倡议不代表获得平台或版权方授权，也不构成免责承诺。</p>
+      <div className="dm-usage-notice" role="note" aria-label="Rủi ro tải về và khuyến cáo sử dụng">
+        <p><strong>Sự cố tạm thời sẽ tự động thử lại.</strong> Khi tải phim nguồn Hồng Quả gặp mất mạng, hết thời gian hoặc truyền tải không đầy đủ, sẽ tự động thử lại tối đa 3 lần với khoảng cách 10, 30, 60 giây; khi nguồn tạm thời không khả dụng sẽ chờ 3, 8, 15 phút. Trong thời gian chờ có thể dừng hoặc thử lại ngay. Lỗi quyền truy cập, lỗi ổ đĩa cần xử lý thủ công; các tác vụ vẫn thất bại sau khi thử lại sẽ được giữ nguyên.</p>
+        <p>Phần mềm này phục vụ mục đích học tập và nghiên cứu, khuyến nghị tự xóa trong vòng 24 giờ sau khi trải nghiệm; vui lòng không mạo danh chính thức hoặc thu phí dưới danh nghĩa ủy quyền giả. Quyền và nghĩa vụ mã nguồn mở tuân theo GPLv3. Các khuyến cáo trên không đại diện cho việc được nền tảng hoặc chủ sở hữu bản quyền cấp phép, cũng như không tạo thành cam kết miễn trừ trách nhiệm.</p>
       </div>
 
       <div className="dm-toolbar">
@@ -479,49 +479,49 @@ function DownloadManager({ onNavigate, active = true }) {
           className="btn btn-primary"
           onClick={resumeAll}
           disabled={!tasks.some(task => ['stopped', 'failed', 'pending'].includes(task.status))}
-          title="把等待中 / 已停止 / 失败的任务全部排队开跑"
+          title="Xếp hàng và khởi chạy lại tất cả tác vụ đang chờ / đã dừng / thất bại"
         >
           <Play size={15} />
-          全部开始
+          Bắt đầu tất cả
         </button>
         <button
           className="btn btn-outline"
           onClick={pauseAll}
           disabled={pausableCount === 0}
-          title="暂停全部：取消正在下载的并清空等待队列"
+          title="Tạm dừng tất cả: Hủy các tác vụ đang tải và làm trống hàng đợi chờ"
         >
           <Pause size={15} />
-          全部暂停
+          Tạm dừng tất cả
         </button>
         <button
           className="btn btn-outline"
           onClick={retryAllFailed}
           disabled={failedCount === 0}
-          title="把所有失败/已停止的任务一次性重新加入下载队列"
+          title="Thêm lại tất cả tác vụ thất bại/đã dừng vào hàng đợi tải về"
         >
           <Zap size={15} />
-          {failedCount > 0 ? `重试失败 (${failedCount})` : '重试失败'}
+          {failedCount > 0 ? `Thử lại thất bại (${failedCount})` : 'Thử lại thất bại'}
         </button>
-        <details className="dm-more-actions" ref={moreActionsRef}><summary>更多操作</summary><div className="dm-more-menu" onClick={event => { const button = event.target.closest('button'); if (button && !button.disabled) moreActionsRef.current.open = false; }}>
+        <details className="dm-more-actions" ref={moreActionsRef}><summary>Thao tác khác</summary><div className="dm-more-menu" onClick={event => { const button = event.target.closest('button'); if (button && !button.disabled) moreActionsRef.current.open = false; }}>
         <button
           className="btn btn-outline"
           onClick={selectAllFailed}
           disabled={failedCount === 0}
-          title="一键勾选所有失败/已停止的任务"
+          title="Chọn tất cả tác vụ thất bại/đã dừng chỉ bằng một cú nhấp chuột"
         >
           <CheckSquare size={15} />
-          {failedCount > 0 ? `选中失败项 (${failedCount})` : '选中失败项'}
+          {failedCount > 0 ? `Chọn các mục lỗi (${failedCount})` : 'Chọn các mục lỗi'}
         </button>
         <button className="btn btn-outline" onClick={retrySelected} disabled={retryableSelectedCount === 0}>
           <RefreshCw size={15} />
-          重试选中 ({retryableSelectedCount})
+          Thử lại mục đã chọn ({retryableSelectedCount})
         </button>
         <button className="btn btn-outline" onClick={clearCompleted} disabled={completedCount === 0}>
           <X size={15} />
-          清空已完成
+          Xóa sạch đã hoàn thành
         </button>
         <button className="btn btn-outline" onClick={clearSelection} disabled={selected.size === 0}>
-          取消选择
+          Bỏ chọn
         </button>
         <button
           className="btn btn-outline"
@@ -530,13 +530,13 @@ function DownloadManager({ onNavigate, active = true }) {
             await refresh();
             await loadSeriesList();
             showToast(r && r.success
-              ? (r.count > 0 ? `已从磁盘补回 ${r.count} 条下载记录` : '没有发现未登记的文件')
-              : '扫描失败');
+              ? (r.count > 0 ? `Đã bổ sung ${r.count} bản ghi tải về từ ổ đĩa` : 'Không phát hiện tệp nào chưa đăng ký')
+              : 'Quét thất bại');
           }}
-          title="扫描下载目录，把磁盘上已有但列表里没有的文件补登记回来"
+          title="Quét thư mục tải về, bổ sung lại các tệp đã có trên đĩa nhưng chưa có trong danh sách"
         >
           <RefreshCw size={15} />
-          扫描下载目录
+          Quét thư mục tải về
         </button>
         </div></details>
         {seriesList.length > 0 && (
@@ -546,7 +546,7 @@ function DownloadManager({ onNavigate, active = true }) {
               value={mergeSeriesId}
               onFocus={() => loadSeriesList()}
               onChange={(e) => setMergeSeriesId(e.target.value)}
-              title="选择要合并的短剧"
+              title="Chọn phim ngắn cần ghép"
             >
               {seriesList.map((s) => (
                 <option key={s.series_id} value={String(s.series_id)}>
@@ -554,21 +554,21 @@ function DownloadManager({ onNavigate, active = true }) {
                 </option>
               ))}
             </select>
-            <button className="btn btn-outline" onClick={openMergeDialog} disabled={merging} title="把该剧已下载的分集合并成单个 mp4">
+            <button className="btn btn-outline" onClick={openMergeDialog} disabled={merging} title="Ghép các tập đã tải của phim này thành một tệp mp4 duy nhất">
               <Layers size={15} />
-              {merging ? '合并中...' : '合并整部剧'}
+              {merging ? 'Đang ghép...' : 'Ghép toàn bộ phim'}
             </button>
           </div>
         )}
         {onNavigate && (
           <button className="btn btn-primary dm-toolbar-end" onClick={() => onNavigate('download')}>
             <Film size={15} />
-            添加下载
+            Thêm lượt tải
           </button>
         )}
       </div>
 
-      {seriesList.length > 0 && <p className="settings-hint dm-merge-hint">选择剧名后点“合并整部剧”，导出该剧全部已下载分集，无需勾选任务。</p>}
+      {seriesList.length > 0 && <p className="settings-hint dm-merge-hint">Chọn tên phim rồi nhấn "Ghép toàn bộ phim" để xuất tất cả tập đã tải của phim đó mà không cần tích chọn từng tác vụ.</p>}
 
       {/* 合并任务 */}
       {mergeTasks.length > 0 && (
@@ -578,29 +578,29 @@ function DownloadManager({ onNavigate, active = true }) {
               <Layers size={16} />
               <div className="merge-body">
                 <div className="merge-title">
-                  合并《{m.seriesTitle}》· {m.done || 0}/{m.total} 集
+                  Ghép《{m.seriesTitle}》· {m.done || 0}/{m.total} tập
                 </div>
                 <div className="merge-sub">
-                  {m.status === 'running' && <>{m.stageText || '正在合并'}{m.method && m.method !== m.stageText ? ` · ${m.method}` : ''}</>}
+                  {m.status === 'running' && <>{m.stageText || 'Đang ghép'}{m.method && m.method !== m.stageText ? ` · ${m.method}` : ''}</>}
                   {m.status === 'completed' && (
                     <>
-                      已完成 · {m.outputName}
+                      Đã hoàn thành · {m.outputName}
                       {m.outputBytes ? ` · ${fmtBytes(m.outputBytes)}` : ''}
                     </>
                   )}
-                  {m.status === 'failed' && <>失败：{m.error}</>}
-                  {m.status === 'stopped' && <>{m.error || '已取消'}</>}
+                  {m.status === 'failed' && <>Thất bại: {m.error}</>}
+                  {m.status === 'stopped' && <>{m.error || 'Đã hủy'}</>}
                 </div>
                 <div className="merge-metrics">
-                  <span>{m.stage === 'checking' ? `已检查 ${m.checked || 0}` : `已处理 ${m.done || 0}`} / {m.total} 集</span>
-                  <span>用时 {fmtElapsed(m.status === 'running' ? (Date.now() - m.startTime) / 1000 : m.elapsedSeconds || ((m.endTime || m.startTime) - m.startTime) / 1000)}</span>
-                  {m.status === 'running' && m.speed > 0 && <span>{m.speed.toFixed(1)} 倍速</span>}
-                  {m.status === 'running' && Number.isFinite(m.etaSeconds) && <span>本阶段约剩 {fmtElapsed(m.etaSeconds)}</span>}
+                  <span>{m.stage === 'checking' ? `Đã kiểm tra ${m.checked || 0}` : `Đã xử lý ${m.done || 0}`} / {m.total} tập</span>
+                  <span>Thời gian {fmtElapsed(m.status === 'running' ? (Date.now() - m.startTime) / 1000 : m.elapsedSeconds || ((m.endTime || m.startTime) - m.startTime) / 1000)}</span>
+                  {m.status === 'running' && m.speed > 0 && <span>{m.speed.toFixed(1)}x</span>}
+                  {m.status === 'running' && Number.isFinite(m.etaSeconds) && <span>Giai đoạn này còn khoảng {fmtElapsed(m.etaSeconds)}</span>}
                 </div>
                 {(m.codecWarning || m.storageWarning || m.cleanupWarning) && <div className="merge-note">{m.storageWarning || m.cleanupWarning || m.codecWarning}</div>}
                 {(m.status === 'running') && (
                   <div className="dm-progress">
-                    <div className="dm-progress-bar" role="progressbar" aria-label="合并进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={m.progress || 0}>
+                    <div className="dm-progress-bar" role="progressbar" aria-label="Tiến độ ghép" aria-valuemin={0} aria-valuemax={100} aria-valuenow={m.progress || 0}>
                       <div className="dm-progress-fill" style={{ width: `${m.progress || 0}%` }} />
                     </div>
                     <span className="dm-pct">{m.progress || 0}%</span>
@@ -609,25 +609,25 @@ function DownloadManager({ onNavigate, active = true }) {
               </div>
               <div className="merge-actions">
                 {m.status === 'running' && (
-                  <button className="icon-btn" title="取消合并" onClick={() => cancelMerge(m.id)}>
+                  <button className="icon-btn" title="Hủy ghép" onClick={() => cancelMerge(m.id)}>
                     <X size={16} />
                   </button>
                 )}
                 {m.status === 'completed' && (
-                  <button className="icon-btn" title="打开所在文件夹" onClick={() => openMergedFile(m.output)}>
+                  <button className="icon-btn" title="Mở thư mục chứa" onClick={() => openMergedFile(m.output)}>
                     <Folder size={16} />
                   </button>
                 )}
                 {m.status !== 'running' && (
                   <button
                     className="icon-btn icon-btn-danger"
-                    title="移除记录"
+                    title="Xóa bản ghi"
                     onClick={async () => {
                       try {
                         const result = await window.electronAPI.deleteMergeTask(m.id);
-                        if (!result?.success) throw new Error(result?.error || '移除记录失败');
+                        if (!result?.success) throw new Error(result?.error || 'Xóa bản ghi thất bại');
                         await loadMergeTasks();
-                      } catch (error) { showToast(error.message || '移除记录失败，请重试', 'error'); }
+                      } catch (error) { showToast(error.message || 'Xóa bản ghi thất bại, vui lòng thử lại', 'error'); }
                     }}
                   >
                     <Trash2 size={16} />
@@ -643,48 +643,48 @@ function DownloadManager({ onNavigate, active = true }) {
         <div className="dm-queue-bar">
           <span className="dm-queue-running">
             <span className="dm-queue-pulse" />
-            正在并发下载 <b>{queue.active}</b> / {queue.maxConcurrent}
-            {queue.queued > 0 ? <> · 队列等待 <b>{queue.queued}</b></> : null}
+            Đang tải đồng thời <b>{queue.active}</b> / {queue.maxConcurrent}
+            {queue.queued > 0 ? <> · Đang chờ trong hàng đợi <b>{queue.queued}</b></> : null}
           </span>
           <span className="dm-queue-hint">
-            并发数可在「设置 → 最大并发下载数」调整
+            Số luồng đồng thời có thể điều chỉnh tại "Cài đặt → Số lượt tải đồng thời tối đa"
           </span>
         </div>
       )}
 
       {retryableSelectedCount > 0 && (
         <div className="dm-hint">
-          已选中 <b>{retryableSelectedCount}</b> 个失败项，点
-          <b>「重试选中」</b> 即会重新下载（无需重新解析）。
+          Đã chọn <b>{retryableSelectedCount}</b> mục thất bại, nhấn
+          <b>「Thử lại mục đã chọn」</b> để tải lại (không cần phân tích lại).
         </div>
       )}
 
-      {loadError && <div className="alert alert-error" role="alert">{loadError}<button className="btn btn-outline btn-sm" onClick={refresh}>重新加载</button></div>}
+      {loadError && <div className="alert alert-error" role="alert">{loadError}<button className="btn btn-outline btn-sm" onClick={refresh}>Tải lại</button></div>}
       {tasks.length > 0 && <div className="dm-pagination">
         <div className="dm-selection-summary">
           <button className="btn btn-outline btn-sm" onClick={allSelected ? clearSelection : selectAll}
-            title={allSelected ? '取消所有分页中的选择' : `选中全部 ${tasks.length} 项，包含其他分页`}>
-            <CheckSquare size={15} />{allSelected ? '取消全选' : '全选'}
+            title={allSelected ? 'Bỏ chọn ở tất cả các trang' : `Chọn tất cả ${tasks.length} mục, bao gồm cả các trang khác`}>
+            <CheckSquare size={15} />{allSelected ? 'Hủy chọn tất cả' : 'Chọn tất cả'}
           </button>
           <button className="btn btn-outline btn-sm" onClick={deleteSelected} disabled={selected.size === 0}
-            title="删除所有分页中已选的任务，确认时可选择是否同时删除本地文件">
-            <Trash2 size={15} />删除已选（{selected.size}项）
+            title="Xóa các tác vụ đã chọn ở tất cả các trang, khi xác nhận có thể chọn xóa kèm tệp trên máy hay không">
+            <Trash2 size={15} />Xóa mục đã chọn ({selected.size} mục)
           </button>
-        <span>共 {tasks.length} 项 · 当前 {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, tasks.length)} 项{selected.size > 0 ? ` · 已选 ${selected.size} 项（跨页保留）` : ''}</span>
+        <span>Tổng cộng {tasks.length} mục · Hiện tại {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, tasks.length)} mục{selected.size > 0 ? ` · Đã chọn ${selected.size} mục (giữ qua các trang)` : ''}</span>
         </div>
-        <nav aria-label="下载任务分页">
-          <button className="btn btn-outline btn-sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>上一页</button>
-          <span>第 {currentPage} / {pageCount} 页</span>
-          <button className="btn btn-outline btn-sm" disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)}>下一页</button>
+        <nav aria-label="Phân trang tác vụ tải về">
+          <button className="btn btn-outline btn-sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Trang trước</button>
+          <span>Trang {currentPage} / {pageCount}</span>
+          <button className="btn btn-outline btn-sm" disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)}>Trang sau</button>
         </nav>
       </div>}
 
       {tasks.length === 0 ? (
         <div className="dm-empty">
           <Download size={40} />
-          <p>暂无下载任务</p>
-          <p className="dm-empty-sub">搜索剧名或粘贴分享链接，选择想保存的集数。</p>
-          {onNavigate && <button className="btn btn-primary" onClick={() => onNavigate('download')}>添加第一部短剧</button>}
+          <p>Chưa có tác vụ tải về</p>
+          <p className="dm-empty-sub">Tìm kiếm tên phim hoặc dán liên kết chia sẻ, chọn các tập bạn muốn lưu.</p>
+          {onNavigate && <button className="btn btn-primary" onClick={() => onNavigate('download')}>Thêm bộ phim đầu tiên</button>}
         </div>
       ) : (
         <div className="dm-list">
@@ -697,7 +697,7 @@ function DownloadManager({ onNavigate, active = true }) {
             const pct = task.progress || 0;
             return (
               <div key={task.id} className={`dm-task ${isSel ? 'selected' : ''}`} onClick={() => toggleSelect(task.id)}>
-                <input className="dm-task-select" type="checkbox" aria-label={`选择 ${task.title || task.filename}`} checked={isSel} onClick={(e) => e.stopPropagation()} onChange={() => toggleSelect(task.id)} />
+                <input className="dm-task-select" type="checkbox" aria-label={`Chọn ${task.title || task.filename}`} checked={isSel} onClick={(e) => e.stopPropagation()} onChange={() => toggleSelect(task.id)} />
                 <div className="dm-task-cover">
                   {task.videoInfo && task.videoInfo.cover ? (
                     <img src={task.videoInfo.cover} alt="" />
@@ -708,8 +708,8 @@ function DownloadManager({ onNavigate, active = true }) {
                 <div className="dm-task-body">
                   <div className="dm-task-title">{task.title || task.filename}</div>
                   <div className="dm-task-meta">
-                    <span className={`status-tag status-${waitingRetry ? 'pending' : task.status}`}>{waitingRetry ? '等待重试' : STATUS_TEXT[task.status] || task.status}</span>
-                    {waitingRetry && <span className="dm-size">自动重试 {task.sourceRetries}/3 · {new Date(task.retryAt).toLocaleTimeString('zh-CN', { hour12: false })} 后排队</span>}
+                    <span className={`status-tag status-${waitingRetry ? 'pending' : task.status}`}>{waitingRetry ? 'Chờ thử lại' : STATUS_TEXT[task.status] || task.status}</span>
+                    {waitingRetry && <span className="dm-size">Tự động thử lại {task.sourceRetries}/3 · Xếp hàng sau {new Date(task.retryAt).toLocaleTimeString('vi-VN', { hour12: false })}</span>}
                     {task.status === 'downloading' && task.totalBytes > 0 && (
                       <span className="dm-size">{fmtBytes(task.receivedBytes)} / {fmtBytes(task.totalBytes)}</span>
                     )}
@@ -728,34 +728,34 @@ function DownloadManager({ onNavigate, active = true }) {
                 </div>
                 <div className="dm-task-actions" onClick={(e) => e.stopPropagation()}>
                   {canStop && (
-                    <button className="icon-btn" title={waitingRetry ? '停止自动重试' : '停止'} onClick={async () => {
+                    <button className="icon-btn" title={waitingRetry ? 'Dừng tự động thử lại' : 'Dừng'} onClick={async () => {
                       try {
                         const result = await window.electronAPI.stopDownload(task.id);
-                        if (!result?.success) throw new Error(result?.error || '停止失败');
+                        if (!result?.success) throw new Error(result?.error || 'Dừng thất bại');
                         await refresh();
-                      } catch (error) { showToast(error.message || '停止失败', 'error'); }
+                      } catch (error) { showToast(error.message || 'Dừng thất bại', 'error'); }
                     }}>
                       <Square size={16} />
                     </button>
                   )}
                   {canRetry && (
-                    <button className="icon-btn" title={waitingRetry ? '立即重试' : '重试'} onClick={async () => {
+                    <button className="icon-btn" title={waitingRetry ? 'Thử lại ngay' : 'Thử lại'} onClick={async () => {
                       try {
                         const result = await window.electronAPI.retryTask(task.id);
-                        if (!result?.success) throw new Error(result?.error || '重试失败');
-                      } catch (error) { showToast(error.message || '重试失败', 'error'); }
+                        if (!result?.success) throw new Error(result?.error || 'Thử lại thất bại');
+                      } catch (error) { showToast(error.message || 'Thử lại thất bại', 'error'); }
                     }}>
                       <RefreshCw size={16} />
                     </button>
                   )}
-                  <button className="icon-btn" title="打开文件夹" onClick={() => window.electronAPI.openFolder(task.id)}>
+                  <button className="icon-btn" title="Mở thư mục" onClick={() => window.electronAPI.openFolder(task.id)}>
                     <Folder size={16} />
                   </button>
                   <button
                     className="icon-btn icon-btn-danger"
-                    title="删除任务（可选是否同时删除本地文件）"
+                    title="Xóa tác vụ (tùy chọn xóa kèm tệp trên máy hay không)"
                     onClick={() => {
-                      askDelete([task], `删除《${task.hongguoInfo && task.hongguoInfo.series_title ? task.hongguoInfo.series_title : ''}》第 ${task.hongguoInfo ? task.hongguoInfo.vid_index : ''} 集任务`);
+                      askDelete([task], `Xóa tác vụ tập ${task.hongguoInfo ? task.hongguoInfo.vid_index : ''} của《${task.hongguoInfo && task.hongguoInfo.series_title ? task.hongguoInfo.series_title : ''}》`);
                     }}
                   >
                     <Trash2 size={16} />
@@ -776,29 +776,29 @@ function DownloadManager({ onNavigate, active = true }) {
       {/* 合并格式选择 */}
       {mergeAsk && (
         <div className="player-confirm-mask" onClick={closeMergeDialog}>
-          <div className="player-confirm" role="dialog" aria-modal="true" aria-label={confirmAsk ? confirmAsk.title : '合并导出'} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
+          <div className="player-confirm" role="dialog" aria-modal="true" aria-label={confirmAsk ? confirmAsk.title : 'Xuất ghép video'} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
             <div className="player-confirm-title" style={{ color: 'var(--accent)' }}>
               <Layers size={17} />
-              合并整部剧
+              Ghép toàn bộ phim
             </div>
             <div className="player-confirm-msg">
-              <p>将《{seriesList.find((series) => String(series.series_id) === mergeSeriesId)?.series_title || '所选短剧'}》的全部已下载分集合并为一个 mp4。未下载的分集不会自动补齐。</p>
-              <p><b>高质量分辨率合并</b>：逐集检查实际文件，全部达到1080P才能开始；有低清分集请选快速或兼容合并。</p>
-              <p><b>快速合并</b>：优先无损拼接，保留每段原分辨率，部分设备可能不兼容。</p>
-              <p><b>兼容合并</b>：必要时转为H.264/AAC，仍保留每段原分辨率，处理较慢。</p>
-              <p>三种方式都保留原文件，只合并已下载分集，不自动补齐，也不会把低清变成真高清。</p>
+              <p>Ghép tất cả các tập đã tải của《{seriesList.find((series) => String(series.series_id) === mergeSeriesId)?.series_title || 'phim đã chọn'}》thành một tệp mp4 duy nhất. Các tập chưa tải sẽ không tự động tải bù.</p>
+              <p><b>Ghép chất lượng độ phân giải cao</b>: Kiểm tra từng tập tệp thực tế, tất cả phải đạt 1080P mới bắt đầu; nếu có tập độ phân giải thấp vui lòng chọn ghép nhanh hoặc tương thích.</p>
+              <p><b>Ghép nhanh</b>: Ưu tiên ghép nối không giảm chất lượng, giữ nguyên độ phân giải gốc của từng đoạn, một số thiết bị có thể không tương thích.</p>
+              <p><b>Ghép tương thích</b>: Khi cần sẽ chuyển mã sang H.264/AAC, vẫn giữ độ phân giải gốc từng đoạn, xử lý chậm hơn.</p>
+              <p>Cả ba cách đều giữ lại tệp gốc, chỉ ghép các tập đã tải, không tự động tải bù, và cũng không biến tập độ nét thấp thành độ nét cao thật sự.</p>
               {mergeError && <p className="alert-error" role="alert">{mergeError}</p>}
             </div>
             <div className="player-confirm-foot">
               <button className="btn btn-outline" onClick={() => doMerge(false, true)} disabled={merging}>
-                高质量分辨率合并
+                Ghép chất lượng cao
               </button>
-              <button className="btn btn-outline" onClick={closeMergeDialog}>取消</button>
+              <button className="btn btn-outline" onClick={closeMergeDialog}>Hủy</button>
               <button className="btn btn-outline" onClick={() => doMerge(true)} disabled={merging}>
-                兼容合并（H.264）
+                Ghép tương thích (H.264)
               </button>
               <button className="btn btn-primary" onClick={() => doMerge(false)} disabled={merging}>
-                智能快速合并
+                Ghép nhanh thông minh
               </button>
             </div>
           </div>
@@ -808,14 +808,14 @@ function DownloadManager({ onNavigate, active = true }) {
       {/* 删除确认（可选是否连本地文件一起删） */}
       {confirmAsk && (
         <div className="player-confirm-mask" onClick={() => setConfirmAsk(null)}>
-          <div className="player-confirm" role="dialog" aria-modal="true" aria-label={confirmAsk ? confirmAsk.title : '合并导出'} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
+          <div className="player-confirm" role="dialog" aria-modal="true" aria-label={confirmAsk ? confirmAsk.title : 'Xuất ghép video'} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
             <div className="player-confirm-title">
               <Trash2 size={17} />
               {confirmAsk.title}
             </div>
             <div className="player-confirm-msg">
-              <p>共 {confirmAsk.count} 个任务，其中 {confirmAsk.withFile} 个已下载完成
-                {confirmAsk.estBytes > 0 ? `（约 ${fmtSize(confirmAsk.estBytes)}）` : ''}。</p>
+              <p>Tổng cộng {confirmAsk.count} tác vụ, trong đó có {confirmAsk.withFile} tác vụ đã tải xong
+                {confirmAsk.estBytes > 0 ? ` (khoảng ${fmtSize(confirmAsk.estBytes)})` : ''}.</p>
               <label className="dm-confirm-check">
                 <input
                   type="checkbox"
@@ -823,16 +823,16 @@ function DownloadManager({ onNavigate, active = true }) {
                   onChange={(e) => setConfirmAsk({ ...confirmAsk, _del: e.target.checked })}
                 />
                 <span>
-                  同时删除本地文件
-                  {confirmAsk.estBytes > 0 ? `（释放约 ${fmtSize(confirmAsk.estBytes)}）` : ''}
+                  Đồng thời xóa tệp trên máy
+                  {confirmAsk.estBytes > 0 ? ` (giải phóng khoảng ${fmtSize(confirmAsk.estBytes)})` : ''}
                 </span>
               </label>
               <p className="dm-confirm-hint">
-                不勾选则只移除任务记录，磁盘上的视频文件会保留（可在文件管理器里自行管理）。
+                Nếu không chọn, chỉ xóa bản ghi tác vụ, tệp video trên ổ đĩa sẽ được giữ lại (bạn có thể tự quản lý trong trình quản lý tệp).
               </p>
             </div>
             <div className="player-confirm-foot">
-              <button className="btn btn-outline" onClick={() => setConfirmAsk(null)}>取消</button>
+              <button className="btn btn-outline" onClick={() => setConfirmAsk(null)}>Hủy</button>
               <button
                 className={`btn ${confirmAsk._del ? 'btn-danger-solid' : 'btn-primary'}`}
                 onClick={async () => {
@@ -842,7 +842,7 @@ function DownloadManager({ onNavigate, active = true }) {
                   await fn(del);
                 }}
               >
-                {confirmAsk._del ? '删除任务和文件' : '仅删除记录'}
+                {confirmAsk._del ? 'Xóa tác vụ và tệp' : 'Chỉ xóa bản ghi'}
               </button>
             </div>
           </div>

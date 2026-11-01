@@ -14,7 +14,7 @@ export default function AnnouncementSettings() {
     const unsubscribe = api.onAnnouncementPreferences(next => { revision++; if (active) setPreferences(next); });
     const current = revision;
     api.getAnnouncementPreferences().then(next => { if (active && current === revision) setPreferences(next); })
-      .catch(() => { if (active) setError('公告设置读取失败，请重启软件后重试。'); });
+      .catch(() => { if (active) setError('Không thể đọc cài đặt thông báo, vui lòng khởi động lại ứng dụng rồi thử lại.'); });
     return () => { active = false; unsubscribe(); };
   }, []);
   const update = async (key, enabled) => {
@@ -24,9 +24,9 @@ export default function AnnouncementSettings() {
     setError('');
     try {
       const result = await window.electronAPI.setAnnouncementPreferences({ [key]: enabled });
-      if (!result?.success) setError(result?.error || '保存失败，原公告设置已保留。');
+      if (!result?.success) setError(result?.error || 'Lưu thất bại, cài đặt thông báo ban đầu được giữ nguyên.');
       else setPreferences(result.preferences);
-    } catch { setError('保存失败，原公告设置已保留。'); }
+    } catch { setError('Lưu thất bại, cài đặt thông báo ban đầu được giữ nguyên.'); }
     finally { pending.current = false; setSaving(false); }
   };
   const viewCurrent = async () => {
@@ -38,19 +38,19 @@ export default function AnnouncementSettings() {
       const result = await window.electronAPI.getCurrentAnnouncement();
       if (result?.announcement) {
         window.dispatchEvent(new CustomEvent('hongguo-show-current-announcement', { detail: result.announcement }));
-      } else setManualMessage(result?.error || '当前暂无可查看的公告。');
-    } catch { setManualMessage('公告读取失败，请稍后重试。'); }
+      } else setManualMessage(result?.error || 'Hiện tại không có thông báo nào.');
+    } catch { setManualMessage('Đọc thông báo thất bại, vui lòng thử lại sau.'); }
     finally { manualPending.current = false; setReading(false); }
   };
   return <div className="settings-group">
-    <span className="settings-label">公告通知</span>
+    <span className="settings-label">Thông báo hệ thống</span>
     <label className="proxy-switch-row"><input type="checkbox" checked={preferences?.normalEnabled === false} disabled={!preferences || saving}
-      onChange={event => update('normalEnabled', !event.target.checked)} /><span className="proxy-switch-text">关闭普通公告<em>开启后不读取、不展示普通公告；软件升级后也保持关闭</em></span></label>
+      onChange={event => update('normalEnabled', !event.target.checked)} /><span className="proxy-switch-text">Tắt thông báo thông thường<em>Khi bật tùy chọn này, hệ thống sẽ không đọc hoặc hiển thị thông báo thường; vẫn duy trì tắt sau khi nâng cấp phần mềm</em></span></label>
     <label className="proxy-switch-row"><input type="checkbox" checked={preferences?.emergencyEnabled === false} disabled={!preferences || saving}
-      onChange={event => update('emergencyEnabled', !event.target.checked)} /><span className="proxy-switch-text">关闭紧急公告<em>开启后停止紧急公告检查；重新接收后，已提醒过的公告也不会重复</em></span></label>
-    <p className="settings-hint">更改立即保存。接收紧急公告时每 5 分钟检查一次，每条只提醒一次；不会受普通公告的“今日不提醒”和“版本更新前不提醒”影响。</p>
-    <button type="button" className="btn btn-outline" disabled={reading} aria-busy={reading} onClick={viewCurrent}>{reading ? '正在读取公告…' : '查看当前公告'}</button>
-    <p className="settings-hint">手动查看不受自动接收开关或免提醒设置限制。</p>
+      onChange={event => update('emergencyEnabled', !event.target.checked)} /><span className="proxy-switch-text">Tắt thông báo khẩn cấp<em>Khi bật tùy chọn này, hệ thống ngừng kiểm tra thông báo khẩn; khi bật lại, các thông báo đã xem sẽ không lặp lại</em></span></label>
+    <p className="settings-hint">Thay đổi có hiệu lực ngay. Khi nhận thông báo khẩn, hệ thống kiểm tra 5 phút một lần, mỗi thông báo chỉ nhắc một lần; không bị ảnh hưởng bởi tùy chọn "Không nhắc lại hôm nay" của thông báo thường.</p>
+    <button type="button" className="btn btn-outline" disabled={reading} aria-busy={reading} onClick={viewCurrent}>{reading ? 'Đang tải thông báo…' : 'Xem thông báo hiện tại'}</button>
+    <p className="settings-hint">Xem thủ công không bị giới hạn bởi công tắc tự động hoặc thiết lập miễn nhắc nhở.</p>
     {manualMessage && <p className="settings-hint" role="status">{manualMessage}</p>}
     {error && <p className="alert alert-error" role="alert">{error}</p>}
   </div>;

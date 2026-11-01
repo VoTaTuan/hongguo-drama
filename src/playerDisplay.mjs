@@ -9,6 +9,6 @@ export function formatClock(value = new Date()) {
 export function formatQualityMeta(width, height) {
   const w = Number(width) || 0;
   const h = Number(height) || 0;
-  if (w <= 0 || h <= 0) return '当前画面 等待视频信息';
-  return `当前画面 ${Math.min(w, h)}P（${w} × ${h}）`;
+  if (w <= 0 || h <= 0) return 'Hình ảnh hiện tại: Đang chờ thông tin video';
+  return `Hình ảnh hiện tại: ${Math.min(w, h)}P (${w} × ${h})`;
 }

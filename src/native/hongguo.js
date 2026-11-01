@@ -90,7 +90,7 @@ async function apiCall(apiPath, body, retries = 3, timeout = 25000, deadline = 0
   const q = { ...COMMON_QUERY, _rticket: Date.now().toString() };
   for (let i = 0; i < retries; i++) {
     const remaining = deadline ? deadline - Date.now() : timeout;
-    if (remaining <= 0) throw new Error('请求超时');
+    if (remaining <= 0) throw new Error('Yêu cầu quá thời gian');
     const signal = {}; // 供错误信息回溯（HTTP 状态 / 字节数 / CDN logid）
     try {
       const res = await axios.post(API + apiPath, body, {
@@ -111,7 +111,7 @@ async function apiCall(apiPath, body, retries = 3, timeout = 25000, deadline = 0
       if (buf.length === 0) {
         // 服务端返回 200 但无任何内容：网关在做业务处理前就丢弃了请求
         const err = new Error(
-          `接口返回空响应（HTTP 200，0 字节）${signal.logid ? ' logid=' + signal.logid : ''}`
+          `API trả về phản hồi rỗng (HTTP 200, 0 byte)${signal.logid ? ' logid=' + signal.logid : ''}`
         );
         err.code = 'EMPTY_RESPONSE';
         err.emptyResponse = true;
@@ -122,7 +122,7 @@ async function apiCall(apiPath, body, retries = 3, timeout = 25000, deadline = 0
       try {
         return JSON.parse(text);
       } catch (e) {
-        const err = new Error(`响应不是合法 JSON（HTTP 200，${buf.length} 字节）: ${text.slice(0, 100)}`);
+        const err = new Error(`Phản hồi không phải JSON hợp lệ (HTTP 200, ${buf.length} byte): ${text.slice(0, 100)}`);
         err.detail = signal;
         throw err;
       }
@@ -230,16 +230,16 @@ function parseEpisodeListHtml(html, seriesId) {
   if (!data || data.isSuccess === false || !/^\d{1,30}$/.test(String(detail?.series_id || '')) ||
       String(detail.series_id) !== String(seriesId) ||
       (data.series_id != null && String(data.series_id) !== String(seriesId))) {
-    throw new Error('官网返回的剧集与请求不一致或缺少剧集身份');
+    throw new Error('Phim từ trang web chính thức không khớp với yêu cầu hoặc thiếu định danh phim');
   }
-  if (!Array.isArray(detail.vid_list)) throw new Error('官网页面未找到分集数据（vid_list）');
+  if (!Array.isArray(detail.vid_list)) throw new Error('Trang web chính thức không tìm thấy dữ liệu tập phim (vid_list)');
   const vids = detail.vid_list.map(String);
   if (vids.some(vid => !/^\d{1,30}$/.test(vid)) || new Set(vids).size !== vids.length) {
-    throw new Error('官网分集数据异常');
+    throw new Error('Dữ liệu tập phim trên trang web chính thức bất thường');
   }
-  if (!vids.length) throw new Error('官网分集列表为空');
+  if (!vids.length) throw new Error('Danh sách tập trên trang web chính thức rỗng');
 
-  const seriesTitle = typeof detail.series_name === 'string' ? detail.series_name : '未命名短剧';
+  const seriesTitle = typeof detail.series_name === 'string' ? detail.series_name : 'Phim_chua_dat_ten';
   const cover = typeof detail.series_cover === 'string' ? detail.series_cover : '';
   const accessible = detail.accessible_episode_cnt;
   const webAccessibleEpisodes = accessible != null && /^\d+$/.test(String(accessible))
@@ -329,15 +329,15 @@ async function fetchPlayUrlFromWeb(vid, sid, onFailure) {
 function shareHttpUrl(value, base) {
   // Validate before Axios or URL parsing: network timeouts cannot stop synchronous data: parsing.
   if (typeof value !== 'string' || value.length > 4096 || /[\s\\]/.test(value)) {
-    throw new Error('分享链接无效或过长');
+    throw new Error('Liên kết chia sẻ không hợp lệ hoặc quá dài');
   }
   let url;
   try { url = new URL(value, base); }
-  catch (_) { throw new Error('请输入有效的 HTTP 或 HTTPS 分享链接'); }
+  catch (_) { throw new Error('Vui lòng nhập liên kết chia sẻ HTTP hoặc HTTPS hợp lệ'); }
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.href.length > 4096) {
-    throw new Error('仅支持不含账号密码的 HTTP 或 HTTPS 分享链接');
+    throw new Error('Chỉ hỗ trợ liên kết chia sẻ HTTP hoặc HTTPS không chứa tài khoản/mật khẩu');
   }
-  if (!isPublicMediaUrl(url.href)) throw new Error('分享链接必须指向公网 HTTP 或 HTTPS 地址');
+  if (!isPublicMediaUrl(url.href)) throw new Error('Liên kết chia sẻ phải trỏ đến địa chỉ HTTP hoặc HTTPS công khai');
   return url.href;
 }
 
@@ -361,10 +361,10 @@ function seriesIdFromShareUrl(value) {
 }
 
 async function resolveSeriesId(shareUrl) {
-  if (typeof shareUrl !== 'string' || shareUrl.length > 8192) throw new Error('分享内容无效或过长');
+  if (typeof shareUrl !== 'string' || shareUrl.length > 8192) throw new Error('Nội dung chia sẻ không hợp lệ hoặc quá dài');
   const trimmed = shareUrl.trim();
   if (trimmed.startsWith('custom:')) {
-    if (!/^custom:[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}:\d{1,30}$/i.test(trimmed)) throw new Error('自定义剧集编号无效');
+    if (!/^custom:[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}:\d{1,30}$/i.test(trimmed)) throw new Error('Mã phim tùy chỉnh không hợp lệ');
     require('./custom-source').assertEnabled(trimmed);
     return trimmed.toLowerCase();
   }
@@ -378,7 +378,7 @@ async function resolveSeriesId(shareUrl) {
   // Decode URL values separately so encoded digits cannot be truncated by the text matcher.
   const initialId = finalUrl ? seriesIdFromShareUrl(finalUrl) : '';
   if (initialId) return initialId;
-  if (!finalUrl) throw new Error('请输入有效的 HTTP 或 HTTPS 分享链接，或剧集 ID');
+  if (!finalUrl) throw new Error('Vui lòng nhập liên kết chia sẻ HTTP hoặc HTTPS hợp lệ, hoặc ID phim');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 25000);
   let bodyText;
@@ -399,7 +399,7 @@ async function resolveSeriesId(shareUrl) {
         validateStatus: (status) => (status >= 200 && status < 300) || [301, 302, 303, 307, 308].includes(status),
       });
       if (res.status >= 300 && res.status < 400) {
-        if (redirects >= 5) throw new Error('分享链接跳转次数过多');
+        if (redirects >= 5) throw new Error('Liên kết chia sẻ chuyển hướng quá nhiều lần');
         finalUrl = shareHttpUrl(res.headers.location, finalUrl);
         const redirectId = seriesIdFromShareUrl(finalUrl);
         if (redirectId) return redirectId;
@@ -420,7 +420,7 @@ async function resolveSeriesId(shareUrl) {
   const match = bodyText.match(/video_series_id=(\d{1,30})(?!\d)/)
     || bodyText.match(/"(?:video_id|series_id)"\s*:\s*"(\d{1,30})"/);
   if (match) return match[1];
-  throw new Error('无法从分享链接解析剧集 ID');
+  throw new Error('Không thể phân tích ID phim từ liên kết chia sẻ');
 }
 
 /**
@@ -438,9 +438,9 @@ async function fetchEpisodeList(seriesId, options = {}) {
 function describeWebLoadError(error) {
   const message = String(error?.message || '');
   if (error?.code === 'ERR_CANCELED' || /aborted|canceled|timeout|ECONNABORTED|ETIMEDOUT/i.test(message)) {
-    return '加载超时或连接中断';
+    return 'Tải quá thời gian hoặc kết nối bị gián đoạn';
   }
-  return message || '加载失败';
+  return message || 'Tải thất bại';
 }
 
 async function fetchEpisodeListFromWeb(seriesId, deadline = 0) {
@@ -449,7 +449,7 @@ async function fetchEpisodeListFromWeb(seriesId, deadline = 0) {
   const id = String(seriesId);
   const race = async (timeout, trustedOfficialDns) => {
     const budget = deadline ? Math.min(timeout, deadline - Date.now()) : timeout;
-    if (budget <= 0) throw new Error('加载超时或连接中断');
+    if (budget <= 0) throw new Error('Tải quá thời gian hoặc kết nối bị gián đoạn');
     const controller = new AbortController();
     const attempts = [
       () => fetchSiteHtml(`${SITE_ORIGIN}/player/${encodeURIComponent(id)}`, budget, controller.signal, { trustedOfficialDns }),
@@ -475,7 +475,7 @@ async function fetchEpisodeListFromWeb(seriesId, deadline = 0) {
     const wait = deadline ? Math.min(600, Math.max(0, deadline - Date.now())) : 600;
     await new Promise(resolve => setTimeout(resolve, wait));
     if (firstValue) return firstValue; // the first attempt won; do not add traffic
-    if (deadline && Date.now() >= deadline) throw new Error('加载超时或连接中断');
+    if (deadline && Date.now() >= deadline) throw new Error('Tải quá thời gian hoặc kết nối bị gián đoạn');
     // Keep trusted DNS for speed, but also retry the ordinary resolver so a blocked
     // DoH endpoint cannot take the whole episode list down.
     return Promise.any([race(3500, true), race(3500, false)]);
@@ -484,7 +484,7 @@ async function fetchEpisodeListFromWeb(seriesId, deadline = 0) {
   catch (aggregate) {
     const nested = (aggregate.errors || [aggregate]).flatMap(error => error?.errors || [error]);
     const second = nested.find(error => error !== firstError) || nested[0] || aggregate;
-    throw new Error(`${describeWebLoadError(firstError)}；重试失败：${describeWebLoadError(second)}`);
+    throw new Error(`${describeWebLoadError(firstError)}; Thử lại thất bại: ${describeWebLoadError(second)}`);
   }
 }
 
@@ -504,7 +504,7 @@ async function fetchEpisodeListFresh(seriesId, { deadline = 0 } = {}) {
   try {
     j = await apiCall("/novel/player/multi_video_detail/preload/v1", body, 3, 25000, deadline);
   } catch (e) {
-    throw new Error(`获取分集失败：官网数据源（${webError.message}），备用接口（${e.message}）`);
+    throw new Error(`Lấy danh sách tập thất bại: Nguồn trang web chính thức (${webError.message}), API dự phòng (${e.message})`);
   }
   if (!j || j.code !== 0) {
     throw new Error("detail API 失败: " + JSON.stringify(j || {}).slice(0, 200));
@@ -514,7 +514,7 @@ async function fetchEpisodeListFresh(seriesId, { deadline = 0 } = {}) {
   // Never take the first key from an object: a mismatched response must fail closed.
   const sid = Object.prototype.hasOwnProperty.call(d, requested) ? requested : '';
   if (!sid) {
-    throw new Error("备用接口返回的剧集与请求不一致");
+    throw new Error("Phim từ API dự phòng không khớp với yêu cầu");
   }
   const vd = d[sid]?.video_data || {};
   if (vd.series_id && String(vd.series_id) !== sid) {
@@ -522,7 +522,7 @@ async function fetchEpisodeListFresh(seriesId, { deadline = 0 } = {}) {
   }
   const vl = vd.video_list || [];
   if (vl.some(item => item?.series_id && String(item.series_id) !== sid)) {
-    throw new Error("备用接口返回了其他剧集的分集");
+    throw new Error("API dự phòng trả về các tập của phim khác");
   }
   const eps = vl.map((item) => ({
     vid: String(item.vid),
@@ -532,11 +532,11 @@ async function fetchEpisodeListFresh(seriesId, { deadline = 0 } = {}) {
     series_title: vd.series_title || '',
     cover: vd.series_cover || vd.cover_url || item.cover_url || '',
   }));
-  if (!eps.length) throw new Error('备用接口分集列表为空');
+  if (!eps.length) throw new Error('Danh sách tập từ API dự phòng rỗng');
   eps.sort((a, b) => a.vid_index - b.vid_index);
   return {
     series_id: String(sid),
-    series_title: vd.series_title || '未命名短剧',
+    series_title: vd.series_title || 'Phim_chua_dat_ten',
     cover: vd.series_cover || vd.cover_url || (eps[0] && eps[0].cover) || '',
     total: eps.length,
     episodes: eps,
@@ -651,24 +651,24 @@ function sourceFailure(source, error) {
     const detail = Object.hasOwn(descriptions, reason) ? descriptions[reason]
       : /^HTTP_[3-5]\d{2}$/.test(reason) ? `HTTP ${reason.slice(5)}` : '';
     return { source, code: /^(?:TIMEOUT|NETWORK_ERROR|HTTP_[3-5]\d{2})$/.test(reason) ? reason : code,
-      message: `匿名播放设备注册失败${detail ? `（${detail}）` : ''}，请检查网络，10 秒后重试` };
+      message: `Đăng ký thiết bị phát ẩn danh thất bại${detail ? ` (${detail})` : ''}, vui lòng kiểm tra mạng, thử lại sau 10 giây` };
   }
   const status = Number(error?.status || error?.response?.status || message.match(/HTTP\s+(\d{3})/)?.[1]);
-  if (status >= 300 && status <= 599) return { source, code: `HTTP_${status}`, message: `请求失败（HTTP ${status}）` };
-  if (code === 'SECURITY_BLOCKED' || code.startsWith('ERR_WEB_MEDIA_')) return { source, code: 'SECURITY_BLOCKED', message: '片源地址被安全校验阻止' };
+  if (status >= 300 && status <= 599) return { source, code: `HTTP_${status}`, message: `Yêu cầu thất bại (HTTP ${status})` };
+  if (code === 'SECURITY_BLOCKED' || code.startsWith('ERR_WEB_MEDIA_')) return { source, code: 'SECURITY_BLOCKED', message: 'Địa chỉ nguồn phim bị chặn bởi kiểm tra an toàn' };
   if (code === 'EMPTY_RESPONSE' || error?.emptyResponse || /接口返回空响应/.test(message)) {
-    return { source, code: 'EMPTY_RESPONSE', message: '播放接口空响应，可能是签名或设备鉴权问题' };
+    return { source, code: 'EMPTY_RESPONSE', message: 'API phát phản hồi rỗng, có thể do chữ ký hoặc xác thực thiết bị' };
   }
-  if (['ECONNABORTED', 'ETIMEDOUT', 'TIMEOUT'].includes(code) || /超时|timeout/i.test(message)) return { source, code: 'TIMEOUT', message: '请求超时' };
-  if (['ENOTFOUND', 'EAI_AGAIN', 'ECONNRESET', 'ECONNREFUSED', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE', 'ERR_NETWORK', 'ERR_CANCELED'].includes(code)) return { source, code: 'NETWORK_ERROR', message: '网络连接失败，请稍后重试' };
-  if (code === 'PREVIEW_ONLY') return { source, code, message: '网页仅提供预览，未作为完整片源' };
+  if (['ECONNABORTED', 'ETIMEDOUT', 'TIMEOUT'].includes(code) || /超时|timeout/i.test(message)) return { source, code: 'TIMEOUT', message: 'Yêu cầu quá thời gian' };
+  if (['ENOTFOUND', 'EAI_AGAIN', 'ECONNRESET', 'ECONNREFUSED', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE', 'ERR_NETWORK', 'ERR_CANCELED'].includes(code)) return { source, code: 'NETWORK_ERROR', message: 'Kết nối mạng thất bại, vui lòng thử lại sau' };
+  if (code === 'PREVIEW_ONLY') return { source, code, message: 'Trang web chỉ cung cấp bản xem trước, không phải nguồn phim đầy đủ' };
   if (code === 'QUALITY_UNAVAILABLE') return { source, code, message: ['720p', '1080p'].includes(error?.quality)
-    ? `本集暂无尺寸可确认且满足 ${error.quality} 的 H.264/HEVC 片源，未降级` : '未取得满足所选清晰度的片源，未降级' };
-  if (code === 'NO_COMPATIBLE_SOURCE') return { source, code, message: '本集暂未提供兼容的 H.264/HEVC 片源' };
-  if (code === 'BUSINESS_REJECTED') return { source, code, message: '接口暂时拒绝本次请求' };
-  if (code === 'MISSING_MODEL' || /未返回目录数据/.test(message)) return { source, code: 'MISSING_MODEL', message: '接口未返回本集片源模型' };
-  if (code === 'INVALID_RESPONSE' || /空响应|有效数据|目录数据不完整|JSON/.test(message)) return { source, code: 'INVALID_RESPONSE', message: '片源数据无法解析' };
-  return { source, code: 'NO_PLAYABLE_SOURCE', message: '暂未取得有效片源' };
+    ? `Tập này tạm thời không có nguồn H.264/HEVC kích thước xác định và thỏa mãn ${error.quality}, chưa hạ cấp` : 'Chưa lấy được nguồn phim thỏa mãn độ phân giải đã chọn, chưa hạ cấp' };
+  if (code === 'NO_COMPATIBLE_SOURCE') return { source, code, message: 'Tập này tạm thời chưa cung cấp nguồn phim H.264/HEVC tương thích' };
+  if (code === 'BUSINESS_REJECTED') return { source, code, message: 'API tạm thời từ chối yêu cầu lần này' };
+  if (code === 'MISSING_MODEL' || /未返回目录数据/.test(message)) return { source, code: 'MISSING_MODEL', message: 'API không trả về mô hình nguồn phim của tập này' };
+  if (code === 'INVALID_RESPONSE' || /空响应|有效数据|目录数据不完整|JSON/.test(message)) return { source, code: 'INVALID_RESPONSE', message: 'Dữ liệu nguồn phim không thể phân tích' };
+  return { source, code: 'NO_PLAYABLE_SOURCE', message: 'Tạm thời chưa lấy được nguồn phim khả dụng' };
 }
 
 function unavailableSources(sources, quality = 'auto') {
@@ -924,7 +924,7 @@ function rebuildMoov(data, moovOff, moovSize, top) {
             newType = original || (avc && !hevc ? 'avc1' : hevc && !avc ? 'hvc1' : null);
             if (!['avc1', 'avc3', 'hvc1', 'hev1'].includes(newType)
               || (newType.startsWith('avc') ? !avc || hevc : !hevc || avc)) {
-              throw new Error('无法确定加密视频的原始编码（codec），请更换片源重试。');
+              throw new Error('Không thể xác định codec gốc của video mã hóa, vui lòng đổi nguồn phim rồi thử lại.');
             }
           }
           const entry = Buffer.alloc(8 + hdrSize);

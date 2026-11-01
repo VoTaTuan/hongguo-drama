@@ -32,13 +32,13 @@ export default function SequelFinder({ seriesId, active = true, timeoutMs = 2500
     const version = ++request.current;
     clearTimer();
     setOpen(true); setLoading(true); setError(''); setPartial(false); setResults([]);
-    // 主进程查询可能因为站点页面卡住而长时间不返回；前端兜底，避免一直转圈。
+    // Truy vấn tiến trình chính có thể không trả về trong thời gian dài do trang web bị treo; frontend xử lý dự phòng để tránh xoay vòng liên tục.
     const timerId = setTimeout(() => {
       if (version !== request.current) return;
       if (timer.current === timerId) timer.current = 0;
       request.current++;
       setLoading(false);
-      setError('查询超时，请稍后重试。');
+      setError('Hết thời gian tìm kiếm, vui lòng thử lại sau.');
     }, Math.max(1, Number(timeoutMs) || 25000));
     timer.current = timerId;
     try {
@@ -47,7 +47,7 @@ export default function SequelFinder({ seriesId, active = true, timeoutMs = 2500
       if (local?.success) setResults(local.results || []);
       const result = await window.electronAPI.findSeriesSequels(seriesId);
       if (version !== request.current) return;
-      if (!result?.success) throw new Error(result?.error || '查询失败，请重试');
+      if (!result?.success) throw new Error(result?.error || 'Tìm kiếm thất bại, vui lòng thử lại');
       setResults(current => {
         const merged = new Map((result.results || []).map(item => [String(item.series_id), item]));
         for (const item of current) if (!merged.has(String(item.series_id))) merged.set(String(item.series_id), item);
@@ -56,9 +56,9 @@ export default function SequelFinder({ seriesId, active = true, timeoutMs = 2500
       setPartial(result.partial === true);
       setError(result.error || '');
     } catch (failure) {
-      if (version === request.current) setError(failure.message || '查询失败，请重试');
+      if (version === request.current) setError(failure.message || 'Tìm kiếm thất bại, vui lòng thử lại');
     } finally {
-      // 只清理本次查询自己的计时器；旧请求晚到不能打断新查询的超时保护。
+      // Chỉ hủy timer của phiên truy vấn hiện tại
       if (timer.current === timerId) { clearTimeout(timerId); timer.current = 0; }
       if (version === request.current) setLoading(false);
     }
@@ -75,37 +75,37 @@ export default function SequelFinder({ seriesId, active = true, timeoutMs = 2500
       if (!result?.success && result?.code === 'SERIES_NOT_FOUND') {
         const detail = await window.electronAPI.searchResolve(sequel.series_id);
         if (version !== request.current) return;
-        if (!detail?.success) throw new Error(detail?.error || '续作详情暂不可用');
+        if (!detail?.success) throw new Error(detail?.error || 'Thông tin phần tiếp theo tạm thời chưa khả dụng');
         const episode = detail.data?.episodes?.find(item => !item.locked);
-        if (!episode) throw new Error('续作暂时没有可播放的分集');
+        if (!episode) throw new Error('Phần tiếp theo tạm thời chưa có tập có thể phát');
         result = await window.electronAPI.playSeries({ seriesId: sequel.series_id, vidIndex: episode.vid_index });
         if (version !== request.current) return;
       }
-      if (!result?.success) throw new Error(result?.error || '打开播放器失败，请重试');
+      if (!result?.success) throw new Error(result?.error || 'Mở trình phát thất bại, vui lòng thử lại');
       setOpen(false);
     } catch (failure) {
-      if (version === request.current) setError(failure.message || '打开失败，请重试');
+      if (version === request.current) setError(failure.message || 'Mở thất bại, vui lòng thử lại');
     } finally {
       if (version === request.current) { setOpening(''); openingRef.current = false; }
     }
   };
 
   if (!active || !seriesId) return null;
-  return <section className="sequel-finder" aria-label="查找当前剧的下一季">
+  return <section className="sequel-finder" aria-label="Tìm phần tiếp theo của phim này">
     <div className="sequel-finder-actions">
       <button type="button" className="btn btn-outline btn-sm" onClick={find} disabled={loading || !!opening}
-        aria-expanded={open} aria-controls="sequel-finder-results">{loading ? '正在查找…' : open ? error ? '重试' : '重新查找' : '查找下一季'}</button>
-      {open && <button type="button" className="btn btn-outline btn-sm" onClick={close}>收起</button>}
+        aria-expanded={open} aria-controls="sequel-finder-results">{loading ? 'Đang tìm…' : open ? error ? 'Thử lại' : 'Tìm lại' : 'Tìm phần tiếp theo'}</button>
+      {open && <button type="button" className="btn btn-outline btn-sm" onClick={close}>Thu gọn</button>}
     </div>
     {open && <div id="sequel-finder-results" className="sequel-finder-results">
-      <p>可能的续作，请核对剧名</p>
-      {loading && <p role="status">{results.length ? '已找到本地记录，正在补充查询…' : '正在查找下一季…'}</p>}
+      <p>Phần tiếp theo có thể có, vui lòng đối chiếu tên phim</p>
+      {loading && <p role="status">{results.length ? 'Đã tìm thấy bản ghi cục bộ, đang bổ sung tìm kiếm…' : 'Đang tìm phần tiếp theo…'}</p>}
       {error && <p className="sequel-finder-error" role="alert">{error}</p>}
-      {partial && <p role="status">部分查询未完成，可稍后重试。</p>}
-      {!loading && !results.length && <p role="status">{error || partial ? '查询未完成，暂时无法判断是否有下一季。' : '暂未找到下一季，可稍后再查。'}</p>}
+      {partial && <p role="status">Một số kết quả chưa tải xong, bạn có thể thử lại sau.</p>}
+      {!loading && !results.length && <p role="status">{error || partial ? 'Tìm kiếm chưa hoàn tất, tạm thời chưa xác định được phần tiếp theo.' : 'Chưa tìm thấy phần tiếp theo, bạn có thể kiểm tra lại sau.'}</p>}
       {!!results.length && <ul className="sequel-finder-list">{results.map(sequel => <li key={sequel.series_id}>
         <button type="button" className="btn btn-outline btn-sm" onClick={() => play(sequel)} disabled={!!opening}
-          aria-label={`播放可能的续作《${sequel.series_title}》`}>{sequel.series_title}{opening === sequel.series_id ? ' · 打开中…' : ''}</button>
+          aria-label={`Phát phần tiếp theo "${sequel.series_title}"`}>{sequel.series_title}{opening === sequel.series_id ? ' · Đang mở…' : ''}</button>
       </li>)}</ul>}
     </div>}
   </section>;

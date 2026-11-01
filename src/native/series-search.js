@@ -22,9 +22,9 @@ function nextSeasonQueries(base, season) {
 // One primary search plus at most two supplements; never recursively expand upstream results.
 async function searchSeries(keyword, search, knownSeries = [], { afterSeason = 1, deadline = 0 } = {}) {
   const kw = String(keyword || '').trim();
-  if (!kw || kw.length > 200) return { success: false, results: [], error: '请输入 1 至 200 字的搜索词' };
+  if (!kw || kw.length > 200) return { success: false, results: [], error: 'Vui lòng nhập từ khóa tìm kiếm từ 1 đến 200 ký tự' };
   const primary = await search(kw, { fuzzy: true, deadline });
-  if (!primary?.success) return primary || { success: false, results: [], error: '搜索暂不可用' };
+  if (!primary?.success) return primary || { success: false, results: [], error: 'Tìm kiếm tạm thời không khả dụng' };
   const results = [...(primary.results || [])], parsed = seasonTitle(kw);
   let queries = [];
   if (parsed.base && !parsed.invalid && parsed.season <= 99) {

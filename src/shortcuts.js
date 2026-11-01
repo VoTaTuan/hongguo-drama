@@ -1,15 +1,15 @@
 export const SHORTCUT_STORAGE_KEY = 'hongguo:preview:playback-shortcuts:v1';
 export const SHORTCUT_EVENT = 'hongguo:playback-shortcuts-changed';
 export const SHORTCUT_ACTIONS = [
-  { id: 'play', label: '播放 / 暂停', key: 'space' },
-  { id: 'backward', label: '快退 5 秒', key: 'arrowleft', repeat: true },
-  { id: 'forward', label: '快进 5 秒', key: 'arrowright', repeat: true },
-  { id: 'previous', label: '上一集', key: 'arrowup' },
-  { id: 'next', label: '下一集', key: 'arrowdown' },
-  { id: 'autoNext', label: '切换连播', key: 'a' },
-  { id: 'slower', label: '减速 0.25 倍', key: 's', repeat: true },
-  { id: 'faster', label: '加速 0.25 倍', key: 'd', repeat: true },
-  { id: 'fullscreen', label: '切换全屏', key: 'f' },
+  { id: 'play', label: 'Phát / Tạm dừng', key: 'space' },
+  { id: 'backward', label: 'Tua lại 5 giây', key: 'arrowleft', repeat: true },
+  { id: 'forward', label: 'Tua tới 5 giây', key: 'arrowright', repeat: true },
+  { id: 'previous', label: 'Tập trước', key: 'arrowup' },
+  { id: 'next', label: 'Tập tiếp theo', key: 'arrowdown' },
+  { id: 'autoNext', label: 'Bật/tắt phát liên tục', key: 'a' },
+  { id: 'slower', label: 'Giảm tốc 0.25x', key: 's', repeat: true },
+  { id: 'faster', label: 'Tăng tốc 0.25x', key: 'd', repeat: true },
+  { id: 'fullscreen', label: 'Toàn màn hình', key: 'f' },
 ];
 export const DEFAULT_SHORTCUTS = Object.freeze(Object.fromEntries(SHORTCUT_ACTIONS.map(action => [action.id, action.key])));
 const KEY_PATTERN = /^(shift\+)?([a-z0-9]|space|arrowleft|arrowright|arrowup|arrowdown)$/;
@@ -25,7 +25,7 @@ export function shortcutKey(event) {
 }
 
 export function formatShortcut(value) {
-  const names = { space: '空格', arrowleft: '←', arrowright: '→', arrowup: '↑', arrowdown: '↓' };
+  const names = { space: 'Space', arrowleft: '←', arrowright: '→', arrowup: '↑', arrowdown: '↓' };
   return value.split('+').map(key => names[key] || (key === 'shift' ? 'Shift' : key.toUpperCase())).join(' + ');
 }
 
@@ -33,8 +33,8 @@ export function validateShortcuts(bindings) {
   const seen = new Map();
   for (const action of SHORTCUT_ACTIONS) {
     const key = bindings?.[action.id];
-    if (typeof key !== 'string' || !KEY_PATTERN.test(key) || key === 'shift+space') return `${action.label}的按键不可用`;
-    if (seen.has(key)) return `与「${seen.get(key)}」冲突，请换一个按键`;
+    if (typeof key !== 'string' || !KEY_PATTERN.test(key) || key === 'shift+space') return `Phím cho "${action.label}" không hợp lệ`;
+    if (seen.has(key)) return `Bị trùng với "${seen.get(key)}", vui lòng chọn phím khác`;
     seen.set(key, action.label);
   }
   return '';

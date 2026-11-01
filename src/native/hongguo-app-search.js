@@ -31,19 +31,19 @@ async function defaultRequest(signed, deadline) {
     const code = error.code === 'ETIMEDOUT' || error.name === 'AbortError' || error.name === 'TimeoutError' ? 'APP_TIMEOUT'
       : /未返回有效数据|空响应/i.test(error.message) ? 'APP_EMPTY'
       : error.code || 'APP_NETWORK';
-    throw appError(code === 'APP_TIMEOUT' ? 'App 搜索超时' : 'App 搜索暂不可用', code);
+    throw appError(code === 'APP_TIMEOUT' ? 'Tìm kiếm trên App quá thời gian' : 'Tìm kiếm trên App tạm thời không khả dụng', code);
   }
 }
 
 function parseSearchPayload(payload, { page = 1 } = {}) {
   page = parseSearchInteger(page);
-  if (page === null || page < 1 || page > 50) throw appError('App 搜索页码需为 1 至 50 的整数', 'APP_INPUT');
-  if (!payload || typeof payload !== 'object') throw appError('App 搜索返回空响应', 'APP_EMPTY');
-  if (Number(payload.code ?? 0) !== 0) throw appError('App 搜索返回业务错误', 'APP_BUSINESS');
+  if (page === null || page < 1 || page > 50) throw appError('Số trang tìm kiếm App phải là số nguyên từ 1 đến 50', 'APP_INPUT');
+  if (!payload || typeof payload !== 'object') throw appError('Tìm kiếm trên App trả về phản hồi rỗng', 'APP_EMPTY');
+  if (Number(payload.code ?? 0) !== 0) throw appError('Tìm kiếm trên App trả về lỗi nghiệp vụ', 'APP_BUSINESS');
   const tabs = Array.isArray(payload.search_tabs) ? payload.search_tabs : payload.data?.search_tabs;
-  if (!Array.isArray(tabs)) throw appError('App 搜索数据结构异常', 'APP_SCHEMA');
+  if (!Array.isArray(tabs)) throw appError('Cấu trúc dữ liệu tìm kiếm App bất thường', 'APP_SCHEMA');
   const tab = tabs.find(item => Number(item?.tab_type) === SEARCH_TAB);
-  if (!tab) throw appError('App 搜索暂未返回短剧结果', 'APP_TAB_MISSING');
+  if (!tab) throw appError('Tìm kiếm App tạm thời chưa trả về kết quả phim ngắn', 'APP_TAB_MISSING');
   const seen = new Set(), results = [];
   for (const cell of Array.isArray(tab.data) ? tab.data : []) {
     const video = (Array.isArray(cell?.video_data) ? cell.video_data : [])
@@ -84,16 +84,16 @@ function parseSearchPayload(payload, { page = 1 } = {}) {
 
 async function searchApp(keyword, { page = 1, cursor = null, deadline = 0, request = defaultRequest } = {}) {
   const kw = cleanTitle(keyword);
-  if (!kw || kw.length > 80) throw appError('App 搜索词无效', 'APP_INPUT');
+  if (!kw || kw.length > 80) throw appError('Từ khóa tìm kiếm App không hợp lệ', 'APP_INPUT');
   const pg = parseSearchInteger(page);
   if (pg === null || pg < 1 || pg > 50) throw appError('App 搜索页码需为 1 至 50 的整数', 'APP_INPUT');
   if (pg > 1 && !cursor?.search_id && !cursor?.passback && parseSearchInteger(cursor?.next_offset) === null) {
-    throw appError('App 搜索游标已失效，请重新搜索', 'APP_CURSOR');
+    throw appError('Con trỏ tìm kiếm App đã hết hạn, vui lòng tìm kiếm lại', 'APP_CURSOR');
   }
   const budget = Number(deadline) > 0 ? deadline : Date.now() + DEFAULT_TIMEOUT_MS;
-  if (budget <= Date.now()) throw appError('App 搜索超时', 'APP_TIMEOUT');
+  if (budget <= Date.now()) throw appError('Tìm kiếm trên App quá thời gian', 'APP_TIMEOUT');
   const identity = await getPlaybackDevice(requestJson);
-  if (budget <= Date.now()) throw appError('App 搜索超时', 'APP_TIMEOUT');
+  if (budget <= Date.now()) throw appError('Tìm kiếm trên App quá thời gian', 'APP_TIMEOUT');
   const signed = signedSearchRequest({ keyword: kw, page: pg, cursor, identity });
   const payload = await request(signed, budget);
   return parseSearchPayload(payload, { page: pg });

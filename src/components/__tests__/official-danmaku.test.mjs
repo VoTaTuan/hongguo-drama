@@ -292,16 +292,16 @@ test('状态出口：失败绝不说成"暂无弹幕"', () => {
   // 有 error 时必须原样透出
   assert.equal(resolveDanmakuStatus({ ...base, error: '弹幕接口不可用（HTTP 502）' }), '弹幕接口不可用（HTTP 502）');
   // 没 error 且没有内容，才是真的没有弹幕
-  assert.equal(resolveDanmakuStatus({ ...base, error: '' }), '本集暂无弹幕');
+  assert.equal(resolveDanmakuStatus({ ...base, error: '' }), 'Tập này tạm thời chưa có danmaku');
   // 有内容时给出条数，并带上来源限制说明
-  assert.match(resolveDanmakuStatus({ ...base, count: 12, notice: '上游仅返回部分结果' }), /已载入 12 条弹幕/);
+  assert.match(resolveDanmakuStatus({ ...base, count: 12, notice: '上游仅返回部分结果' }), /Đã tải 12 danmaku/);
   assert.match(resolveDanmakuStatus({ ...base, count: 12, notice: '上游仅返回部分结果' }), /上游仅返回部分结果/);
   // 未启用 / 不支持 / 未播放 各有明确说法
-  assert.match(resolveDanmakuStatus({ ...base, enabled: false }), /开启后/);
-  assert.match(resolveDanmakuStatus({ ...base, supported: false }), /仅红果来源/);
-  assert.match(resolveDanmakuStatus({ ...base, active: false }), /播放本集后/);
+  assert.match(resolveDanmakuStatus({ ...base, enabled: false }), /Bật sau đó/);
+  assert.match(resolveDanmakuStatus({ ...base, supported: false }), /Chỉ nguồn Hồng Quả/);
+  assert.match(resolveDanmakuStatus({ ...base, active: false }), /Phát tập này sau đó/);
   assert.equal(resolveDanmakuStatus({ ...base, visible: false }), '');
-  assert.match(resolveDanmakuStatus({ ...base, error: '', loaded: false }), /正在加载/);
+  assert.match(resolveDanmakuStatus({ ...base, error: '', loaded: false }), /Đang tải/);
 });
 
 
@@ -320,7 +320,7 @@ test('部分结果与截断结果始终说明限制', () => {
   for (const flag of ['partial', 'truncated']) {
     const feed = makeFeed();
     appendOfficialPage(feed, { success: true, series_id: SERIES, episode_id: VID, items: [], [flag]: true });
-    assert.match(feed.notice, /部分|限制/);
+    assert.match(feed.notice, /phần|giới hạn/i);
   }
 });
 

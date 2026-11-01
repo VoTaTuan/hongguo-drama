@@ -8,11 +8,11 @@ export function readLocalLibrary() {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     const items = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(items) || items.some(item => !item || typeof item.id !== 'string' || !item.id || typeof item.title !== 'string' || typeof item.favorite !== 'boolean' || (item.published_at !== null && !validPublishedAt(item.published_at)))) {
-      throw new Error('保存的数据格式不正确');
+      throw new Error('Định dạng dữ liệu đã lưu không đúng');
     }
     return { items, error: '' };
   } catch (error) {
-    return { items: [], error: `无法读取本机收藏与日历：${error.message}。原有数据未改动。` };
+    return { items: [], error: `Không thể đọc dữ liệu yêu thích và lịch trên máy: ${error.message}. Dữ liệu gốc không thay đổi.` };
   }
 }
 
@@ -20,7 +20,7 @@ export function saveLocalSeries({ id, title, published_at, favorite, cover }) {
   const current = readLocalLibrary();
   if (current.error) return current;
   const seriesId = String(id || '').trim();
-  if (!seriesId || !String(title || '').trim()) return { ...current, error: '缺少剧集名称或编号，无法保存到本机。' };
+  if (!seriesId || !String(title || '').trim()) return { ...current, error: 'Thiếu tên phim hoặc mã phim, không thể lưu vào máy.' };
   const previous = current.items.find(item => item.id === seriesId);
   const next = {
     id: seriesId,
@@ -36,7 +36,7 @@ export function saveLocalSeries({ id, title, published_at, favorite, cover }) {
     window.dispatchEvent(new Event(CHANGE_EVENT));
     return { items, error: '' };
   } catch (error) {
-    return { ...current, error: `未能保存到本机：${error.message}。请释放存储空间后重试。` };
+    return { ...current, error: `Lưu vào máy thất bại: ${error.message}. Vui lòng giải phóng bộ nhớ rồi thử lại.` };
   }
 }
 
@@ -49,7 +49,7 @@ export function removeLocalSeries(id) {
     window.dispatchEvent(new Event(CHANGE_EVENT));
     return { items, error: '' };
   } catch (error) {
-    return { ...current, error: `未能移除本机记录：${error.message}。原有记录未改动。` };
+    return { ...current, error: `Xóa bản ghi trên máy thất bại: ${error.message}. Bản ghi gốc không đổi.` };
   }
 }
 

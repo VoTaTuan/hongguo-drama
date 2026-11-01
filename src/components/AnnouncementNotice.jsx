@@ -49,7 +49,7 @@ export default function AnnouncementNotice() {
       try {
         const result = await api.checkAnnouncements({ urgentOnly });
         if (active) present(result?.announcement);
-      } catch { /* 公告不可达不影响播放，也不在后台连续重试。 */ }
+      } catch { /* Không thể truy cập thông báo không ảnh hưởng đến phát, cũng không thử lại liên tục ngầm. */ }
       finally {
         pending = false;
         if (active && recheck) { recheck = false; check(false); }
@@ -98,8 +98,8 @@ export default function AnnouncementNotice() {
     const timer = setTimeout(close, 30000);
     if (notice.urgent) {
       window.electronAPI.acknowledgeAnnouncement({ id: notice.id }).then(result => {
-        if (active && !result?.success) setError(result?.error || '无法保存已读记录，重启后可能再次提醒。');
-      }).catch(() => { if (active) setError('无法保存已读记录，重启后可能再次提醒。'); });
+        if (active && !result?.success) setError(result?.error || 'Không thể lưu trạng thái đã đọc, sau khi khởi động lại có thể sẽ nhắc lại.');
+      }).catch(() => { if (active) setError('Không thể lưu trạng thái đã đọc, sau khi khởi động lại có thể sẽ nhắc lại.'); });
     }
     return () => { active = false; copyRequest.current++; clearTimeout(timer); };
   }, [notice]);
@@ -112,9 +112,9 @@ export default function AnnouncementNotice() {
     setError('');
     try {
       const result = await window.electronAPI.dismissAnnouncement({ mode });
-      if (!result?.success) { setError(result?.error || '保存失败，请重试；原提醒设置未改变。'); return; }
+      if (!result?.success) { setError(result?.error || 'Lưu thất bại, vui lòng thử lại; cài đặt nhắc nhở ban đầu không đổi.'); return; }
       setNotice(next => next === current ? null : next);
-    } catch { setError('保存失败，请重试；原提醒设置未改变。'); }
+    } catch { setError('Lưu thất bại, vui lòng thử lại; cài đặt nhắc nhở ban đầu không đổi.'); }
     finally { savingRef.current = false; setSaving(false); }
   };
 
@@ -123,8 +123,8 @@ export default function AnnouncementNotice() {
     setError('');
     try {
       const result = await window.electronAPI.openExternalUrl(url);
-      if (!result?.success) setError(result?.error || '链接打开失败，请稍后重试。');
-    } catch { setError('链接打开失败，请稍后重试。'); }
+      if (!result?.success) setError(result?.error || 'Mở liên kết thất bại, vui lòng thử lại sau.');
+    } catch { setError('Mở liên kết thất bại, vui lòng thử lại sau.'); }
   };
 
   const copyEmail = async () => {
@@ -135,7 +135,7 @@ export default function AnnouncementNotice() {
       await navigator.clipboard.writeText(FEEDBACK_EMAIL);
       if (request === copyRequest.current) setEmailCopied(true);
     } catch {
-      if (request === copyRequest.current) setError(`复制失败，请手动选择复制邮箱：${FEEDBACK_EMAIL}`);
+      if (request === copyRequest.current) setError(`Sao chép thất bại, vui lòng sao chép email thủ công: ${FEEDBACK_EMAIL}`);
     }
   };
 
@@ -144,23 +144,23 @@ export default function AnnouncementNotice() {
     <section className="announcement-dialog" role="dialog" aria-modal="true" aria-labelledby="announcement-title" aria-describedby="announcement-body" tabIndex={-1}>
       <header className="announcement-heading">
         <h2 id="announcement-title">{notice.title}</h2>
-        <button type="button" className="icon-btn" aria-label="关闭公告" title="关闭公告" onClick={close}><X size={18} /></button>
+        <button type="button" className="icon-btn" aria-label="Đóng thông báo" title="Đóng thông báo" onClick={close}><X size={18} /></button>
       </header>
-      {notice.urgent && <p className="announcement-urgent">紧急公告 · {notice.manual ? '手动查看' : '本条仅提醒一次'}</p>}
+      {notice.urgent && <p className="announcement-urgent">Thông báo khẩn · {notice.manual ? 'Xem thủ công' : 'Chỉ nhắc nhở một lần'}</p>}
       <div id="announcement-body" className="announcement-body">{notice.body.split(/\r?\n\r?\n/).map((paragraph, index) =>
         <p className="announcement-paragraph" key={index}>{paragraph.includes('vipai.pro')
-          ? <a className="announcement-link announcement-purchase-link" href={PURCHASE_URL} title="在浏览器中打开 vipai.pro" onClick={event => openLink(event, PURCHASE_URL)}>{paragraph}</a>
+          ? <a className="announcement-link announcement-purchase-link" href={PURCHASE_URL} title="Mở vipai.pro trong trình duyệt" onClick={event => openLink(event, PURCHASE_URL)}>{paragraph}</a>
           : paragraph.split(/(\r?\n)/).map((line, part) => {
             if (line.includes(FEEDBACK_URL)) return <a className="announcement-link" href={FEEDBACK_URL} key={part} onClick={event => openLink(event, FEEDBACK_URL)}>{line}</a>;
             return line.includes(FEEDBACK_EMAIL) ? <button type="button" className="announcement-link" key={part} onClick={copyEmail}>{line}</button> : line;
           })}</p>
       )}</div>
-      <p className="announcement-hint">30 秒后自动关闭。{notice.urgent ? '下方选项仅影响普通公告，新的紧急公告仍会提醒。' : '下方选项仅影响普通公告。'}</p>
-      {emailCopied && <p className="announcement-copy-status" role="status">邮箱已复制</p>}
+      <p className="announcement-hint">Tự động đóng sau 30 giây. {notice.urgent ? 'Tùy chọn bên dưới chỉ áp dụng cho thông báo thường, thông báo khẩn mới vẫn sẽ nhắc nhở.' : 'Tùy chọn bên dưới chỉ áp dụng cho thông báo thường.'}</p>
+      {emailCopied && <p className="announcement-copy-status" role="status">Đã sao chép email</p>}
       {error && <p className="announcement-error" role="alert">{error}</p>}
       <footer className="announcement-actions">
-        <button type="button" className="btn btn-outline" disabled={saving} onClick={() => dismiss('version')}>版本更新前不再提醒</button>
-        <button type="button" className="btn btn-primary" disabled={saving} onClick={() => dismiss('day')}>今日打开不再提醒</button>
+        <button type="button" className="btn btn-outline" disabled={saving} onClick={() => dismiss('version')}>Không nhắc lại trước khi cập nhật bản mới</button>
+        <button type="button" className="btn btn-primary" disabled={saving} onClick={() => dismiss('day')}>Hôm nay không nhắc lại</button>
       </footer>
     </section>
   </div>, portalTarget);

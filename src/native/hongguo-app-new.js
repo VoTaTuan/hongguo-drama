@@ -84,10 +84,10 @@ async function defaultRequest(signed, deadline) {
       deadline, AbortSignal.timeout(remaining));
   } catch (error) {
     if (error.code === 'ETIMEDOUT' || error.name === 'AbortError' || error.name === 'TimeoutError') {
-      throw appError('App 上新请求超时', 'APP_TIMEOUT');
+      throw appError('Yêu cầu phim mới trên App quá thời gian', 'APP_TIMEOUT');
     }
-    if (/未返回有效数据|空响应/i.test(error.message || '')) throw appError('App 上新返回空响应', 'APP_EMPTY');
-    throw appError(error.message || 'App 上新请求失败', error.code || 'APP_NETWORK');
+    if (/未返回有效数据|空响应/i.test(error.message || '')) throw appError('Phim mới trên App trả về phản hồi rỗng', 'APP_EMPTY');
+    throw appError(error.message || 'Yêu cầu phim mới trên App thất bại', error.code || 'APP_NETWORK');
   }
 }
 

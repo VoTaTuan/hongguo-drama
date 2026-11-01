@@ -1,14 +1,14 @@
 const { createHash } = require('node:crypto');
 const { fetchPublicDetails } = require('./public-details');
 
-const NOTICE = '官网仅提供本集部分评论，暂未提供可用的公开翻页接口；更多评论请到红果短剧 App 查看。';
+const NOTICE = 'Trang web chỉ cung cấp một phần bình luận của tập này, hiện chưa có giao diện phân trang công khai; để xem thêm bình luận vui lòng mở App Phim Ngắn Hồng Quả.';
 
 async function fetchEpisodeComments(options) {
-  if (!options || typeof options !== 'object' || Array.isArray(options)) return { success: false, error: '评论请求无效' };
+  if (!options || typeof options !== 'object' || Array.isArray(options)) return { success: false, error: 'Yêu cầu bình luận không hợp lệ' };
   const { seriesId, episodeId, cursor = null, limit = 30 } = options;
   if (typeof seriesId !== 'string' || !/^\d{6,30}$/.test(seriesId) ||
       typeof episodeId !== 'string' || !/^\d{6,30}$/.test(episodeId) ||
-      !Number.isInteger(limit) || limit < 1 || limit > 30) return { success: false, error: '评论请求编号或条数无效' };
+      !Number.isInteger(limit) || limit < 1 || limit > 30) return { success: false, error: 'Mã hoặc số lượng bình luận yêu cầu không hợp lệ' };
   if (cursor !== null) return { success: false, source_limited: true, error: NOTICE };
   const details = await fetchPublicDetails(seriesId, episodeId);
   if (!details.success) return details;

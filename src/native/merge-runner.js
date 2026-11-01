@@ -40,7 +40,7 @@ async function runMerge({ task, ordered, outDir, ffmpegPath, ffprobePath, probe,
   Object.defineProperty(task, 'children', { value: new Set(), configurable: true });
   let temporary, lastUpdate = 0, stageStarted = Date.now();
   task.phaseTimings = {};
-  const check = () => { if (task.cancelled) throw new Error('已取消'); };
+  const check = () => { if (task.cancelled) throw new Error('Đã hủy'); };
   const emit = (force = false) => {
     task.elapsedSeconds = (Date.now() - task.startTime) / 1000;
     if (force || Date.now() - lastUpdate > 500) { lastUpdate = Date.now(); update(); }
@@ -51,7 +51,7 @@ async function runMerge({ task, ordered, outDir, ffmpegPath, ffprobePath, probe,
   };
   const stage = (name, text) => { recordStage(); task.stage = name; task.stageText = text; task.speed = 0; task.etaSeconds = null; emit(true); };
   const run = (args, onTime) => new Promise((resolve, reject) => {
-    if (task.cancelled) return reject(new Error('已取消'));
+    if (task.cancelled) return reject(new Error('Đã hủy'));
     const child = spawn(ffmpegPath, ['-y', '-hide_banner', '-loglevel', 'error', ...args, '-progress', 'pipe:1', '-nostats'], { windowsHide: true });
     task.children.add(child);
     let pending = '', errors = '', spawnError;
@@ -67,13 +67,13 @@ async function runMerge({ task, ordered, outDir, ffmpegPath, ffprobePath, probe,
     child.once('close', code => {
       task.children.delete(child);
       if (task.cancelled) reject(new Error('已取消'));
-      else if (spawnError) reject(new Error('无法启动 FFmpeg: ' + spawnError.message));
-      else if (code !== 0) reject(new Error(`FFmpeg 退出码 ${code}：${errors.trim() || '没有返回错误详情'}`));
+      else if (spawnError) reject(new Error('Không thể khởi động FFmpeg: ' + spawnError.message));
+      else if (code !== 0) reject(new Error(`Mã thoát FFmpeg ${code}: ${errors.trim() || 'Không có chi tiết lỗi'}`));
       else resolve();
     });
   });
   try {
-    stage('checking', '检查分集');
+    stage('checking', 'Kiểm tra các tập');
     let infos;
     if (precheckedInfos?.length === ordered.length) {
       infos = precheckedInfos;
@@ -85,22 +85,22 @@ async function runMerge({ task, ordered, outDir, ffmpegPath, ffprobePath, probe,
         check();
         const info = await probe(ffprobePath, ordered[i].path, task);
         check();
-        if (!info || info.duration <= 0) throw new Error(`第 ${ordered[i].vid_index} 集无法读取有效视频信息，请重新下载本集`);
+        if (!info || info.duration <= 0) throw new Error(`Tập ${ordered[i].vid_index} không đọc được thông tin video hợp lệ, vui lòng tải lại tập này`);
         infos.push(info); task.checked = i + 1; emit();
       }
     }
     const plan = buildMergePlan(infos, { compatible });
     task.totalDuration = plan.totalDuration;
     const normalize = plan.videoMode === 'encode' || plan.audioMode === 'encode' || plan.remux || plan.videoContainer === 'mpegts';
-    task.method = plan.videoMode === 'encode' ? '统一视频编码' : plan.audioMode === 'encode' ? '保留画质，仅统一音频' : plan.remux || plan.videoContainer === 'mpegts' ? '无损统一封装' : '无损快速合并';
-    task.codecWarning = plan.videoMode === 'encode' ? '分集编码不一致，按各自原分辨率统一为 H.264；原文件保留' : '';
+    task.method = plan.videoMode === 'encode' ? 'Mã hóa video thống nhất' : plan.audioMode === 'encode' ? 'Giữ nguyên chất lượng hình ảnh, chỉ thống nhất âm thanh' : plan.remux || plan.videoContainer === 'mpegts' ? 'Đóng gói thống nhất không nén' : 'Ghép nhanh không nén';
+    task.codecWarning = plan.videoMode === 'encode' ? 'Mã hóa các tập không nhất quán, chuyển sang H.264 theo độ phân giải gốc từng tập; tệp gốc được giữ nguyên' : '';
     task.targetBitrate = plan.videoMode === 'encode' ? plan.videoBitrate : null;
     const estimate = plan.videoMode === 'encode' ? plan.estimatedBytes : task.totalBytes * 1.1;
     const required = estimate * (normalize ? 2.2 : 1.1);
     try {
       const st = fs.statfsSync(outDir), free = st.bavail * st.bsize;
-      if (free < required) throw new Error(`磁盘空间不足：需要约 ${(required / 1073741824).toFixed(1)} GB，可用 ${(free / 1073741824).toFixed(1)} GB`);
-    } catch (error) { if (error.message.startsWith('磁盘空间不足')) throw error; }
+      if (free < required) throw new Error(`Dung lượng ổ đĩa không đủ: cần khoảng ${(required / 1073741824).toFixed(1)} GB, khả dụng ${(free / 1073741824).toFixed(1)} GB`);
+    } catch (error) { if (error.message.startsWith('Dung lượng ổ đĩa không đủ')) throw error; }
     check();
     temporary = await fs.promises.mkdtemp(path.join(outDir, '.merge-'));
     let files = ordered.map(e => e.path);
@@ -109,7 +109,7 @@ async function runMerge({ task, ordered, outDir, ffmpegPath, ffprobePath, probe,
       let hardwareFrames = canUseHardwareFrames(infos, encoder);
       check();
       const normalizeAll = async () => {
-        stage('preparing', plan.videoMode === 'encode' ? '统一视频编码' : plan.audioMode === 'encode' ? '统一音频' : '无损统一封装');
+        stage('preparing', plan.videoMode === 'encode' ? 'Mã hóa video thống nhất' : plan.audioMode === 'encode' ? 'Thống nhất âm thanh' : 'Đóng gói thống nhất không nén');
         const extension = plan.videoContainer === 'mpegts' ? 'ts' : 'mp4';
         const times = ordered.map(() => 0), targets = ordered.map((_, i) => path.join(temporary, `${i}.${extension}`));
         const started = Date.now(); let next = 0, failure;
@@ -166,16 +166,16 @@ async function runMerge({ task, ordered, outDir, ffmpegPath, ffprobePath, probe,
           for (let i = 0; i < ordered.length; i++) await fs.promises.rm(path.join(temporary, `${i}.${plan.videoContainer === 'mpegts' ? 'ts' : 'mp4'}`), { force: true });
           if (hardwareFrames) {
             hardwareFrames = false;
-            task.codecWarning = '硬件解码不可用，已切换常规解码；仍使用硬件编码';
+            task.codecWarning = 'Giải mã phần cứng không khả dụng, đã chuyển giải mã thông thường; vẫn dùng mã hóa phần cứng';
           } else {
-            task.codecWarning = '硬件编码不可用，已完整切换软件编码；原文件保留';
+            task.codecWarning = 'Mã hóa phần cứng không khả dụng, đã chuyển sang mã hóa phần mềm; tệp gốc được giữ nguyên';
             encoder = 'libx264';
           }
         }
       }
     }
     check();
-    stage('joining', '写入合并文件');
+    stage('joining', 'Ghi tệp ghép nối');
     const listPath = path.join(temporary, 'list.ffconcat'), tmpOutput = path.join(temporary, 'output.mp4');
     fs.writeFileSync(listPath, files.map(file => `file '${file.replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n') + '\n');
     const joinedAt = Date.now();
@@ -193,12 +193,12 @@ async function runMerge({ task, ordered, outDir, ffmpegPath, ffprobePath, probe,
     task.verified = '';
     task.outputBytes = fs.statSync(task.output).size;
     recordStage();
-    task.status = 'completed'; task.stage = 'completed'; task.stageText = '合并完成'; task.progress = 100; task.done = ordered.length; task.etaSeconds = 0;
+    task.status = 'completed'; task.stage = 'completed'; task.stageText = 'Ghép nối hoàn tất'; task.progress = 100; task.done = ordered.length; task.etaSeconds = 0;
   } finally {
     recordStage();
     if (temporary) {
       try { await fs.promises.rm(temporary, { recursive: true, force: true, maxRetries: 2 }); }
-      catch (_) { task.cleanupWarning = `临时文件未清理：${temporary}`; }
+      catch (_) { task.cleanupWarning = `Tệp tạm chưa được dọn dẹp: ${temporary}`; }
     }
     delete task.children; delete task.child;
     task.elapsedSeconds = (Date.now() - task.startTime) / 1000;

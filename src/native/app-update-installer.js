@@ -26,8 +26,8 @@ function createUpdateInstaller({ updater, currentVersion, isEnabled, installBloc
     clearNativeInstall();
     nativeReadyVersion = null;
     update({ status: 'error', error: state.status === 'installing'
-      ? '安装更新失败，当前版本仍可使用。请重试或前往发布页下载安装。'
-      : '更新下载或校验失败，请检查网络后重试。' });
+      ? 'Cài đặt bản cập nhật thất bại, phiên bản hiện tại vẫn có thể sử dụng. Vui lòng thử lại hoặc đến trang phát hành để tải về cài đặt.'
+      : 'Tải xuống hoặc xác thực bản cập nhật thất bại, vui lòng kiểm tra mạng rồi thử lại.' });
   });
   function cancel() {
     generation++;
@@ -38,13 +38,13 @@ function createUpdateInstaller({ updater, currentVersion, isEnabled, installBloc
     return { success: true, state: getState() };
   }
   function download(expectedVersion) {
-    if (!isEnabled()) return Promise.resolve(fail('自动检测更新已关闭，请先在设置中开启。'));
-    if (state.status === 'installing') return Promise.resolve(fail('正在安装更新。'));
+    if (!isEnabled()) return Promise.resolve(fail('Tự động kiểm tra cập nhật đã tắt, vui lòng bật trong cài đặt trước.'));
+    if (state.status === 'installing') return Promise.resolve(fail('Đang cài đặt bản cập nhật.'));
     // The updater shares request state; finish cancelled work before starting a retry.
     if (operation) {
       if (operationGeneration === generation) return operation;
       const queuedGeneration = generation;
-      return operation.then(() => queuedGeneration === generation ? download(expectedVersion) : fail('更新已取消。'));
+      return operation.then(() => queuedGeneration === generation ? download(expectedVersion) : fail('Cập nhật đã bị hủy.'));
     }
     if (state.downloaded && state.version === expectedVersion) return Promise.resolve({ success: true, state: getState() });
     const request = ++generation;
@@ -56,7 +56,7 @@ function createUpdateInstaller({ updater, currentVersion, isEnabled, installBloc
         if (request !== generation || !isEnabled()) { result?.cancellationToken?.cancel(); return fail('更新已取消。'); }
         const release = availableRelease({ tag_name: result?.updateInfo?.version }, currentVersion);
         if (!release || release.version !== expectedVersion) {
-          update({ status: 'error', error: '新版信息已变化，请重新检查更新。' });
+          update({ status: 'error', error: 'Thông tin bản mới đã thay đổi, vui lòng kiểm tra lại cập nhật.' });
           return fail(state.error);
         }
         cancellationToken = result.cancellationToken;
@@ -68,7 +68,7 @@ function createUpdateInstaller({ updater, currentVersion, isEnabled, installBloc
         return { success: true, state: getState() };
       } catch (_) {
         if (request !== generation || !isEnabled()) return fail('更新已取消。');
-        update({ status: 'error', error: '更新下载或校验失败，请检查网络后重试。' });
+        update({ status: 'error', error: 'Tải xuống hoặc xác thực bản cập nhật thất bại, vui lòng kiểm tra mạng rồi thử lại.' });
         return fail(state.error);
       }
     })().finally(() => { operation = null; cancellationToken = null; });
@@ -93,11 +93,11 @@ function createUpdateInstaller({ updater, currentVersion, isEnabled, installBloc
       } else updater.quitAndInstall(false, true);
     } catch (_) {
       clearNativeInstall();
-      update({ status: 'error', error: '无法启动更新安装，请重试或前往发布页下载安装。' });
+      update({ status: 'error', error: 'Không thể khởi động cài đặt cập nhật, vui lòng thử lại hoặc đến trang phát hành để tải cài đặt.' });
     }
   }
   function install() {
-    if (!isEnabled() || !state.downloaded || !['downloaded', 'error'].includes(state.status)) return fail('请先完成更新下载。');
+    if (!isEnabled() || !state.downloaded || !['downloaded', 'error'].includes(state.status)) return fail('Vui lòng hoàn thành tải bản cập nhật trước.');
     const blocked = installBlocker();
     if (blocked) return fail(blocked);
     update({ status: 'installing', error: '' });

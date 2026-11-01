@@ -15,7 +15,7 @@ async function requestHls(url, { signal, headers }) {
 
 // The bundled FFmpeg has no HTTP transport: stage guarded HLS resources on disk and allow local protocols only.
 async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = requestHls, checkAccess = () => {}, headers = {}, onProgress, tempCapacityBytes }) {
-  if (!ffmpeg) throw new Error('未找到 FFmpeg，无法准备 HLS 视频');
+  if (!ffmpeg) throw new Error('Không tìm thấy FFmpeg, không thể chuẩn bị video HLS');
   webMediaRequestOptions(url);
   const controller = new AbortController(), files = new Map();
   let temporary, child, failure, killed, killTimer, spaceTimer, diskJob, writer;
@@ -26,21 +26,21 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
     killed = true; child.kill('SIGTERM'); killTimer = setTimeout(() => child.kill('SIGKILL'), 2000);
   };
   const fail = error => { failure ||= error; controller.abort(); stopChild(); };
-  const abort = () => fail(new Error('已取消 HLS 准备'));
+  const abort = () => fail(new Error('Đã hủy chuẩn bị HLS'));
   const check = () => {
     if (signal?.aborted || cancelToken?.reason) abort();
     if (failure) throw failure;
     checkAccess();
   };
   const ensureCapacity = extra => {
-    if (stagedBytes + extra > capacityBytes) throw new Error('HLS 暂存空间不足，已停止');
+    if (stagedBytes + extra > capacityBytes) throw new Error('Không đủ dung lượng lưu tạm HLS, đã dừng');
     const stat = fs.statfsSync(temporary), free = Number(stat.bsize) * Number(stat.bavail);
     const needed = [...diskJobs].filter(job => job.device === diskJob.device)
       .reduce((sum, job) => sum + job.remaining(job === diskJob ? extra : 0), DISK_RESERVE);
-    if (!Number.isFinite(free) || free < needed) throw new Error('HLS 暂存或输出空间不足，已停止');
+    if (!Number.isFinite(free) || free < needed) throw new Error('Không đủ dung lượng lưu tạm hoặc xuất HLS, đã dừng');
   };
   signal?.addEventListener('abort', abort, { once:true }); cancelToken?.subscribe(abort);
-  const deadline = setTimeout(() => fail(new Error('HLS 准备超时，请重试')), 10 * 60 * 1000);
+  const deadline = setTimeout(() => fail(new Error('Chuẩn bị HLS quá thời gian, vui lòng thử lại')), 10 * 60 * 1000);
   const stage = async (remote, playlist = false, ancestors = new Set()) => {
     check(); webMediaRequestOptions(remote);
     if (ancestors.has(remote)) throw new Error('HLS 清单循环引用');

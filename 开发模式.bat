@@ -1,16 +1,17 @@
 @echo off
-rem Hongguo Drama 5.3 source candidate - version metadata: package.json
-title 红果短剧下载器 - 开发模式
+rem Phim Ngan Hong Qua 5.3 - Thong tin phien ban: package.json
+chcp 65001 >nul
+title Phim Ngan Hong Qua - Che do phat trien
 cd /d "%~dp0"
 
 echo ============================================
-echo  红果短剧下载器 - 开发模式
-echo  将启动 React 开发服务器 + Electron 窗口
+echo  Phim Ngan Hong Qua - Che do phat trien
+echo  Dang khoi dong React dev server + Electron...
 echo ============================================
 echo.
 
 if not exist node_modules (
-    echo 首次运行，正在安装依赖，请稍候...
+    echo Phat hien thieu thu vien, dang tu dong cai dat...
     call npm install
 )
 

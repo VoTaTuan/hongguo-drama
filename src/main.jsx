@@ -1,4 +1,4 @@
-// 红果短剧 4.8：界面入口；目录双线与验证范围见 docs/release-4.8.md。
+// Phim Ngắn Hồng Quả: Điểm khởi đầu giao diện.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';

@@ -1,710 +1,326 @@
 <p align="center">
-  <img src="build/icon.png" alt="红果短剧桌面版图标" width="112" height="112">
+  <img src="build/icon.png" alt="Biểu tượng Phim Ngắn Hồng Quả cho máy tính để bàn" width="112" height="112">
 </p>
 
-<h1 align="center">红果短剧 · 桌面版</h1>
+<h1 align="center">Phim Ngắn Hồng Quả · Bản Máy Tính Để Bàn</h1>
 
-<p align="center">发现好剧，接着上次看。搜索、播放、下载、追剧与合并导出，在一个桌面应用里完成。</p>
+<p align="center">Khám phá phim hay, tiếp tục xem từ lần trước. Tìm kiếm, phát trực tuyến, tải xuống, theo dõi và gộp xuất phim trong cùng một ứng dụng máy tính tiện lợi.</p>
 
 <p align="center">
-  <a href="https://github.com/jackotom/hongguo-drama/releases/latest"><img alt="最新公开版本" src="https://img.shields.io/github/v/release/jackotom/hongguo-drama?style=flat-square"></a>
-  <img alt="macOS 13 或更新版本" src="https://img.shields.io/badge/macOS-13%2B-555555?style=flat-square">
-  <img alt="M 系列 Mac、Intel Mac 与 Windows x64" src="https://img.shields.io/badge/platforms-Mac_arm64_%2F_x64_%C2%B7_Windows_x64-55746b?style=flat-square">
-  <a href="LICENSE"><img alt="GPL-3.0 许可证" src="https://img.shields.io/badge/license-GPL--3.0-555555?style=flat-square"></a>
+  <a href="https://github.com/jackotom/hongguo-drama/releases/latest"><img alt="Phiên bản công khai mới nhất" src="https://img.shields.io/github/v/release/jackotom/hongguo-drama?style=flat-square"></a>
+  <img alt="macOS 13 trở lên" src="https://img.shields.io/badge/macOS-13%2B-555555?style=flat-square">
+  <img alt="Mac chip M, Intel Mac và Windows x64" src="https://img.shields.io/badge/platforms-Mac_arm64_%2F_x64_%C2%B7_Windows_x64-55746b?style=flat-square">
+  <a href="LICENSE"><img alt="Giấy phép GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-555555?style=flat-square"></a>
 </p>
 
 <p align="center">
-  <a href="#下载与安装"><strong>下载与安装</strong></a> ·
-  <a href="#完整功能">完整功能</a> ·
-  <a href="#界面与演示">界面与演示</a> ·
-  <a href="#常见问题">常见问题</a> ·
-  <a href="https://github.com/jackotom/hongguo-drama/issues">反馈问题</a>
+  <a href="#tải-về-và-cài-đặt"><strong>Tải về và cài đặt</strong></a> ·
+  <a href="#tính-năng-đầy-đủ">Tính năng đầy đủ</a> ·
+  <a href="#giao-diện-và-minh-họa">Giao diện và minh họa</a> ·
+  <a href="#câu-hỏi-thường-gặp">Câu hỏi thường gặp</a> ·
+  <a href="https://github.com/jackotom/hongguo-drama/issues">Phản hồi sự cố</a>
 </p>
 
-## 下载与安装
+## Tải về và cài đặt
 
+**Phiên bản chính thức hiện tại: 5.3** (nội bộ `5.3.0`). Bổ sung tải xuống NAS, lưu ảnh bìa, tóm tắt và NFO cùng cấp, quy chuẩn đặt tên tập phim và tự động tái sử dụng bổ sung. Bản Mac kép đã ký, chứng thực (Notarized) và staple; tệp EXE Windows chưa ký số. Chi tiết xem [Thuyết minh 5.3](docs/release-5.3.md).
 
-
-**当前正式版：5.3**（内部 `5.3.0`）。新增下载到 NAS，同层保存封面、简介和 NFO，规范分集命名并复用补齐。双Mac已签名、公证和装订；Windows EXE未签名。详见 [5.3说明](docs/release-5.3.md)。
-
-| 设备 | 下载 5.3 | 安装方式 |
+| Thiết bị | Tải về 5.3 | Cách cài đặt |
 |---|---|---|
-| Apple 芯片 Mac（M 系列），macOS 13+ | [下载 DMG](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/Hongguo-5.3-mac-arm64.dmg) | 打开 DMG，拖入「应用程序」后启动；后续支持应用内更新 |
-| Intel Mac，macOS 13+ | [下载 DMG](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/Hongguo-5.3-mac-x64.dmg) | 打开 DMG，拖入「应用程序」后启动；后续支持应用内更新 |
-| Windows x64（推荐安装版） | [下载安装版 EXE](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/hongguo-downloader-5.3-win-x64-setup.exe) | 按向导安装，后续支持应用内更新 |
-| Windows x64（便携版） | [下载便携 EXE](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/hongguo-downloader-5.3-win-x64.exe) · [下载便携 ZIP](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/hongguo-downloader-5.3-win-x64.zip) | 直接运行 EXE；ZIP 解压后运行同一程序，后续仍需手动替换 |
+| Apple Silicon Mac (M series), macOS 13+ | [Tải DMG](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/Hongguo-5.3-mac-arm64.dmg) | Mở DMG, kéo vào "Applications" rồi khởi chạy; hỗ trợ cập nhật trong ứng dụng sau này |
+| Intel Mac, macOS 13+ | [Tải DMG](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/Hongguo-5.3-mac-x64.dmg) | Mở DMG, kéo vào "Applications" rồi khởi chạy; hỗ trợ cập nhật trong ứng dụng sau này |
+| Windows x64 (Khuyên dùng bản cài đặt) | [Tải bản cài đặt EXE](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/hongguo-downloader-5.3-win-x64-setup.exe) | Cài đặt theo hướng dẫn, hỗ trợ cập nhật trong ứng dụng sau này |
+| Windows x64 (Bản di động Portable) | [Tải EXE Portable](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/hongguo-downloader-5.3-win-x64.exe) · [Tải ZIP Portable](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/hongguo-downloader-5.3-win-x64.zip) | Chạy trực tiếp tệp EXE; bản ZIP giải nén rồi chạy chương trình, cập nhật sau này cần thay thế thủ công |
 
-[查看最新正式版](https://github.com/jackotom/hongguo-drama/releases/latest) · [5.3 更新说明与源码](https://github.com/jackotom/hongguo-drama/releases/tag/v5.3) · [SHA256 校验文件](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/SHA256SUMS.txt)
+[Xem bản phát hành chính thức mới nhất](https://github.com/jackotom/hongguo-drama/releases/latest) · [Thuyết minh cập nhật 5.3 và mã nguồn](https://github.com/jackotom/hongguo-drama/releases/tag/v5.3) · [Tệp kiểm tra SHA256](https://github.com/jackotom/hongguo-drama/releases/download/v5.3/SHA256SUMS.txt)
 
+- **Nâng cấp lên 5.3**: Bản cài đặt 5.2 có thể dùng cập nhật trong ứng dụng; hoặc thoát ứng dụng cũ rồi ghi đè ứng dụng Mac hoặc chạy gói cài đặt Windows. Bản di động giữ nguyên thư mục `data` cùng cấp rồi thay thế thủ công; phiên bản 1.75 trở về trước cần cài đặt thủ công một lần.
+- **Cập nhật sau này**: Bản cài đặt Mac và Windows có thể tải bản mới trực tiếp trong ứng dụng, sau khi tải xong bạn chủ động nhấp khởi động lại để cài, không ép buộc nâng cấp. Bản di động Windows tiếp tục tải qua trang phát hành và thay thế thủ công.
+- **Mac**: Gói chính thức đã hoàn thành ký Developer ID, chứng thực Apple Notarization Accepted và đóng dấu staple vé. Không cần tắt Gatekeeper toàn cục; việc chứng thực của Apple không tương đương với kiểm duyệt App Store hoặc cấp phép bản quyền nội dung.
+- **Windows**: Bản cài đặt và bản di động EXE chưa được ký số thương mại nên có thể xuất hiện cảnh báo bảo mật của hệ thống. Vui lòng đối chiếu nguồn tải chính thức; bản di động sẽ giải nén tệp chạy tạm trong lần khởi động đầu tiên. Bản cài đặt tiếp tục dùng thư mục dữ liệu người dùng ban đầu; từ bản 3.4 trở đi, bản di động đặt cài đặt và lịch sử tải xuống trong thư mục `data` của chương trình, khi di chuyển chương trình vui lòng mang theo cả thư mục này. Bản cài đặt và bản di động không thể chạy cùng lúc (chỉ cho phép một phiên bản của ứng dụng chạy); trước khi đổi phiên bản vui lòng thoát cửa sổ đang chạy.
+- **Sử dụng thông thường chỉ cần tệp cài đặt ở bảng trên**: Các tệp ZIP cập nhật Mac, `latest*.yml` và `.blockmap` trên trang phát hành dành riêng cho trình cập nhật tự động; tệp `source` và Source code do GitHub tự tạo là mã nguồn, không thể chạy trực tiếp.
 
-- **升级到 5.3**：5.2 安装版可使用应用内更新；也可退出旧程序后替换 Mac 应用或运行 Windows 安装包。便携版保留同目录的 `data` 后手动替换；1.75 及更早版本需要手动安装。
-- **后续更新**：Mac 与 Windows 安装版可在应用内下载新版，下载完成后由你点击重启安装，不强制升级。Windows 便携版继续通过发行页下载并手动替换。
-- **Mac**：正式包完成 Developer ID 签名、Apple 公证 Accepted 和票据装订。无需全局关闭 Gatekeeper；公证不等于 App Store 审核或内容授权。
-- **Windows**：安装版和便携版 EXE 尚未签名，可能出现系统安全提示。请核对官方下载来源；便携版首次启动会展开临时运行文件。安装版沿用原用户资料目录；3.4 起便携版把设置和下载记录放在程序目录的 `data` 文件夹，移动程序时请连同该文件夹一起保留。安装版与便携版不能同时运行（同一应用只允许一个实例）；更换版本前请先退出正在运行的窗口。
-- **普通使用只需上表安装文件**：发行页中的 Mac 更新 ZIP、`latest*.yml` 和 `.blockmap` 供更新程序使用；`source` 文件和 GitHub 自动生成的 Source code 是源码，不能直接运行。
-
-本项目是社区维护的开源修改版，**不是红果、西饭或河马的官方客户端，也未获平台官方背书**。不提供付费分集解锁；剧集、清晰度和可用范围取决于来源平台。
+Dự án này là bản sửa đổi mã nguồn mở do cộng đồng duy trì, **không phải ứng dụng chính thức của Hồng Quả, XiFan hay Hà Mã, và cũng không được các nền tảng chính thức chứng nhận**. Ứng dụng không cung cấp tính năng mở khóa các tập trả phí; danh sách tập phim, độ nét và phạm vi khả dụng phụ thuộc hoàn toàn vào nền tảng nguồn.
 
 <details>
-<summary>3.9 历史下载与升级说明</summary>
+<summary>Thuyết minh tải về và nâng cấp lịch sử bản 3.9</summary>
 
-**历史正式版：3.9**（内部 `3.9.0`）。恢复 App 取流、播放与下载，完善当天新剧补搜、后续两集预取、系统画中画及小窗模式。Mac 已签名、公证；Windows EXE 未签名。三端发行与验收回执见 [3.9 说明](docs/release-3.9.md)。按设备下载一个文件即可，无需另装 Node.js、Homebrew 或 FFmpeg。
+**Bản chính thức trước đây: 3.9** (nội bộ `3.9.0`). Khôi phục lấy luồng App, phát và tải xuống, cải tiến tìm kiếm bù phim mới hôm nay, tải trước 2 tập tiếp theo, hình trong hình (PiP) hệ thống và chế độ cửa sổ thu nhỏ. Mac đã ký và chứng thực; EXE Windows chưa ký.
 
-| 设备 | 下载 3.9 | 安装方式 |
+| Thiết bị | Tải về 3.9 | Cách cài đặt |
 |---|---|---|
-| Apple 芯片 Mac（M 系列），macOS 13+ | [下载 DMG](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/Hongguo-3.9-mac-arm64.dmg) | 打开 DMG，拖入「应用程序」后启动；后续支持应用内更新 |
-| Intel Mac，macOS 13+ | [下载 DMG](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/Hongguo-3.9-mac-x64.dmg) | 打开 DMG，拖入「应用程序」后启动；后续支持应用内更新 |
-| Windows x64（推荐安装版） | [下载安装版 EXE](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/hongguo-downloader-3.9-win-x64-setup.exe) | 按向导安装，后续支持应用内更新 |
-| Windows x64（便携版） | [下载便携 EXE](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/hongguo-downloader-3.9-win-x64.exe) · [下载便携 ZIP](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/hongguo-downloader-3.9-win-x64.zip) | 直接运行 EXE；ZIP 解压后运行同一程序，后续仍需手动替换 |
-
-[3.9 更新说明与源码](https://github.com/jackotom/hongguo-drama/releases/tag/v3.9) · [SHA256 校验文件](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/SHA256SUMS.txt)
-
-- **升级到 3.9**：3.8 安装版可通过应用内更新升级；1.75 及更早版本仍需手动安装一次。退出旧程序后替换 Mac 应用或运行 Windows 安装包；便携版升级时保留同目录的 `data`，并保留原系统资料目录作为迁移备份。
+| Apple Silicon Mac (M series), macOS 13+ | [Tải DMG](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/Hongguo-3.9-mac-arm64.dmg) | Mở DMG, kéo vào "Applications" rồi khởi chạy |
+| Intel Mac, macOS 13+ | [Tải DMG](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/Hongguo-3.9-mac-x64.dmg) | Mở DMG, kéo vào "Applications" rồi khởi chạy |
+| Windows x64 (Cài đặt) | [Tải EXE cài đặt](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/hongguo-downloader-3.9-win-x64-setup.exe) | Cài đặt theo hướng dẫn |
+| Windows x64 (Di động) | [Tải EXE di động](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/hongguo-downloader-3.9-win-x64.exe) · [Tải ZIP di động](https://github.com/jackotom/hongguo-drama/releases/download/v3.9/hongguo-downloader-3.9-win-x64.zip) | Chạy trực tiếp EXE; hoặc giải nén ZIP rồi chạy |
 
 </details>
 
-## 开始使用
+## Bắt đầu sử dụng
 
-1. 打开「设置」，选择下载目录并保存。
-2. 在「发现短剧」浏览，或在「搜索与下载」输入剧名、红果分享链接或剧集 ID。
-3. 打开详情点「立即播放」，也可选择集数与清晰度加入下载队列。
-4. 下次从「我的剧库」或「观看记录」接着看；下载进度、失败重试和整剧合并在「下载管理」。
+1. Mở phần "Cài đặt", chọn thư mục tải xuống và lưu lại.
+2. Duyệt xem trong "Khám phá phim ngắn", hoặc nhập tên phim, liên kết chia sẻ Hồng Quả hoặc ID phim tại mục "Tìm kiếm và tải về".
+3. Mở chi tiết và nhấp "Phát ngay", hoặc chọn các tập cùng độ nét mong muốn để thêm vào hàng đợi tải xuống.
+4. Lần tiếp theo, tiếp tục xem từ "Kho phim của tôi" hoặc "Lịch sử xem"; tiến độ tải, thử lại khi lỗi và gộp toàn bộ phim nằm trong mục "Quản lý tải xuống".
 
-## 5.3 下载到 NAS
+## 5.3 Tải xuống NAS
 
-- 「我的剧库」底部新增「下载到 NAS」，先挂载共享目录，再为每部剧选择独立文件夹。
-- 新下载直接写入所选目录；视频、封面、简介、剧集及分集 NFO 同层保存，不再追加目录。
-- 分集按「剧名 S01E001.mp4」命名；已有本地视频保留原文件并安全复制，已有 NAS 视频复用、缺失资料补齐。
-- 下载管理打开正确保存目录；目录断开、同名冲突或活动下载改路径时给出提示；直接 NAS 视频不参与看完自动删。
-- 资料按来源实际提供，独立保存而非内嵌 MP4；实体 NAS 和媒体库识别尚未实测。
-- 5.3已正式发布；三端下载和验证范围见 [5.3说明](docs/release-5.3.md)。
+- Phía dưới "Kho phim của tôi" bổ sung "Tải xuống NAS": trước tiên hãy gắn kết (mount) thư mục chia sẻ, sau đó chọn thư mục độc lập cho từng bộ phim.
+- Tải mới ghi trực tiếp vào thư mục đã chọn; video, ảnh bìa, tóm tắt, tệp NFO của phim và từng tập được lưu cùng cấp, không tạo thêm thư mục phụ.
+- Tên tập phim được đặt theo chuẩn "Tên Phim S01E001.mp4"; video cục bộ đã có được giữ nguyên tệp gốc và sao chép an toàn; video đã có trên NAS được tái sử dụng, thông tin còn thiếu được bổ sung.
+- Quản lý tải xuống mở đúng thư mục lưu trữ; đưa ra cảnh báo khi ngắt kết nối thư mục, trùng tên xung đột hoặc đổi đường dẫn khi đang tải; video tải trực tiếp lên NAS không bị xóa tự động sau khi xem xong.
+- Dữ liệu phim căn cứ theo nguồn thực tế cung cấp, lưu độc lập chứ không nhúng vào tệp MP4; chưa kiểm thử thực tế trên NAS phần cứng và thư viện nhận diện media.
+- Bản 5.3 đã phát hành chính thức; xem chi tiết tại [Thuyết minh 5.3](docs/release-5.3.md).
 
-## 5.2 macOS 窗口恢复
+## 5.2 Khôi phục cửa sổ macOS
 
-- 重启应用或关闭主窗口后从 Dock 重开，恢复普通主窗口的位置和大小。
-- 最大化、全屏、最小化、隐身小窗和竖屏布局不覆盖普通窗口记录，启动仍为普通窗口。
-- 原显示器不在时回默认位置和大小；同屏可用区域缩小时，窗口保持在屏幕内。
-- 正常退出时保存；崩溃或强制退出不保证保存本次调整。
-- 5.2已正式发布；三端下载与验证范围见 [5.2说明](docs/release-5.2.md)。
+- Khi khởi động lại ứng dụng hoặc mở lại từ Dock sau khi đóng cửa sổ chính, hệ thống sẽ khôi phục lại vị trí và kích thước của cửa sổ chính thông thường.
+- Phóng to tối đa, toàn màn hình, thu nhỏ, cửa sổ tàng hình và bố cục dọc không ghi đè bản ghi cửa sổ thông thường; khởi động luôn là cửa sổ thông thường.
+- Khi màn hình ban đầu không còn sẽ tự động trở về vị trí và kích thước mặc định; khi vùng khả dụng của màn hình bị thu nhỏ, cửa sổ luôn được giữ nằm trong màn hình.
+- Bản 5.2 đã phát hành chính thức; xem chi tiết tại [Thuyết minh 5.2](docs/release-5.2.md).
 
-## 5.1 更新说明
+## 5.1 Cập nhật sửa lỗi
 
-修复了已知问题
+Đã sửa các sự cố đã biết. Chi tiết xem [Thuyết minh 5.1](docs/release-5.1.md).
 
-三端5.1已正式发布；下载和验证范围见 [5.1说明](docs/release-5.1.md)。
+## 5.0 Ghi nhớ lịch sử xem và gợi ý các phần phim liên quan
 
-## 5.0 观看记录记忆与疑似同剧提示
+- Phạm vi phát hiện bên cạnh "Kiểm tra cập nhật", tùy chọn "Ẩn các phần thấp hơn cùng bộ phim" sẽ ghi nhớ lựa chọn trên máy và khôi phục khi mở lại trang hoặc ứng dụng.
+- Hỗ trợ cách viết phần rõ ràng như Phần 9, Phần 10, chữ số Hán và số phần trong ngoặc đơn; các phần phim rõ ràng cùng nguồn, cùng tên tiếp tục được phân nhóm bình thường.
+- Các hậu tố chỉ có số trần, đổi số ở giữa tiêu đề hoặc đổi tên nhẹ chỉ hiển thị "Nghi vấn cùng bộ phim (chỉ gợi ý)".
+- Các mục nghi vấn không vào danh sách ẩn, không gom nhóm hàng loạt, không hiện chấm đỏ cập nhật hoặc thông báo hệ thống.
+- Chi tiết xem [Thuyết minh 5.0](docs/release-5.0.md).
 
-- “检查更新”旁的检测范围、“隐藏同剧低季”会记住本机选择，重新打开页面及应用后恢复。
-- 支持第9季、10季、中文数字及括号内季号等明确写法；同来源、同剧名的明确季号继续正常归组。
-- 裸数字后缀、标题中间换数字、中英文数字变化和轻微改名只显示“疑似同剧（仅提示）”。
-- 疑似项不会进入隐藏、批量归组、更新红点或系统通知；点击核对也不会清除原剧更新标记。
-- 同一剧号后续改为明确季名时，新标题覆盖旧疑似缓存，转入确定续作后可正常清除更新标记。
-- 大幅改名仍可能漏提示；标题相近不能证明作品关系，不同记录和视频不会被删除。
-- 5.0 已正式发布，三端下载和最终验收回执见 [5.0说明](docs/release-5.0.md)。
+## 4.9 Tương thích máy tính cũ, phím Boss và sửa lỗi thu nhỏ cửa sổ
 
-## 4.9 老电脑兼容、老板键与小窗修复
+- Bổ sung tùy chọn "Máy tính đời cũ (Ưu tiên H.264)": ưu tiên nguồn tương thích, khi bật chế độ tương thích sẽ chủ động chuyển mã trước đối với nguồn H.265 đã biết, giảm hiện tượng màn hình đen rồi báo lỗi.
+- Sửa lỗi hình trong hình (PiP) và cửa sổ tàng hình trên Mac làm biến mất biểu tượng ứng dụng trên Dock.
+- Cài đặt thêm phím Boss cho phép nhập tổ hợp phím tùy chỉnh: tạm dừng toàn cục và ẩn toàn bộ cửa sổ phát, trên Mac đồng thời ẩn Dock; nhấn lại lần nữa để khôi phục cửa sổ và biểu tượng, tiếp tục giữ trạng thái tạm dừng.
+- Chi tiết xem [Thuyết minh 4.9](docs/release-4.9.md).
 
-- 新增“老电脑（H.264优先）”：优先兼容片源，开启兼容模式时对已知 H.265 片源提前转码，减少先黑屏再失败的情况。
-- 修复 Mac 自带画中画、隐身小窗导致整个应用 Dock 图标消失的问题。
-- 设置新增可录入组合键的老板键：全局暂停并隐藏所有播放窗口，Mac同时隐藏Dock；再次按键恢复窗口与图标，保持暂停。
-- 4.9 为上一正式版；历史验收与限制见 [4.9说明](docs/release-4.9.md)。
+## 4.8 Tự động ưu tiên 1080P và tự hạ cấp khi lỗi
 
-## 4.8 自动1080P优先与失败换档
+- Khi phát trực tuyến chọn "Tự động (Ưu tiên 1080P)", hệ thống sẽ thử 1080P trước, nếu thất bại sẽ lần lượt thử 720P và nguồn tương thích; khi chuyển đổi vẫn giữ nguyên tiến độ phát và trạng thái tạm dừng.
+- Khi gặp lỗi không tương thích giải mã, hệ thống trước tiên thử phát tương thích ở độ phân giải hiện tại và một lần tái tạo bộ nhớ đệm, nếu vẫn thất bại mới chuyển mức độ nét; khi tắt chế độ tương thích sẽ chuyển mức độ nét ngay.
+- Chuyển tập, thử lại thủ công và tải trước tập tiếp theo sẽ ưu tiên lại mức 1080P; số lần thử mỗi lượt có giới hạn để tránh chuyển đổi liên tục.
+- Chọn thủ công 720P hoặc 1080P vẫn giữ nguyên mức cố định, tệp cục bộ đã có không bị ép tải lại; chất lượng khả dụng thực tế tùy thuộc vào nguồn cung cấp. Chi tiết xem [Thuyết minh 4.8](docs/release-4.8.md).
 
-- 在线播放选择「自动（1080P优先）」时，先尝试1080P，失败后依次尝试720P和兼容片源；切换时保留播放进度及暂停状态。
-- 解码不兼容时，先尝试当前画质的兼容播放与一次缓存重建，仍失败再换档；关闭兼容模式时直接换档。
-- 换集、手动重试和后续分集预取重新优先1080P；每轮尝试次数有限，避免反复切换。
-- 手动指定720P或1080P仍保持固定画质，已有本地文件不强制重下；实际可用画质取决于来源。详见 [4.8说明](docs/release-4.8.md)。
+## 4.7 Thử lại khi tải lỗi và sửa lỗi hình trong hình
 
-## 4.7 下载重试与画中画修复
+- Sau khi gửi yêu cầu tải thất bại, "Thử lại tập này" có thể gửi lại yêu cầu; thông báo hiển thị đúng trạng thái tác vụ thực tế.
+- Hình trong hình tích hợp hiển thị ở góc dưới bên phải màn hình chứa cửa sổ chính, tự động lấy tiêu điểm, giữ ghim trên cùng và nhớ kích thước.
+- Sửa ngoại lệ xảy ra do hủy lần đọc cũ khi kéo thanh tiến độ video cục bộ; đăng ký thiết bị ẩn danh thất bại lần đầu có thể thử lại sau một khoảng thời gian làm mát ngắn. Chi tiết xem [Thuyết minh 4.7](docs/release-4.7.md).
 
-- 下载提交失败后，「重试本集」可以重新提交；提示按真实任务状态显示，避免失败后仍提示「本集已尝试下载」。
-- 自带画中画显示在主窗口所在屏幕的右下角，并聚焦、保持置顶；保留尺寸记忆。
-- 修复拖动本地视频进度时旧读取取消引发的异常；首次匿名设备注册失败后可在短暂冷却后重新尝试。详见 [4.7说明](docs/release-4.7.md)。
+## 4.6 Thích ứng 4K và cửa sổ rộng
 
-## 4.6 4K与宽窗口适配
+- Trang Khám phá và Tìm kiếm tận dụng tối đa chiều rộng cửa sổ, áp phích sắp xếp linh hoạt theo không gian khả dụng; trong Cài đặt có thể chọn kích thước áp phích: Nhỏ, Chuẩn, Lớn, Cực lớn.
+- Giao diện mặc định thu phóng 100%, không tự động phóng to vì màn hình 4K hay toàn màn hình; thu phóng thủ công hỗ trợ từ 50% đến 200% và lưu lại tùy chọn.
+- Tiêu đề tự động xuống dòng trên cửa sổ hẹp, thanh bên có thể cuộn trên cửa sổ thấp. Chi tiết xem [Thuyết minh 4.6](docs/release-4.6.md).
 
-- 发现页和搜索页充分使用窗口宽度，海报按可用空间排列；设置中可单独选择小、标准、大、特大海报。
-- 界面默认100%缩放，不因4K屏或全屏自动放大；手动缩放支持50%–200%，并保存偏好。
-- 窄窗口页头自动换行，矮窗口侧栏可滚动。详见 [4.6说明](docs/release-4.6.md)。
+## 4.5 Đổi lượt khác trên trang Khám phá
 
-## 4.5 发现页换一批
+- Nút "Đổi lượt khác" đọc trang tiếp theo thực tế của nguồn, danh mục và thể loại hiện tại, giữ nguyên thứ tự sắp xếp của nguồn.
+- Nhấp lặp lại vào các nút Phim người đóng, Hoạt hình, Phim AI hoặc Thể loại cũng sẽ đổi lượt; khi chuyển lại phân loại sẽ tiếp tục vị trí trước đó, đến trang cuối cùng sẽ quay lại từ đầu.
+- Bốn bảng xếp hạng Tổng hợp, Người đóng, Hoạt hình, AI giữ nguyên thứ tự độ hot, nhấp lặp lại vào bảng hiện tại không đổi lượt. Chi tiết xem [Thuyết minh 4.5](docs/release-4.5.md).
 
-- 「换一批」读取当前来源、目录线路和题材的真实下一页，保留来源顺序。
-- 重复点击真人剧、漫剧、AI剧或题材按钮也会换批；切回分类继续上次位置，到末页后重新开始。
-- 综合、真人、漫剧、AI四个热播榜保持热度顺序，重复点击当前榜单不换批；翻页失败保留旧片单并重试同一页。详见 [4.5说明](docs/release-4.5.md)。
+## 4.4 Hình trong hình tích hợp, lọc lịch sử và khôi phục lấy nguồn
 
-## 4.4 自带画中画、记录筛选与取源恢复
+- Cài đặt có thể chọn "Hệ thống nguyên bản / Ứng dụng tích hợp" cho hình trong hình, mặc định dùng cửa sổ nổi tích hợp; cửa sổ hiển thị tên phim, nhớ kích thước, quay lại cửa sổ chính giữ nguyên tiến độ và trạng thái phát.
+- Lịch sử xem thêm tùy chọn "Ẩn các phần thấp hơn cùng bộ phim", chỉ ảnh hưởng đến hiển thị và bộ đếm, giữ nguyên bản ghi và tệp video của các phần khác.
+- Khi lấy nguồn từ App trả về phản hồi rỗng, hệ thống sẽ làm mới thiết bị ẩn danh một lần và thử lại trong giới hạn thời gian và hạn mức làm mát, không làm đổi tài khoản đăng nhập.
+- Lối vào tài khoản độc lập thống nhất thành "Tài khoản Hồng Quả", giữ nguyên tính năng quét mã đăng nhập và đọc lịch sử xem trên App. Chi tiết xem [Thuyết minh 4.4](docs/release-4.4.md).
 
-- 设置可选择「系统原生／应用自带」画中画，默认使用自带小窗；小窗显示剧名、记忆尺寸，返回主窗口保留进度和播放状态。
-- 观看记录新增「隐藏同剧低季」，只影响显示和计数，保留其他季记录及视频文件。
-- App取源返回空响应时，在时间预算和冷却限制内更新一次匿名设备并重试，不更换登录账号。
-- 独立账号入口统一为「红果账号」，扫码登录与APP观看记录功能保留。详见 [4.4说明](docs/release-4.4.md)。
+## 4.3 Quản lý đăng nhập và lịch sử xem trên APP
 
-## 4.3 登录管理与 APP 观看记录
+Thêm trang "Quản lý đăng nhập" độc lập phía trên "Cài đặt". Sử dụng App Hồng Quả trên điện thoại quét mã QR trang web để đăng nhập, sau khi đăng nhập có thể đọc 50 lịch sử xem gần nhất trên APP của tài khoản và tìm kiếm theo tên phim. Chỉ khi nhấp vào bản ghi từ trang Quản lý đăng nhập mới chuyển sang trình phát; mục "Lịch sử xem" gốc vẫn chỉ hiển thị lịch sử của máy tính này.
 
-4.3 在「设置」上方新增独立「登录管理」。使用手机红果 App 扫描网页登录二维码，登录后可读取当前账号最近 50 部 APP 观看记录，并按剧名搜索。只有从登录管理页点击记录才会进入播放器；原「观看记录」仍只显示本机记录。
+Trạng thái đăng nhập được mã hóa bằng lưu trữ an toàn của hệ thống, tách biệt với cài đặt thông thường, lịch sử xem và bản sao lưu. Phiên bản này không tải lên lịch sử của máy và không nhập hàng loạt bản ghi APP vào máy. Chi tiết xem [Thuyết minh 4.3](docs/release-4.3.md).
 
-登录态使用系统安全存储加密，和普通设置、观看历史及备份分开保存。本版不上传本机历史，也不把 APP 记录批量导入本机。外部账号扫码和真实记录映射仍需实机验收，详见 [4.3说明](docs/release-4.3.md)。
+## 4.2 Độ phân giải合tập và phương thức gộp
 
-## 4.2 合集分辨率与合并方式
+Khắc phục vấn đề tập đầu có độ phân giải thấp làm nén toàn bộ các tập HD phía sau xuống 480P. Gộp nhanh và Gộp tương thích ghép nối theo độ phân giải gốc của từng đoạn video; đoạn độ nét thấp không làm giảm chất lượng đoạn HD. Gộp chất lượng cao kiểm tra tệp thực tế đã tải trước khi bắt đầu, chỉ khởi chạy khi tất cả các tập đều đạt 1080P.
 
-4.2 修复低分辨率首集把后续高清分集压成 480P 的问题。快速和兼容合并会按每段视频的原始分辨率拼接，例如前10秒1080P、后10秒720P；低清片段不会拖低高清片段。高质量分辨率合并会在开始前检查实际已下载文件，只有全部达到1080P才启动。
+Cả 3 phương thức đều giữ nguyên tệp gốc, chỉ gộp các tập đã tải và không phóng đại video nét thấp thành nét cao giả mạo. Chi tiết xem [Thuyết minh 4.2](docs/release-4.2.md).
 
-合并弹窗写清三种方式。软件只在合并前检查一次，完成后不再读取或复查输出视频。三种方式都保留原文件，只合并已下载分集，也不会把低清视频变成真高清。左侧导航不能拖选文字，右侧正文仍可选中复制。验证范围与发行边界见 [4.2说明](docs/release-4.2.md)。
+## 4.1 Xuất dữ liệu văn bản kèm theo khi tải xuống
 
-## 4.1 随下载导出文字数据
+- Trong "Tìm kiếm và tải về" chọn phim ngắn Hồng Quả, tích chọn theo nhu cầu: "Danmaku", "Bình luận", "Đánh giá phim", sau đó nhấn tải các tập đã chọn.
+- Danmaku và bình luận của từng tập được lưu thành tệp JSON riêng biệt, sử dụng thư mục và tiền tố tên tệp của tác vụ video thực tế; đánh giá phim lưu 1 bản duy nhất cho cả bộ.
+- Dữ liệu văn bản xuất ngầm trong nền, một mục lỗi không làm chặn tải video. Kết quả hiển thị số lượng thành công, bỏ qua, thất bại và dữ liệu một phần.
+- Chỉ hỗ trợ nguồn Hồng Quả; bình luận và đánh giá phim chỉ bao gồm phần công khai trên trang web chính thức. Tính năng xuất phát từ PR #61 của `jayeeliu`.
 
-- 在「搜索与下载」选择红果短剧，按需勾选「弹幕」「评论」「剧评」，再点击下载选中集数。
-- 每集弹幕、评论分别保存为 JSON，使用实际视频任务的目录和文件名前缀；整剧剧评保存一份。已有视频任务可通过再次提交补导出，新设置不会改变旧任务的文字保存位置。
-- 文字在后台导出，单项失败不阻塞视频下载。结果区显示成功、跳过、失败与部分数据份数；完成先到、修改勾选或旧任务迟到均不会覆盖当前任务结果。
-- 完整 JSON 保留；翻页中断的弹幕标记为部分数据，再次提交可重试补齐，失败保留原文件。
-- 仅支持红果来源；评论、剧评只含官网公开可读部分，不承诺全量。功能源于 `jayeeliu` 的 PR #61，详见下方贡献者记录。
+## Tính năng đầy đủ
 
-## 4.0 远程公告与搜索故障回退
-
-4.0 已正式发布，包含以下功能；验证范围见 [4.0 说明](docs/release-4.0.md)。
-
-- 普通、紧急远程公告各有独立关闭开关，升级后保留；自动提醒关闭时不读取对应通道。公告显示 30 秒自动收起，关闭当前弹窗不改变免提醒偏好。
-- 普通公告正文已说明：可在「设置 → 公告通知」永久关闭普通或紧急公告，软件升级后仍保持关闭；需要时可点击「查看当前公告」手动查看。
-- 紧急公告优先，每 5 分钟检查；同一 ID 自动提醒永久一次，跨天、重启、升级不重复，前提是本机已读记录成功保存且保留。新 ID 可再次提醒。
-- 普通公告支持“今日打开不再提醒”（`day`）与“版本更新前不再提醒”（`version`）；抑制期间不读取普通远程文件，版本变化解除抑制，独立关闭开关仍保留。
-- 设置页「查看当前公告」手动重新读取，即使自动提醒关闭、普通免提醒生效或紧急 ID 已读也可查看；不改开关和免提醒偏好。
-- 三处交互：GitHub 反馈在系统浏览器打开网页；邮箱点击复制地址并显示“邮箱已复制”，失败时提示手动复制；AI 服务购买说明整段链接打开 `vipai.pro`。本机测试包已确认邮箱复制成功提示。
-- 纳入四项审核修复：关闭再开启丢弃旧请求迟到结果；公告跟随全屏与焦点且不重复记已读、不重置 30 秒计时；普通开关不重置紧急 5 分钟时钟；公告文件使用真实解析器校验且不绑定固定正文。
-- 搜索 #60：官网出现 503／502 等故障时自动尝试带注册匿名身份与原签名的 App 搜索，分页沿用同一通道；已有故障回退、分页和真实搜索样本通过记录。未取得报告者的具体关键词与网络环境，不能保证所有地区或作品可用。完整范围与验证边界见 [4.0 说明](docs/release-4.0.md)。
-
-## 3.9 播放恢复、搜索、双集预取与窗口模式
-
-- 放宽当天新剧补搜：官网没有同名结果或接口异常时，App 真人剧与 AI 剧上新目录默认各翻两页，最多使用 200 条候选、返回 20 条补搜结果，繁忙日的新剧更不容易落在首屏之外。
-- 修复下一集预取失败后一直占着名额、没有重试的问题；失败会立即释放本次请求，15 秒后随播放进度重试，切到该集时不必重新等待下载。
-- 预取升级为最多后续两集：跳过锁定、已下载和本地可播分集；从第一集切到第二集时保留第三集的已准备结果，并在新位置继续补齐后续窗口。
-- 播放控制条新增「画中画」按钮：使用系统原生悬浮小窗继续播放，窗口可拖动、置顶、暂停与关闭；自动连播或切换清晰度时不再主动关闭小窗。
-- 画中画复用当前 `video` 元素，不额外下载或开启第二路在线会话；退出小窗后返回应用内播放。
-- **全屏**按钮与小窗模式并存：横屏进入播放器全屏，竖屏填满当前窗口；「小窗模式」把主窗口缩为置顶小窗，鼠标移开自动暂停隐藏，移回继续，可用 Esc、Dock 或窗口菜单恢复。
-- 系统画中画的默认位置、置顶和跨虚拟桌面行为由操作系统管理；不支持画中画的环境会给出提示。
-
-## 3.8 搜索当天新剧
-
-- 官网搜索没有同名结果、接口 502，或短剧名被更长的老剧名遮蔽时，自动从 App 近 7 天上新目录补搜当天新剧。
-- 补搜结果显示「今日上新」/「App 新剧」标记；官网已有精确同名结果时不额外请求 App。
-- 补搜失败不影响官网结果；加载更多仍固定官网通道，不会把补搜结果混进下一页。
-- App 搜索实验开关仍默认关闭；本次补搜读取 App 分类目录，不需要开启该开关。
-- 边界：每类最多取前 50 条、缓存 60 秒；App 目录接口偶发失败时仍以官网结果为准。
-
-## 3.7 观看记录检测
-
-- 每条观看记录新增单独「检测」按钮；失败只影响这一条，可立即重试。
-- 同一来源、同一基础剧名按剧族归组：最高季只做一次续作搜索，低季复用候选；每季自己的新集仍独立检查，避免低季补更被漏掉。
-- 批量检测支持「全部记录／仅最高季／仅未看完／排除已看完低季」；已看完的低季自动检测降到每 24 小时一次。
-- 单条分集检查限时 10 秒，批量总预算 90 秒，按剧族和记录有限并发；显示当前进度，超出预算的记录保留为“继续检查”。
-- 分集更新失败与续作搜索失败分开显示；续作搜索结果短期缓存，失败后短暂冷却，避免连续撞同一个坏节点。
-
-## 3.6 分集拉取提速
-
-- 官网分集页优先走可信 DNS，避开会挂起的 CDN 边缘；首次只等 1.5 秒，0.6 秒未回就并行再开一组。
-- 重试同时走可信／普通 DNS 的 player 与 detail；备用接口 200 空响应自动重试，不再直接失败。
-- 真实 10 部剧集样本全部成功，0.49–1.21 秒，平均 0.81 秒；预览 UI 实测 0.75–1.12 秒。
-- 上游仍可能偶发断连；不承诺每部剧每次必然秒开。详见 [3.6 说明](docs/release-3.6.md)。
-
-## 3.5 目录双线与分页恢复
-
-- 发现短剧与热播推荐提供「App（快速）／官网」，默认 App、各自记忆选择；两条线路独立缓存，加载失败后可手动切换，不混入另一条线路的片单。
-- 推荐刷新不再破坏发现页后续分页。失败、取消、超时和切题材保留真实页码；旧分页失效时明确提示刷新回首页。
-- 搜索按来源逐步显示已返回结果，慢来源不再遮住已有片单；推荐显示 App 剧情简介。
-- 对已核实的西饭元数据冲突仅隐藏错误分集副标题，保留剧集编号、文件、资料及播放映射；不据此确认上游影片身份。
-- App 或官网仍可能间歇超时，不承诺永久可用或官网一定更快。改动、验证与发行边界见 [3.5 说明](docs/release-3.5.md)。
-
-## 3.4 搜索与资料安全
-
-官网搜索支持补搜和加载更多；Windows 便携资料跟随程序，播放器新增全屏时间与分辨率信息。App 搜索为默认关闭的实验选项。修复内容及验收边界见 [3.4 说明](docs/release-3.4.md)。
-
-## 3.3 下载降级与 Mac 界面缩放
-
-- 红果指定清晰度不可用或下载失败时，自动尝试更低清晰度；下载管理显示降级提示和实际下载画质。
-- 已有文件保留；取消、磁盘权限和本地媒体工具错误不会触发降级，不改变第三方来源的策略。
-- Mac 的「视图」放大、缩小和实际大小会保存选择，调整窗口、切换横竖布局或重新启动后继续生效。
-- 3.3 三端发行已完成；字号只随手动缩放调整，拖动窗口不改变字号。构建、公证与真实媒体验收边界见 [3.3 说明](docs/release-3.3.md)。
-
-## 3.2 片单缓存与刷新恢复
-
-- 热播推荐保留会话片单；切换分类或返回页面时先显示已有内容，再更新片单。原生目录缓存延长至 120 秒，主动刷新仍重新请求。
-- 刷新超时、失败或返回空列表时保留已有片单，显示可重试提示；更新完成后保留仍在片单中的选中剧集。
-- 切换来源、修改来源配置或取消更新后，旧请求返回不会覆盖当前选择或触发旧剧播放。
-- 发现页已有海报时使用紧凑错误提示，保留分类、分页及海报可见。
-- 3.2 三端发行已完成；验证范围与限制见 [3.2 说明](docs/release-3.2.md)。
-
-## 3.1 查找下一季与审计修复
-
-- 增加手动查找下一季入口，列出同来源、同剧名的更高季数候选，确认后再播放。
-- 改善跨来源结果相关性；主剧名搜索优先补缺失季，手动及后台续作检查优先补当前季之后的缺失季，每次最多两条补搜。
-- 删除下载文件保留在线播放会话；单任务、单集、自动清理及整剧清理共用归属检查，保护共用文件。占用统计、分集列表与合并按同一归属识别；保存失败保留记录并展示实际释放空间，正在合并的剧明确提示跳过。
-- 清理会取消目标失败任务的自动重试，并保存取消状态；文件未能删除而保留记录时也不会在当前会话自动重下。取消状态保存失败会明确提示。
-- 代理测试使用表单对应路由，手动代理不受环境绕过规则干扰；明确系统模式的接口／浏览器范围。
-- 收藏与观看记录续作优先使用本地档案；缺档案使用稳定错误码回退。
-- 播放页恢复常用开关，新增下载本集与后5／10集；横屏缩小时整体等比例缩放，保持行列。
-- 三端正式发行已完成，验证范围与限制见 [3.1 说明](docs/release-3.1.md)。
-
-## 3.0 代理与本地播放管理修复
-
-- 强制直连与关闭代理时清理继承的 ALL_PROXY；切回系统模式恢复启动时的代理环境。
-- 清理下载记录后，“删除全部已下载”仍能找到并清理合集。
-- 收藏与上新优先打开本机已登记剧集，仅缺少档案时联网解析。
-- 鼠标移出播放器后回到原位置，播放控件正常显示。
-- 保留 2.9 的时间轴弹幕、观看记录与播放器改进。详情见 [3.0 说明](docs/release-3.0.md)。
-
-## 2.9 时间轴弹幕与观看体验
-
-- 新增按视频播放时间点显示的弹幕，可在“时间轴弹幕”与原有“本集评论”之间切换，保留显示设置和屏蔽词。
-- 弹幕获取、请求签名和时间轴实现参考并移植自 [dawei233/hongguo-drama](https://github.com/dawei233/hongguo-drama)，固定来源提交 `c884fab6c6e36ad38173e251738b9b35f958383f`，沿用 GPL-3.0 许可，保留原作者说明。
-- 使用的是非公开分时接口，上游变化时可能失效，不能保证与手机端数量完全一致；失败可切换为本集评论。
-- 弹幕不足时轮播已滚出的真实内容，新到点内容优先；快进、后退保留在屏弹幕。鼠标停住 1 秒隐藏控件与指针。
-- 观看记录支持逐条移除与全部／未看完／已看完筛选，收藏增加海报，搜索历史可逐条删除。
-- 改进播放取源、剧库管理和看完缓存清理。详细变更与验收边界见 [2.9 说明](docs/release-2.9.md)。
-
-## 2.8 快进回退时延续可见控件计时
-
-- 底栏已显示时，快进／回退及长按重复触发会重新计算 2 秒自动隐藏时间，避免操作中途消失。
-- 底栏已隐藏时，默认或自定义快进／回退、长按及松键仍保持隐藏；移动鼠标可正常唤出。
-- 保留全屏按钮焦点清理与上一集／下一集行为。变更与验证范围见 [2.8 更新说明](docs/release-2.8.md)。
-
-## 2.7 快进回退时保持控件隐藏
-
-- 播放控件已隐藏时，默认方向键和自定义快进／回退快捷键不再唤出底栏；长按重复触发和松开按键保持一致。
-- 修复进入全屏后隐藏按钮残留焦点，避免后续快捷键因焦点移动而重新显示控件。
-- 移动鼠标仍可正常显示播放控件。变更范围与验收边界见 [2.7 更新说明](docs/release-2.7.md)。
-
-## 2.6 全屏播放体验
-
-- 全屏顶部显示剧名和当前集，随播放控件显示与隐藏。
-- 底部增加悬浮选集网格，可直接切换分集；清晰度菜单沿用现有取源能力。
-- 清晰度受来源、当前分集和本地文件限制；菜单说明适用范围，不承诺来源未提供的高清片源。
-- 历史状态与限制见 [2.6 更新说明](docs/release-2.6.md)。资产可用性与正式发布状态以发行页为准。
-
-## 2.5 播放与任务恢复修复
-
-- 再次合并自动生成新文件名；清理遗留合并临时文件，退出时等待下载收尾。
-- 后台搜索与可见窗口分开，限制远程页面权限。
-- 按真实视频编码恢复媒体信息，避免将 H.264 片源误标为 HEVC。
-- 分集加载失败可直接重试；兼容模式与自动删除设置保存失败时显示原因。
-- 有下载运行时，也可恢复其它暂停或失败任务；已下载更新安装失败后可再次安装。
-- 修正标题年份被误识别成季数的问题。详见 [2.5 发行说明](docs/release-2.5.md)。
-
-## 2.4 播放、缓存与安全修复
-
-- 离开剧库暂停播放，返回时保留进度；新下载剧集和空间统计按需刷新。
-- 减少下载管理和等待播放时的重复目录扫描，修复失败回退持续轮询。
-- 收紧分享链接与转码缓存参数校验，保护活动缓存和退出清理。
-- 修复保存恢复后更新仍受阻的问题，升级重定向安全依赖。
-- 详见 [2.4 发行说明](docs/release-2.4.md)。
-
-### 播放取源与连播优化
-
-- 兼容官网新的播放页路径，保留分集身份校验，避免错误拒绝正常片源。
-- App 与旧接口媒体请求默认不附网页 Referer，403 时切换请求头重试一次。
-- 在线取源和预缓存下一集不再反复扫描整个下载目录，减少慢磁盘造成的播放阻塞。
-- 补充 Windows 便携版手动升级步骤，避免仍从旧快捷方式启动。
-- 详见 [2.4 发行说明](docs/release-2.4.md)。
-
-## 2.3 红果网络与热播换源修复
-
-- 红果分类与热播榜统一使用应用浏览器网络通道，跟随应用中的系统、直连或自定义代理设置，避免目录请求与浏览器网络配置不一致。
-- 热播推荐新增来源选择。红果不可用时，可切换西饭、河马或已启用的自定义源；其它来源展示实际目录，不冒充热播排名。
-- 换源会取消等待旧片单和旧剧解析，避免迟到结果覆盖当前来源；保留摇一摇和剧库播放入口。
-- 详见 [2.3 发行说明](docs/release-2.3.md)。
-
-## 2.2 播放控件与启动修复
-
-- 播放时鼠标移出播放区域，进度条与控制按钮立即开始隐藏；暂停、拖拽、菜单和键盘操作保留可见入口。
-- 启动时不再遍历全部历史下载目录，避免慢外置盘或网络盘扫描拖住主窗口。未登记的本地视频可在“下载管理 → 展开工具 → 扫描下载目录”补登记，分集播放仍按需查找。
-- 网络初始化增加等待上限，启动失败显示具体阶段，方便反馈。
-- 保留更新下载的取消、重试、手动下载与应用代理支持。
-- 详见 [2.2 发行说明](docs/release-2.2.md)。
-
-## 2.1 更新检测与下载修复
-
-- 更新检测增加官方备用通道，GitHub API 限流或超时后仍可查询稳定新版。
-- 应用内更新下载跟随设置中的代理，支持代理认证；切换代理后重新建立连接。
-- 下载中可以取消，取消后可重试；手动下载入口随时可用。
-- 下载完成仍由你决定是否重启安装。已安装的旧版本不会自动获得本轮检测修复；旧版检测失败时，可直接下载本版安装包。
-- 本轮验证及边界见 [2.1 发行说明](docs/release-2.1.md)。
-
-## 2.0 代理与历史下载修复
-
-- 切换下载目录后，已登记的历史视频仍可定位与兼容转码。
-- 代理密码保存、清除立即刷新，普通设置保存不重放密码；IPv6 地址和认证匹配已修正。
-- 窗口、关于面板、发行标签和下载文件名统一使用两段版本 **2.0**。
-- 双 Mac 隔离替换及 Windows 真实官方 1.80 安装版升级检查通过；设置、观看记录保留。详见 [2.0 发行说明](docs/release-2.0.md)。
-
-## 1.80 应用内下载安装更新
-
-- Mac 与 Windows 安装版新增应用内下载更新，显示下载进度；完成后由你点击重启安装。
-- 保留官方下载页入口，网络失败可重试；Windows 便携版继续手动下载，不会静默转换成安装版。
-- 原有用户资料位置不变，沿用设置、观看记录和下载目录；不要求清空数据或重新下载剧集。
-- 1.75 及更早版本需手动安装一次 1.80，之后才使用新版更新入口。具体验证范围见[本版发行说明](https://github.com/jackotom/hongguo-drama/releases/tag/v1.80)。
-
-## 1.75 安全与稳定性改进
-
-- 搜索加载与页面读取共用超时，卡住后可以继续搜索；慢加载也会读取已有结果。
-- 加强窗口隔离、页面跳转和应用接口来源检查；页面异常时可重新加载恢复。
-- 本地数据替换前同步落盘，减少纯播放时的重复目录扫描，下载与连载上新仍会刷新。
-- 限制单次整集缓冲读取，保留下载后播放；后续版本按整数段判断新旧。详见 [1.75 更新说明](docs/release-1.75.md)。
-
-## 1.74 播放画质与恢复修复
-
-- 红果在线播放可独立选择 720P／1080P，切集、缓存和恢复保持选择，不静默降级。
-- 评论状态提示不再挡住画面；下载等待重试与最终失败分别显示，保留具体错误。
-- 修复画质标签误导选流、指定画质缓存未复用，以及 Windows 带引号路径漏查 FFmpeg。
-- 保留剧库与已下载文件。详见 [1.74 更新说明](docs/release-1.74.md)；真实片源可用性仍取决于上游。
-
-## 1.73 下载自动重试
-
-临时传输故障按 10、30、60 秒自动重试；下载管理显示等待状态、轮次和时间，支持立即重试或停止。详见 [1.73 更新说明](docs/release-1.73.md)。
-
-## 1.72 播放与下载修复
-
-- 普通横屏播放时，控制条无操作约两秒后隐藏；暂停、菜单、拖动和键盘焦点仍可正常使用。
-- 官网及自定义片源复用经过安全检查的连接，减少分段播放重复建连；代理与直连分开。
-- 指定清晰度下载遇到临时网络错误，可按既有上限延迟重试，保持原画质，不无限重试。
-- 保留 1.71 布局。详见 [1.72 更新说明](docs/release-1.72.md)；上游不可用或明确画质缺失仍可能失败。
-
-## 1.71 布局更新
-
-- 我的剧库的下载清晰度说明移到标题下、操作按钮上方；竖屏时随管理面板展开。
-- 热播推荐四个榜单与“摇一摇”分散排布，旧试用包更新后生效。
-- 保留原有剧库、下载和设置。详见 [1.71 更新说明](docs/release-1.71.md)。
-
-## 1.7 更新重点
-
-
-**下载仍可能失败。** 平台风控可能限制取址；App 取址已采用每次请求更换合成设备标识符的方式尝试绕过按设备限制，但不保证所有剧集可用或下载成功。失败任务会保留，可稍后重试。
-
-本软件用于学习研究，建议体验后 24 小时内自行删除；请勿冒充官方或以虚假授权名义收费。开源权利义务以 [GPLv3](LICENSE) 为准。上述倡议不代表获得平台或版权方授权，也不构成免责承诺。
-
-- 取址遭遇临时拒绝时，按 3、8、15 分钟最多延迟重试三次；可暂停或停止，不无限重试。
-- 修复本地资料读取失败后的覆盖风险、多实例争抢资料、合并期间误删分集、合并选中旧记录，以及下载完成前的视频有效性检查。
-- 修复下载回复晚到后跳集、暂停状态在同集换源后丢失、返回剧库重复执行旧点播指令。完整预缓存可经质量检查后保存，减少重复取流。
-- 热播推荐保留四种榜单，新增“摇一摇”短剧签筒。支持全部来源、单来源随机，避免连续抽到同部，结果在统一剧库播放。
-- 设置新增自定义播放源：支持苹果 CMS V10 JSON API 的目录、搜索、详情与选集，以及明确 MP4/M3U8 直链的播放和下载。已启用来源加入发现、全部搜索和摇一摇。
-- M3U8 仅支持点播；先将清单、分片和密钥逐项检查并准备到本地，再播放或保存为 MP4。支持普通与 AES-128 HLS，不支持直播、DRM、解析网页、远程插件和付费解锁。
-- 自定义源可测试、启停、编辑和删除；删除配置不删除本地视频。沿用现有代理设置，代理端最终 DNS 由用户所选代理负责。
-
-源码基于公开 v1.6，保留原播放恢复与三来源功能。公开发行与平台验证状态以发行页为准。详见 [1.7 升级说明](docs/release-1.7.md)。
-
-## 1.6 更新重点
-
-- **下载清晰度可选**：自动（兼容优先）、1080P、720P；按实际分辨率选源，不静默降级。
-- **本集评论弹幕**：可调字号、速度、不透明度、区域和密度，支持本机屏蔽词。
-- **播放与下载恢复**：地址失效或传输中断时，有限次刷新取址并尝试备用片源；文件完整并通过校验后才标记下载完成。
-
-弹幕仅展示公开网页提供的部分评论，通常首屏约 15 条，读完不循环；不代表全部评论，也不支持发送或回复。完整改动和验证范围见 [1.6 发行说明](https://github.com/jackotom/hongguo-drama/releases/tag/v1.6)。
-
-## 完整功能
-
-| 想做什么 | 主要功能 |
+| Mục tiêu | Tính năng chính |
 |---|---|
-| 找剧 | 红果、西饭、河马统一搜索，分类、热播榜、分享链接解析 |
-| 连续观看 | 在线与本地播放、断点续播、自动连播、倍速、后续两集预取与系统画中画 |
-| 下载与导出 | 清晰度选择、批量下载、失败重试、合并 MP4 |
-| 管理剧库 | 观看记录、本机收藏、新集提醒、下载文件与缓存清理 |
-| 调整观看体验 | 横竖布局、置顶、小窗模式、系统画中画、主题、快捷键与画质增强 |
-| 阅读评论 | 公开剧评、本集评论弹幕与本机屏蔽词 |
+| Tìm phim | Tìm kiếm hợp nhất Hồng Quả, XiFan, Hà Mã; duyệt danh mục, bảng thịnh hành, phân tích liên kết chia sẻ |
+| Xem liên tục | Phát trực tuyến và cục bộ, tiếp tục phát từ điểm dừng, tự chuyển tập, chỉnh tốc độ, tải trước 2 tập tiếp theo, hình trong hình |
+| Tải và xuất | Chọn độ phân giải, tải hàng loạt, tự động thử lại khi lỗi, gộp thành 1 tệp MP4 |
+| Quản lý kho phim | Lịch sử xem, yêu thích trên máy, nhắc nhở tập mới, dọn dẹp tệp tải và bộ nhớ đệm |
+| Tùy chỉnh trải nghiệm | Bố cục ngang/dọc, ghim cửa sổ, chế độ thu nhỏ, hình trong hình (PiP), chủ đề, phím tắt, tăng cường độ nét |
+| Đọc bình luận | Đánh giá công khai, mưa bình luận (Danmaku) theo dòng thời gian, từ khóa chặn trên máy |
 
 <details>
-<summary>展开功能详情与使用限制</summary>
+<summary>Mở rộng chi tiết tính năng và giới hạn sử dụng</summary>
 
-### 1. 找剧：三个来源，一次搜索
+### 1. Tìm phim: Ba nguồn trong một lần tìm kiếm
 
-- **全部来源搜索**：默认同时查询红果、西饭和河马，结果标明来源；也可切换单一来源。某个来源失败时，仍显示其他来源的结果。
-- **发现目录**：海报、剧名、集数、题材筛选、分页浏览和刷新片单；详情展示完整分集及下载状态。
-- **红果分类与热播榜**：真人剧、漫剧、AI 剧；综合、真人、漫剧、AI 四类榜单，显示来源提供的排名与热度。
-- **红果链接 / ID 解析**：粘贴分享链接或输入剧集 ID，获取详情后播放或选集下载。
-- **详情直接播放**：无需先下载整部剧；未下载的可用分集尝试在线播放。
-- **选集更灵活**：单选、多选、全选、反选、取消全选；快捷选前 10 集、前 30 集、后 30 集；支持 `1-30`、`1,3,5`、`1,5,10-20` 等范围。
+- **Tìm kiếm tất cả các nguồn**: Mặc định truy vấn đồng thời Hồng Quả, XiFan và Hà Mã, kết quả ghi rõ nguồn; có thể chuyển sang từng nguồn riêng lẻ. Khi một nguồn gặp lỗi, kết quả của các nguồn khác vẫn hiển thị bình thường.
+- **Danh mục khám phá**: Hiển thị ảnh bìa, tên phim, số tập, bộ lọc thể loại, duyệt phân trang và làm mới danh sách; trang chi tiết hiển thị toàn bộ các tập cùng trạng thái tải xuống.
+- **Phân loại và bảng xếp hạng Hồng Quả**: Phim người đóng, Hoạt hình, Phim AI; 4 bảng xếp hạng Tổng hợp, Người đóng, Hoạt hình, AI hiển thị thứ hạng và độ hot do nguồn cung cấp.
+- **Phân tích liên kết / ID Hồng Quả**: Dán liên kết chia sẻ hoặc nhập ID phim ngắn để lấy thông tin chi tiết, phát ngay hoặc chọn tập tải về.
+- **Phát trực tiếp từ chi tiết**: Không cần tải trước toàn bộ phim; các tập chưa tải có thể phát trực tuyến ngay lập tức.
+- **Chọn tập linh hoạt**: Chọn từng tập, chọn nhiều tập, chọn tất cả, đảo vùng chọn, bỏ chọn tất cả; chọn nhanh 10 tập đầu, 30 tập đầu, 30 tập cuối; hỗ trợ các cú pháp khoảng như `1-30`, `1,3,5`, `1,5,10-20`.
 
-| 来源 | 已实现 | 当前边界 |
+| Nguồn | Đã triển khai | Giới hạn hiện tại |
 |---|---|---|
-| 红果 | 目录、题材、四类热播榜、搜索、分享链接 / ID 解析、可用分集播放下载 | 网页未提供片源时尝试补充取址，结果仍以来源实际返回为准。 |
-| 西饭 | 独立目录、题材、分页、搜索、已开放分集播放下载 | 热播榜尚未接入；锁定分集保留标记并跳过。 |
-| 河马 | 官网目录、题材、前后翻页、搜索、完整分集列表、明确免费分集播放下载 | 收费或状态不明的分集锁定，不提供解锁。 |
+| Hồng Quả | Danh mục, thể loại, 4 bảng xếp hạng, tìm kiếm, phân tích link/ID, phát và tải tập khả dụng | Khi trang web chưa có nguồn sẽ thử lấy luồng bổ sung từ App, kết quả tùy thuộc vào phản hồi thực tế của nguồn. |
+| XiFan | Danh mục riêng, thể loại, phân trang, tìm kiếm, phát và tải tập đã mở | Chưa tích hợp bảng xếp hạng; các tập bị khóa giữ nguyên đánh dấu và bỏ qua. |
+| Hà Mã | Danh mục web, thể loại, lật trang trước sau, tìm kiếm, danh sách tập đầy đủ, phát và tải tập miễn phí | Các tập thu phí hoặc trạng thái không rõ ràng sẽ bị khóa, ứng dụng không cung cấp mở khóa. |
 
-三个来源的文件按来源与剧名分目录保存。“漫画”是图文阅读内容；要播放视频请选“漫剧”。片源、清晰度及可用分集取决于平台，软件不承诺固定 1080p 或全集可用。
+Tệp của 3 nguồn được lưu theo thư mục riêng theo nguồn và tên phim.
 
-### 2. 播放：在线、本地与连续观看
+### 2. Phát video: Trực tuyến, cục bộ và xem liên tục
 
-- **本地优先**：已下载分集直接播放本地文件，未下载且未锁定分集尝试在线播放；双击未下载分集可加入下载队列。
-- **基本控制**：点击画面或按钮播放 / 暂停，拖动进度条，查看时间，调整音量与静音。
-- **缓存后续 2 集**：在「我的剧库」连播按钮左侧开关，默认开启并记住选择；当前集开始播放就最多预缓存后续两集可在线播放的内容，跳过已下载和锁定分集。切到下一集时会保留更后一集的预取结果；预取失败会释放名额并在 15 秒后重试。会提前使用网络流量，关闭开关可取消全部后台预缓存。
-- **自动连播**：默认开启，可随时关闭；自动切换下一集，跳过锁定分集，本地与在线分集可衔接播放。
-- **断点续播**：按剧保存集数和播放位置，从剧库或观看记录接着看；切换到应用内其他页面，仍可继续播放并保存进度。
-- **0.25×–4× 倍速**：共 16 档。右下角倍速数字是独立按钮，每点增加 0.25×，4× 后回到 1×；三点菜单可直接选档，切集与连播保持当前倍速。
-- **兼容播放**：默认开启兼容模式；解码失败、黑屏有声时尝试转为 H.264，也可手动「转码后播放」。显示转码进度，支持取消和清理缓存。
-- **失败恢复**：可取消准备、重试本集、重新连接片源或尝试兼容转码。地址过期或传输中断时有限次刷新取址，不无限重试；硬件转码失败时尝试软件转码。
+- **Ưu tiên cục bộ**: Các tập đã tải về sẽ phát trực tiếp từ tệp cục bộ; các tập chưa tải và không bị khóa sẽ thử phát trực tuyến; nhấp đúp vào tập chưa tải để thêm vào hàng đợi tải xuống.
+- **Điều khiển cơ bản**: Nhấp chuột vào khung hình hoặc nút để phát/tạm dừng, kéo thanh tiến độ, xem thời gian, chỉnh âm lượng và tắt tiếng.
+- **Bộ nhớ đệm 2 tập tiếp theo**: Bật tắt bên cạnh nút liên tục trong "Kho phim của tôi", mặc định bật và ghi nhớ lựa chọn; khi bắt đầu phát tập hiện tại sẽ tải trước tối đa 2 tập tiếp theo có thể phát trực tuyến, bỏ qua các tập đã tải và bị khóa.
+- **Tự động chuyển tập**: Mặc định bật, có thể tắt bất cứ lúc nào; tự động chuyển sang tập tiếp theo, bỏ qua tập bị khóa, kết nối mượt mà giữa tập cục bộ và trực tuyến.
+- **Tiếp tục từ điểm dừng**: Lưu số tập và vị trí phát theo từng bộ phim, tiếp tục xem từ Kho phim hoặc Lịch sử; khi chuyển sang các trang khác trong ứng dụng vẫn tiếp tục phát và lưu tiến độ.
+- **Tốc độ phát từ 0.25× đến 4×**: Tổng cộng 16 mức. Nút tốc độ ở góc dưới bên phải là nút độc lập, mỗi lần nhấp tăng 0.25×, sau 4× sẽ quay lại 1×; menu 3 chấm cho phép chọn nhanh các mức, chuyển tập và xem liên tục vẫn giữ nguyên tốc độ đã chọn.
+- **Chế độ phát tương thích**: Mặc định bật chế độ tương thích; khi lỗi giải mã, màn hình đen nhưng có tiếng sẽ tự động chuyển đổi sang H.264, hoặc có thể chọn thủ công "Chuyển mã rồi phát". Hiển thị tiến độ chuyển mã, hỗ trợ hủy và dọn dẹp bộ nhớ đệm.
+- **Khôi phục lỗi**: Cho phép hủy chuẩn bị, thử lại tập này, kết nối lại nguồn hoặc chuyển mã tương thích. Khi địa chỉ hết hạn hoặc truyền dữ liệu bị ngắt quãng sẽ làm mới lấy lại địa chỉ có giới hạn; khi chuyển mã phần cứng thất bại sẽ tự động thử chuyển mã phần mềm.
 
-优先选择兼容性较好的 H.264 片源，同编码内再优先清晰度；可能低于 HEVC 片源的最高分辨率。软件转码可能更慢，来源服务异常仍可能导致播放失败。
+### 3. Khung hình và cửa sổ: Ngang, dọc và tập trung xem
 
-在线播放不保存到下载目录，但部分片源会先准备临时媒体文件并在使用后清理；兼容转码另有磁盘缓存。因此“在线”不代表完全不占磁盘。
+- **Bản ngang / Bản dọc**: Chuyển đổi bố cục từ thanh trên cùng; khi chuyển lại bản ngang sẽ khôi phục kích thước và vị trí cửa sổ trước đó.
+- **Ghim cửa sổ trên cùng**: Một nút để ghim hoặc bỏ ghim, thuận tiện vừa làm việc vừa xem phim.
+- **Hình trong hình (PiP) hệ thống**: Nút bấm trên thanh điều khiển phát để mở cửa sổ nổi nhỏ của hệ thống; cửa sổ dùng chung phần tử video đang phát, có thể kéo di chuyển, ghim, tạm dừng và đóng, tự động chuyển tập và đổi chất lượng mà không đóng cửa sổ, tiếp tục phát khi chuyển không gian làm việc (virtual desktop).
+- **Chế độ cửa sổ thu nhỏ**: Nút "Cửa sổ nhỏ" trên cùng thu nhỏ cửa sổ chính thành kích thước 400×600 ghim trên cùng; khi rê chuột ra ngoài sẽ tự động tạm dừng và ẩn đi, rê chuột vào tiếp tục, nhấn phím Esc, Dock hoặc menu cửa sổ để khôi phục.
+- **Chọn tập tích hợp bên phải**: Trong chế độ dọc, thanh chọn tập mở rộng hoặc thu gọn theo cửa sổ, giảm che khuất khung hình video.
+- **Toàn màn hình**: Bản ngang sử dụng toàn màn hình video; bản dọc lấp đầy cửa sổ hiện tại, nhấn `Esc` để thoát. Khi phát toàn màn hình hoặc dọc, thanh điều khiển tự động ẩn sau 2 giây không thao tác, di chuyển chuột hoặc bấm phím sẽ hiển thị lại.
+- **Chế độ hiển thị khung hình**: Chuyển đổi trong menu 3 chấm, **ghi nhớ độc lập cho từng bộ phim**:
+  - *Vừa cửa sổ (Mặc định)*: Co giãn theo tỷ lệ không gian khả dụng, hiển thị trọn vẹn toàn bộ khung hình, nhân vật và phụ đề.
+  - *Giữ nguyên chiều rộng*: Co giãn theo chiều rộng khả dụng; khi giảm chiều cao cửa sổ, khung hình không bị thu nhỏ theo, phần vượt quá trên dưới sẽ được cắt giữa.
 
-### 3. 画面与窗口：横屏、竖屏和专注观看
+### 4. Lịch sử xem và nhắc nhở theo dõi phim
 
-- **横屏版 / 竖屏版**：从顶部切换布局；切回横屏时恢复此前窗口尺寸与位置。
-- **窗口置顶**：一键置顶 / 取消置顶，方便边工作边看。
-- **系统画中画**：播放控制条一键弹出原生悬浮小窗；小窗继续使用当前播放元素，可拖动、置顶、暂停与关闭，自动连播和切换清晰度时保持小窗，切换虚拟桌面后继续播放。小窗位置与跨桌面行为由系统管理。
-- **小窗模式**：顶部「小窗模式」把主窗口缩为 400×600 的置顶窗口并保持播放；在 Electron 支持工作区 API 的平台上设为所有虚拟桌面可见。鼠标移开时暂停并隐藏，移回继续，Esc、Dock 或窗口菜单可恢复。
-- **右侧一体选集**：竖屏模式下，选集栏随窗口展开或收起，减少对视频的遮挡。
-- **隐藏管理按钮**：收起不常用操作，让播放区更简洁。
-- **去掉播放器边框**：竖屏下去掉播放区周围留白与圆角；这是播放器布局效果，不是移除系统窗口边框。
-- **全屏**：横屏使用视频全屏；竖屏填满当前窗口，`Esc` 退出。全屏或竖屏播放时，控制条闲置约 2 秒自动隐藏，移动鼠标或操作非切集快捷键后重新显示；暂停、拖动进度条、打开菜单或键盘焦点停在控件上时保持可见。自动连播及上一集、下一集快捷键切集时，已隐藏的控制条保持隐藏，不再短暂弹出。
-- **画面模式**：在播放器三点菜单切换，**每部剧独立记忆**，切换保留播放进度。
+- Trang "Lịch sử xem" độc lập, chỉ ghi nhận khi video thực sự bắt đầu phát, sắp xếp theo thời gian xem gần nhất.
+- Hiển thị ảnh bìa, tên phim, số tập, mốc thời gian phát và thời điểm xem gần nhất, nhấp vào để tiếp tục xem.
+- Hỗ trợ "Kiểm tra cập nhật" thủ công; trong thời gian ứng dụng chạy, định kỳ khoảng 6 tiếng kiểm tra tập mới một lần cho từng bộ phim, nhắc nhở bằng dấu chấm đỏ và số tập mới thêm.
+- Hằng ngày kiểm tra các **phần phim tiếp theo nghi vấn** cùng nguồn, cùng tên và có số phần cao hơn; tính năng này có thể tắt riêng biệt trong Cài đặt.
+- Thông báo hệ thống mặc định tắt, có thể bật trong Cài đặt (cần cấp quyền thông báo trong hệ điều hành).
 
-| 画面模式 | 效果 | 适合场景 |
-|---|---|---|
-| 适应窗口（默认） | 按可用宽高等比缩放，完整显示画面 | 希望人物、字幕和画面边缘都能看全。 |
-| 保持宽度 | 按可用宽度等比缩放；只缩短窗口高度时，画面不跟着变小，上下超出部分居中裁剪 | 希望调整窗口高度时保持画面大小；注意边缘字幕或人物可能被裁掉。 |
+### 5. Hàng đợi tải xuống: Lưu hàng loạt và khôi phục khi lỗi
 
-### 4. 观看记录与追剧提醒
+- **Độ nét tải xuống**: Tự động (Ưu tiên tương thích), 1080P, 720P, có thể lưu làm mặc định. Chọn nguồn theo độ phân giải thực tế của video, kiểm tra lại trước khi lưu. Nguồn Hồng Quả nếu độ nét đã chọn không khả dụng hoặc tải lỗi sẽ tự động thử độ nét thấp hơn và hiển thị thông báo. Không phóng to giả mạo HD; khi có độ phân giải cao hơn sẽ giữ nguyên, không nén giảm độ phân giải.
+- **Lưu lựa chọn độc lập theo tác vụ**: Thay đổi độ nét mặc định không làm thay đổi các lần thử lại thông thường của tác vụ hiện có; tệp độ nét thấp đã có được giữ lại, không tự động ghi đè.
+- Thêm từng tập hoặc hàng loạt vào hàng đợi, hiển thị các trạng thái: Đang chờ, Đang tải, Đã hoàn thành, Thất bại, Đã dừng, cùng tiến độ tải, dung lượng đã nhận / tổng dung lượng và nguyên nhân lỗi.
+- Hỗ trợ: Bắt đầu tất cả, Tạm dừng tất cả, Dừng từng tác vụ, Thử lại các mục thất bại, Chọn mục thất bại và Thử lại các mục đã chọn; tác vụ đã dừng có thể xếp hàng chạy lại.
+- **1 đến 10 tác vụ tải đồng thời**, mặc định là 3, có hiệu lực sau khi lưu trong Cài đặt.
+- Danh sách tải tổ chức theo từng bộ phim và phân trang; **chọn tất cả xuyên trang, bỏ chọn tất cả, giữ lại vùng chọn và xóa hàng loạt**.
+- Xác nhận trước khi xóa: Mặc định chỉ xóa bản ghi tác vụ, có thể tích chọn xóa đồng thời tệp cục bộ trên đĩa; có thể dọn sạch các bản ghi đã hoàn thành.
+- Mở nhanh thư mục tác vụ bằng một nhấp chuột; **Quét thư mục tải xuống** để bổ sung đăng ký các tệp đã có sẵn trên đĩa phù hợp với quy tắc đặt tên.
 
-- 独立「观看记录」页，真正开始播放后才计入，按最近观看排序。
-- 显示封面、剧名、集数、播放时间点及最近观看时间，点击继续观看。
-- 支持手动「检查更新」；应用运行期间每部剧约 6 小时检查一次新集，列表较多时分批处理，以红点和新增集数提醒。
-- 约每天检查同来源、同名且季数更高的**疑似续作**，并直接打开；该功能可单独关闭，名称匹配可能误报或漏报。
-- 系统通知默认关闭，可在设置中开启；仍需系统允许通知。
+### 6. Gộp và xuất phim: Kết hợp nhiều tập thành 1 tệp MP4
 
-追剧检查仅在应用运行时执行，不承诺退出后提醒或实时推送。观看记录保存在本机，不提供跨设备同步。
+Trong "Quản lý tải xuống", chọn tên phim rồi nhấp "Gộp toàn bộ phim", không cần tích chọn từng tác vụ; "Kho phim của tôi" cũng cung cấp lối vào gộp phim. Danh sách ứng viên chỉ hiển thị những bộ phim còn tệp cục bộ có thể gộp.
 
-### 5. 下载队列：批量保存与失败恢复
-
-- **下载清晰度**：自动（兼容优先）、1080P、720P，可保存默认值。按视频实际尺寸选源，保存前再次检查。红果片源所选画质不可用或下载失败时尝试更低清晰度，并显示提示。不会放大冒充高清；只有更高分辨率时保留原分辨率，不降采样。
-- **任务独立保存选择**：修改默认清晰度不改变已有任务的普通重试；已有低清文件保留，不自动覆盖。清晰度选项仅影响下载，不改变在线播放策略。
-- 单集或批量加入队列，显示等待中、下载中、已完成、失败、已停止状态，以及下载进度、已接收 / 总字节数和失败原因。
-- 支持全部开始、全部暂停、单任务停止、重试失败、选中失败项及重试选中；停止的任务可重新排队。
-- **1–10 个并发下载**，默认 3，在设置保存后生效；较高并发可能触发来源限流。
-- 下载列表按剧组织并分页；**跨页全选、取消全选、选择保留与批量删除**。
-- 删除前确认：默认仅删除任务记录，可勾选同时删除本地文件；可清空已完成记录。
-- 一键打开任务文件夹；**扫描下载目录**，补登记符合应用目录与命名规则的已有文件。
-
-片源的“1080P”标签可能与实际尺寸不符，也不代表上游母版质量；不保证每部剧或每一集都有 1080P。“重新排队 / 重试”不等于从已下载字节续传，锁定集不能加入下载队列。
-
-### 6. 合并导出：多集合成一个 MP4
-
-在「下载管理」选择剧名后点「合并整部剧」，无需勾选任务；「我的剧库」也提供合并入口。候选列表只显示仍有本地可合并分集的剧，在线播放记录不会混入；仅删除任务记录但保留文件时，仍可合并。
-
-| 模式 | 处理方式 |
+| Chế độ | Cách xử lý |
 |---|---|
-| 智能快速合并 | 编码参数一致时直接拼接；不一致时按需要处理音视频，混合编码可能需要转码。 |
-| 兼容合并（H.264） | 导出 H.264/AAC；已兼容分集尽量直接拼接，仅处理不匹配部分。 |
+| Gộp nhanh thông minh | Khi các thông số mã hóa đồng nhất sẽ ghép trực tiếp; khi không đồng nhất sẽ xử lý âm thanh/hình ảnh khi cần thiết, mã hóa hỗn hợp có thể cần chuyển mã. |
+| Gộp tương thích (H.264) | Xuất chuẩn H.264/AAC; các tập đã tương thích sẽ ghép trực tiếp, chỉ xử lý những phần không khớp. |
 
-显示阶段、进度、耗时及可用的处理速度 / 预计剩余时间，支持取消、打开输出所在文件夹和移除合并记录。两种方式都保留原始分集；**仅合并已下载分集，不会自动补齐缺集**。转码并非无损，用时取决于内容和设备。
+Hiển thị giai đoạn, tiến độ, thời gian đã dùng và tốc độ xử lý khả dụng / thời gian ước tính còn lại, hỗ trợ hủy, mở thư mục chứa tệp xuất và xóa bản ghi gộp. Cả hai phương thức đều giữ nguyên các tập phim gốc; **chỉ gộp các tập đã tải xong, không tự động bổ sung tập còn thiếu**.
 
-### 7. 我的剧库与空间清理
+### 7. Kho phim của tôi và dọn dẹp dung lượng
 
-- 搜索、切换已登记短剧，查看集数、下载数量和文件占用，下载尚未完成的可用分集。
-- 从剧库列表移除但保留文件；恢复已移除的剧；批量清理没有本地下载的剧。
-- 删除单部剧或全部已下载文件，保留剧集信息，之后仍可尝试在线播放或重新下载。
-- 分别清理在线播放缓存与兼容转码缓存。
-- 可选「看完自动删」：一集播放结束后删除该集本地文件，默认关闭。**需要长期保留视频时不要开启。**
+- Tìm kiếm, chuyển đổi giữa các bộ phim đã đăng ký, xem số tập, số lượng đã tải và dung lượng chiếm dụng trên đĩa, tải tiếp các tập khả dụng chưa hoàn thành.
+- Xóa khỏi danh sách Kho phim nhưng vẫn giữ lại tệp; khôi phục các bộ phim đã xóa; dọn dẹp hàng loạt các bộ phim không có tệp tải cục bộ.
+- Xóa từng bộ phim hoặc toàn bộ tệp đã tải, giữ lại thông tin phim để sau này vẫn có thể xem trực tuyến hoặc tải lại.
+- Dọn dẹp độc lập bộ nhớ đệm phát trực tuyến và bộ nhớ đệm chuyển mã tương thích.
+- Tùy chọn "Tự động xóa sau khi xem xong": sau khi phát hết một tập sẽ tự động xóa tệp cục bộ của tập đó, mặc định tắt. **Không nên bật nếu bạn cần lưu trữ video lâu dài.**
 
-### 8. 设置、网络与软件更新
+### 8. Cài đặt, mạng và cập nhật phần mềm
 
-- **下载位置**：选择文件夹或手动填写目录。
-- **命名规则**：支持「剧名」「集数」「标题」变量，以及“剧名_第N集”“剧名_第N集_标题”预设；保留独立集号以避免覆盖。
-- **代理配置**：开关、跟随系统 / 环境变量、手动 HTTP/HTTPS 代理、强制直连；支持地址端口、常见端口预设及可选认证信息。
-- **代理测试**：可在保存前测试草稿配置，保存后生效。当前“跟随系统”主进程读取 `HTTP_PROXY` / `HTTPS_PROXY` 等环境变量，不保证识别所有系统代理或 PAC；一次测试成功不代表全部片源可访问。
-- **提醒开关**：分别控制新集检查、疑似续作、系统通知和自动检测软件更新。
-- **软件更新提示**：默认开启；启动及运行期间每 6 小时检查 GitHub 正式新版。右上角提醒可关闭，也可取消自动检测并保存；网络失败不阻止使用旧版。
-- Mac 与 Windows 安装版可从更新提醒下载新版，查看进度，下载完成后点击重启安装；也可从设置中检查更新。不经点击，不自动下载或在退出时安装。
-- Windows 便携版使用官方下载页入口，退出后手动替换；更新失败不会要求清空原资料。所有版本均保留发行页入口，不强制升级。
+- **Vị trí tải xuống**: Chọn thư mục qua hộp thoại hoặc nhập đường dẫn thư mục thủ công.
+- **Quy tắc đặt tên tệp**: Hỗ trợ các biến "TenPhim", "Tap", "TieuDe" (hoặc "剧名", "集数", "标题"), cùng các mẫu dựng sẵn; giữ số tập độc lập để tránh bị ghi đè.
+- **Cấu hình Proxy mạng**: Bật/tắt, Theo hệ thống / biến môi trường, Proxy HTTP/HTTPS thủ công, Kết nối trực tiếp; hỗ trợ địa chỉ, cổng, cổng thông dụng định sẵn và thông tin xác thực tùy chọn.
+- **Kiểm tra Proxy**: Có thể kiểm tra kết cấu proxy trước khi lưu.
+- **Công tắc thông báo**: Kiểm soát độc lập kiểm tra tập mới, phần tiếp theo nghi vấn, thông báo hệ thống và tự động kiểm tra bản cập nhật phần mềm.
+- **Nhắc nhở cập nhật phần mềm**: Mặc định bật; khi khởi động và trong lúc chạy định kỳ 6 tiếng kiểm tra phiên bản chính thức mới trên GitHub.
 
-### 9. 外观、收藏与评论
+### 9. Giao diện, yêu thích và bình luận
 
-- **外观与窗口**：浅色、深色或跟随系统；小窗模式在鼠标移开时暂停并隐藏，移回继续，可通过 Esc、Dock 或窗口菜单恢复主窗口；系统画中画用于跨应用和虚拟桌面继续观看。
-- **找剧辅助**：本机搜索历史联想、公开热播榜、已完结或更新中筛选；未知状态不冒充已完结，热播榜不是账号个性化推荐。
-- **公开剧评与本集弹幕**：查看来源提供的评分、整剧剧评和单集评论节选。弹幕可调不透明度、字号、速度、区域和密度，也可隐藏入口；默认开启常见敏感词过滤，可添加本机屏蔽词，无法识别所有变体。
-- **本机收藏与上新**：收藏仅保存在本机；「收藏与上新」按已浏览剧集的首次公开日期整理，不是完整的未来上新排期。
-- **画质增强**：原画、可调锐化、Anime4K CNNx2M 2× 增强。Anime4K 面向动漫，支持不高于 1080p 的输入；真人画面可能偏平滑，不兼容或处理持续过慢时恢复原画，不改变下载文件。
-- **分享链接**：用户主动点击后读取分享链接；公开剧集可复制官方分享页链接。
-
-公开评论仅供阅读，弹幕通常只有公开网页首屏约 15 条，读完不会循环。当前不提供手机号登录、手机账号收藏／点赞／历史同步、弹幕发送或回复。
+- **Giao diện và cửa sổ**: Sáng, Tối hoặc theo hệ thống; chế độ cửa sổ nhỏ tự động tạm dừng và ẩn khi rê chuột ra ngoài, rê chuột vào tiếp tục; hình trong hình hệ thống dùng để xem xuyên suốt qua các ứng dụng khác.
+- **Hỗ trợ tìm phim**: Gợi ý lịch sử tìm kiếm trên máy, bảng xếp hạng thịnh hành công khai, lọc theo phim đã hoàn thành hoặc đang cập nhật.
+- **Đánh giá phim công khai và mưa bình luận (Danmaku)**: Xem điểm đánh giá do nguồn cung cấp, nhận xét toàn bộ phim và trích đoạn bình luận từng tập. Danmaku có thể tùy chỉnh độ mờ, cỡ chữ, tốc độ, khu vực và mật độ hiển thị; mặc định bật bộ lọc từ khóa nhạy cảm, hỗ trợ thêm từ khóa chặn trên máy.
+- **Yêu thích trên máy**: Mục yêu thích chỉ lưu trên máy này.
+- **Tăng cường chất lượng hình ảnh**: Bản gốc, Làm sắc nét có thể điều chỉnh, Tăng cường Anime4K CNNx2M 2×.
+- **Liên kết chia sẻ**: Nhấp để đọc liên kết chia sẻ; các bộ phim công khai có thể sao chép liên kết trang chia sẻ chính thức.
 
 </details>
 
-## 播放快捷键
+## Phím tắt phát video
 
-| 按键 | 操作 |
+| Phím | Thao tác |
 |---|---|
-| `空格` | 播放 / 暂停 |
-| `←` / `→` | 后退 / 前进 5 秒 |
-| `↑` / `↓` | 上一集 / 下一集 |
-| `A` | 开启 / 关闭连播 |
-| `S` / `D` | 降低 / 提高 0.25 倍速 |
-| `F` | 切换全屏 |
-| `Esc` | 退出竖屏填满窗口状态，或关闭当前菜单 / 弹窗 |
+| `Space` (Phím cách) | Phát / Tạm dừng |
+| `←` / `→` | Lùi lại / Tiến tới 5 giây |
+| `↑` / `↓` | Tập trước / Tập tiếp theo |
+| `A` | Bật / Tắt tự động phát liên tục |
+| `S` / `D` | Giảm / Tăng 0.25× tốc độ phát |
+| `F` | Bật / Tắt toàn màn hình |
+| `Esc` | Thoát chế độ dọc tràn cửa sổ, hoặc đóng menu / hộp thoại hiện tại |
 
-以上为默认键位，可在「设置」中点击修改，支持单键或 Shift 组合，并检查冲突、恢复默认。输入框、菜单和弹窗操作不会误触播放器快捷键。
+Các phím trên là phím tắt mặc định, có thể nhấp để thay đổi trong "Cài đặt", hỗ trợ phím đơn hoặc tổ hợp với phím Shift, tự động kiểm tra xung đột và có nút khôi phục về mặc định. Thao tác trong ô nhập văn bản, menu và hộp thoại sẽ không kích hoạt nhầm phím tắt trình phát.
 
-## 界面与演示
+## Giao diện và minh họa
 
-![红果短剧 1.6：热播推荐与公开榜单](docs/screenshots/macos-v1.6-hot.jpg)
+![Phim Ngắn Hồng Quả 1.6: Gợi ý thịnh hành và bảng xếp hạng công khai](docs/screenshots/macos-v1.6-hot.jpg)
 
-<p align="center"><sub>macOS 1.6 正式版实拍：热播推荐页面。截图中的片单与热度为截取时的公开榜单内容，会随来源更新。</sub></p>
+<p align="center"><sub>Hình ảnh thực tế phiên bản macOS 1.6: Trang Gợi ý thịnh hành. Danh sách phim và độ hot trong ảnh chụp màn hình là nội dung công khai tại thời điểm chụp, sẽ cập nhật theo nguồn thực tế.</sub></p>
 
-<details>
-<summary>观看 3 分钟功能介绍（基于 1.3，未包含后续更新）</summary>
+## Câu hỏi thường gặp
 
-https://github.com/user-attachments/assets/b95f4f60-b57c-495f-a30e-62ac2b0bda11
+### Tại sao một số tập bị khóa, tải thất bại hoặc độ nét không đồng đều?
 
-3 分钟，从三来源搜索、链接解析讲到播放续看、下载合并、横竖屏与画面模式，再展示 1.3 的主题、快捷键、隐身小窗、热播推荐、公开剧评、本机收藏与日历、画质增强和更新提醒。
+Nguồn video và phạm vi khả dụng do dịch vụ nền tảng quyết định; các tập bị khóa trên XiFan, tập tính phí hoặc trạng thái không rõ ràng trên Hà Mã sẽ được giữ nguyên trạng thái khóa. Ứng dụng không cung cấp tính năng mở khóa hay xem quảng cáo nhận thưởng, không cam kết khả dụng cho nội dung trả phí.
 
-视频使用 1.3 正式前端和隔离的演示资料；播放器画面为短剧封面演示，集数、榜单、评分、评论与日期不代表真实平台数据。
+### Làm gì khi tải xuống thất bại hoặc không tải được danh mục?
 
-[下载三分钟介绍视频（1080p，约6 MB）](https://github.com/jackotom/hongguo-drama/releases/download/v1.3/Hongguo-1.3-Complete-Intro-3min.mp4)
+Trước tiên hãy kiểm tra kết nối mạng và nền tảng nguồn, sau đó kiểm tra công tắc và chế độ Proxy, giảm bớt số lượng tải đồng thời, sử dụng tính năng "Thử lại mục lỗi" hoặc tải lại danh mục. Nếu màn hình đen nhưng vẫn có tiếng hãy thử bật chế độ Tương thích.
 
-</details>
+### Video, cài đặt và lịch sử xem được lưu ở đâu?
 
-## 常见问题
+Video được lưu trong thư mục tải xuống đã chọn trong Cài đặt, phân cấp theo nguồn và tên phim. Cài đặt, tác vụ và lịch sử xem mặc định nằm tại:
 
-### 为什么有些分集锁定、加载失败或清晰度不同？
+- macOS: `~/Library/Application Support/hongguo-downloader/`
+- Windows bản cài đặt: `%APPDATA%\hongguo-downloader\`
+- Windows bản di động (Portable, từ bản 3.4 trở đi): Thư mục `data\` ngay cạnh tệp chương trình.
 
-片源和可用范围由来源服务决定；西饭锁定集、河马收费或状态不明集会保留锁定。应用不提供解锁或广告奖励接口，不承诺付费内容可用。来源接口可能变化，过去能用不保证一直可用。
+### Cách cập nhật ứng dụng?
 
-### 下载失败、目录加载不出来怎么办？
+Trước tiên cài đặt thủ công bản mới nhất một lần. Sau đó, bản cài đặt Mac và Windows khi phát hiện bản mới có thể nhấp tải về trong ứng dụng, tải xong nhấp khởi động lại để cài; bản di động Windows tiếp tục tải thủ công qua trang phát hành. Ứng dụng không ép buộc cập nhật và không tự động cài đặt khi chỉ thoát thông thường.
 
-先检查网络与来源平台，再检查代理开关和模式，适当降低并发，使用「重试失败」或重新加载目录。黑屏有声可尝试兼容模式。
+### Xây dựng từ mã nguồn có kèm chữ ký số và chứng thực không?
 
-### 视频、设置和记录存在哪里？
+Mã nguồn mặc định khi build trên Mac sử dụng chữ ký ad-hoc, không tự động dùng chứng chỉ nhà phát triển hoặc gửi chứng thực Apple. Gói Mac chính thức có chữ ký Developer ID và chứng thực độc lập; các gói Windows hiện chưa ký số thương mại.
 
-视频保存在设置中的下载目录，按来源与剧名组织。设置、任务及观看记录默认位于：
+### Phản hồi sự cố như thế nào?
 
-- macOS：`~/Library/Application Support/hongguo-downloader/`
-- Windows 安装版：`%APPDATA%\hongguo-downloader\`
-- Windows 便携版（3.4 起）：程序所在目录的 `data\`（单文件便携 EXE 和解压即用版相同）
+Truy cập [Issues](https://github.com/jackotom/hongguo-drama/issues) cung cấp phiên bản ứng dụng, hệ điều hành, loại chip, nguồn phim, các bước tái hiện và thông báo lỗi. Vui lòng che/xóa thông tin tài khoản, Cookie, thông tin đăng nhập proxy và đường dẫn cá nhân trước khi gửi ảnh chụp màn hình hay nhật ký log.
 
-自行指定用户资料目录时以指定位置为准。移除剧库条目、删除任务记录、删除视频和清理缓存是不同操作，请核对确认框。
+## Bản quyền, Giấy phép và Giới hạn sử dụng
 
-### 怎样在应用内更新？
+Dự án này kế thừa giấy phép **[GPL-3.0](LICENSE)** từ thượng nguồn và bảo lưu các tuyên bố về sửa đổi và nguồn gốc. Xem chi tiết các thay đổi trong [NOTICE](NOTICE), giấy phép các thành phần phụ thuộc xem trong [Thông báo bên thứ ba](THIRD-PARTY-NOTICES.md).
 
-先手动安装一次最新版。之后，Mac 与 Windows 安装版发现新版时可点击下载，完成后再点击重启安装；Windows 便携版仍通过发行页手动下载。软件不会强制更新，也不会因为普通退出而自动安装已下载的版本。关闭提醒或自动检测后，旧版仍可继续使用；来源服务变化仍可能影响功能。
+Chân thành cảm ơn các dự án nền tảng và tài liệu tham khảo:
 
-### Windows 下载新版后，为什么仍显示旧版本？
+- **[327044572/hongguo-downloader](https://github.com/327044572/hongguo-downloader)**: Dự án gốc thượng nguồn.
+- **[zhenyong97/hongguo-downloader](https://github.com/zhenyong97/hongguo-downloader)**: Nền tảng trực tiếp của bản chuyển đổi macOS này.
+- **[woshishiq1/drpys](https://github.com/woshishiq1/drpys)** & **[N3urda/hongguoTV](https://github.com/N3urda/hongguoTV)**: Nguồn thuật toán liên quan đến App; chi tiết xem [Tuyên bố bản quyền thuật toán](src/native/licenses/NOTICE.txt).
+- **[Hululu007/drpy-node](https://github.com/Hululu007/drpy-node/tree/295f2b7047e14122d542a7736cb931e81abcf85c)**: Tham khảo đường dẫn và cấu trúc dữ liệu XiFan; dự án tự viết bộ chuyển đổi độc lập.
+- **Electron, React, FFmpeg & x264**: Môi trường chạy máy tính, giao diện và các thành phần xử lý đa phương tiện.
 
-先退出所有正在运行的红果短剧，再运行最新版文件名以 `-setup.exe` 结尾的安装包，完成后从安装程序生成的快捷方式启动。不要继续使用指向旧便携版的桌面或任务栏入口。设置页显示的版本号才是当前运行版本。
-
-继续使用便携版时：单文件便携 EXE 请放回原文件夹，保留同目录的 `data` 文件夹后再运行；ZIP 版解压到新文件夹后，先把旧文件夹的 `data` 复制过去，或直接覆盖原文件夹中的程序文件。只运行新文件夹里的 EXE 而丢掉 `data`，会显示空记录或回退到系统目录里的旧记录。确认版本正确后，再更新自己的快捷方式。无需清空整个系统 Temp、应用资料目录或下载的视频。若仍显示旧版，请反馈实际启动文件名和设置页版本号，隐去个人路径。
-
-### 自行构建也有签名和公证吗？
-
-源码默认 Mac 构建使用 ad-hoc 签名，不会自动使用开发者证书或提交公证。正式 Mac 包的 Developer ID 签名与公证是独立发行步骤；Windows 包当前未签名。无需为本应用全局关闭 Gatekeeper。
-
-### 如何反馈问题？
-
-到 [Issues](https://github.com/jackotom/hongguo-drama/issues) 提供应用版本、操作系统与芯片类型、来源、复现步骤和错误提示。截图与日志请移除账号信息、Cookie、代理凭据及个人文件路径。
-
-## 版本与验证范围
-
-4.1（内部 `4.1.0`，标签 `v4.1`）已正式发布，包含内置来源全局开关与文字导出。文字导出候选阶段的整剧验证结果为 80 个视频 `completed`、合计 `241881712` 字节；弹幕 80 份、386 条，其中 3 份为空；评论 25 份、307 条；剧评 1 份、4 条。另 55 集评论本次来源未开放，未生成空文件或误取其他集，网络与写盘实际失败为 0。该整剧原始资料随旧工作区回收而丢失，数值来自此前已观察的聊天回执，不作为本轮重新下载或播放的证据。加入来源开关后重新构建三端，204 项单元、91 项平台检查、Windows 安装及升级检查通过；Mac 完成签名、公证及装订，16 项附件摘要与大小一致。详见 [4.1 说明](docs/release-4.1.md)。
-
-4.0（内部 `4.0.0`）已于 2026-10-27 18:07（Asia/Shanghai）正式发布，标签 `v4.0`。冻结源码 `c8d9acb61ea8c4b2ca8df543b94ac0d56fdd3451`；三端 16 项附件的远端 SHA256 与大小逐项匹配。双 Mac App 与 DMG 已完成 Developer ID 签名、Apple 公证 Accepted 和装订，只读挂载验证通过。Windows CI 40484301307 的便携媒体、安装、重装及真实 1.80 升级资料保留检查通过；EXE 未签名。 已有回归记录：179 项单元测试、91 项平台检查通过。x64 包在 Rosetta 下启动并显示 4.0；本机已安装签名、公证并装订的 arm64 4.0，安装期间资料不变，包内源码匹配，已确认最新邮箱复制成功及永久关闭公告正文显示。 本轮未重做真实两集下载或完整在线播放，不沿用 3.9 的真实播放与人工听音证据。Windows 媒体检查使用 CI 测试素材；未覆盖实体 Intel Mac、实体 Windows、干净 Gatekeeper、长期播放及完整应用内跨版本更新。 详细回执见 [4.0 说明](docs/release-4.0.md)。以下 3.9 及更早版本历史保持原样。
-
-3.9（内部 `3.9.0`）已于 2026-10-27 14:15（Asia/Shanghai）正式发布，标签 `v3.9`。冻结源码 `4a88f2ea597101a5c2e92f2ab564afee9c5167e0`；三端 16 项附件的远端 SHA256 与大小逐项匹配。双 Mac App 与 DMG 已完成 Developer ID 签名、Apple 公证 Accepted 和装订。Windows CI 40458538824 的便携播放、安装、重装与真实 1.80 升级资料保留通过；EXE 未签名。 真实两集下载、播放和切集通过，声音由用户确认正常；本机已安装正式签名包。验证细节和未验范围见 [3.9 说明](docs/release-3.9.md)。
-
-上一正式版 **3.8**（内部 `3.8.0`），搜索当天新剧的补搜改动及验收边界见 [3.8 说明](docs/release-3.8.md)。冻结源码 `528c716a085dc4e3323ebd0aec7fb96815bc6523`；16 项附件的远端摘要和大小已核对，双 Mac 已签名、公证与装订，Windows EXE 未签名。[Windows CI](https://github.com/jackotom/hongguo-drama/actions/runs/40311819587) 通过：便携播放、安装启动、同版本重装和真实 1.80 → 3.8 升级资料保留。
-
-更早正式版 **3.7**（内部 `3.7.0`），观看记录检测改进及验收边界见 [3.7 说明](docs/release-3.7.md)。冻结源码 `85920561b68e0d5cc6ef10f5e6c2c33e96659f09`；16 项附件的远端摘要和大小已核对，双 Mac 已签名、公证与装订，Windows EXE 未签名。[Windows CI](https://github.com/jackotom/hongguo-drama/actions/runs/40288846088) 通过：便携播放、安装启动、同版本重装和真实 1.80 → 3.7 升级资料保留。
-
-上一正式版 **3.6**（内部 `3.6.0`），分集提速、目录双线与分页修复及发行边界见 [3.6 说明](docs/release-3.6.md)。冻结源码 `887862f449b87c56a01b565c849057756266d5a5`；其 16 项附件、签名、公证和 Windows CI 结果保持不变。
-
-上一正式版 **3.5**（内部 `3.5.0`），目录双线、分页恢复与发行边界见 [3.5 说明](docs/release-3.5.md)。冻结源码 `34bdc9eabdd81ce42c6ed6a23516b245fe44d93e`；其 16 项附件、签名、公证和 Windows CI 结果保持不变。
-
-更早正式版 **3.4**（内部 3.4.0），搜索、便携资料与安全修复及验收边界见 [3.4 说明](docs/release-3.4.md)。App 搜索仍是默认关闭的实验选项。
-
-更早正式版 **3.3**（内部 3.3.0）的下载降级与 Mac 界面缩放记录见 [3.3 说明](docs/release-3.3.md)。以下保留其历史验收结果，不代替 3.6 验收。
-
-3.3 安装包、对应源码与校验文件见 [3.3 发行页](https://github.com/jackotom/hongguo-drama/releases/tag/v3.3)。三端 16 项资产已公开并核对远端 SHA256；双 Mac 应用与 DMG 已完成 Developer ID 签名、Apple 公证 Accepted 和装订；Windows CI 安装、重装、跨版本升级与便携媒体检查通过，EXE 未签名。 Windows 构建记录：[本轮 CI](https://github.com/jackotom/hongguo-drama/actions/runs/40156845982)。
-
-冻结源码 `1f152862ac9bc23f0a2ad2340a32ad7a62a4aaec`；后续文档提交不改变 v3.3 标签及已发布安装包、更新包和对应源码包的字节。 源码候选随机真实两集下载与播放、快进／回退、全屏、切集及受控 720P 降级通过，用户确认声音正常。最终已签名 arm64 包隔离启动、90% 缩放、恢复 100% 与正常退出通过；未在最终包重复真实播放。
-
-更早正式版 **3.2** 的片单缓存、刷新恢复与验证记录保留于 [3.2 说明](docs/release-3.2.md) 和 [3.2 发行页](https://github.com/jackotom/hongguo-drama/releases/tag/v3.2)。其冻结源码 `fe110c68f9e2a1eceb059be222901d2d37926a5d` 及已发布资产保持不变；3.2 未覆盖本机正式安装，更早变更见 [3.1 说明](docs/release-3.1.md)。此前 2.1 已有 Mac 隔离启动、更新下载与合成版本原生重启，以及 Windows CI 的新装、重装和真实 1.80 覆盖升级记录；这些历史结果不代替后续版本验收，也不代表实体电脑完整覆盖。
-
-本版不宣称修复批量下载黑屏或闪退反馈；相关问题仍需要对应设备与复现场景核实。
-
-**4.0 验证边界**：本轮未重做真实两集下载或完整在线播放，不沿用 3.9 的真实播放与人工听音证据。Windows 媒体检查使用 CI 测试素材；未覆盖实体 Intel Mac、实体 Windows、干净 Gatekeeper、长期播放及完整应用内跨版本更新。
-
-<details>
-<summary>历史版本与旧版升级提示</summary>
-
-| 版本 | 主要变化 | 详细记录 |
-|---|---|---|
-| 1.6 | 下载清晰度、本集弹幕、播放与下载恢复 | [发行说明](https://github.com/jackotom/hongguo-drama/releases/tag/v1.6) |
-| 1.5 | 片源兼容、播放失败恢复、全屏切集控制条优化 | [发行说明](https://github.com/jackotom/hongguo-drama/releases/tag/v1.5) |
-| 1.4 | 修复合并候选混入在线播放记录、文件删除后候选残留 | [发行说明](https://github.com/jackotom/hongguo-drama/releases/tag/v1.4) |
-| 1.3 | 主题、快捷键、隐身小窗、公开剧评、本机收藏与画质增强 | [发行说明](https://github.com/jackotom/hongguo-drama/releases/tag/v1.3) |
-| 1.2 | 按剧记忆画面模式、正式新版提醒 | [版本记录](docs/release-1.2.md) |
-
-仓库曾从 `hongguo-drama-mac` 更名为 `hongguo-drama`。如果仍使用更名前的 1.2 安装包，请从本页手动下载当前正式版替换一次；应用标识与用户资料位置保持不变。1.2 修订版的精确源码见该版发行附件，原 `v1.2` 标签保留首发历史。
-
-</details>
-
-## 从源码构建 Mac 版
-
-<details>
-<summary>展开构建步骤、产物位置与 FFmpeg 对应源码说明</summary>
-
-应用使用 **Electron + React + Node.js**。构建需要 Node.js **22.12 或更新版本**、npm、Apple Command Line Tools、`pkg-config`，以及可用的 `make`、`git`、`curl`。构建脚本不会自动安装这些系统依赖。
-
-```sh
-git clone https://github.com/jackotom/hongguo-drama.git
-cd hongguo-drama
-npm ci
-npm run build:mac
-```
-
-上述默认命令在 Apple Silicon 上构建两种 Mac 架构。Intel 构建机请先运行 `node scripts/setup-ffmpeg-mac.js x64` 和 `npm run build:react`，再运行 `npx electron-builder --mac dmg zip --x64 --publish never`。
-
-构建会验证已有 FFmpeg / FFprobe 缓存；缺少匹配缓存时，从固定且经过 SHA256 校验的 FFmpeg/x264 源码编译，然后生成前端、指定架构应用、DMG 和 ZIP。首次构建需联网获取依赖和源码，编译可能耗时数分钟。默认 ZIP 只是构建产物，不能直接作为官方签名更新包发布；正式发行需在签名、公证和装订后重新生成 ZIP 与更新清单。
-
-| 用途 | 命令或产物 |
-|---|---|
-| 开发模式 | `npm run dev` |
-| 仅生成 Mac 应用 | `npm run build:mac:dir` |
-| 应用产物 | `dist/mac-arm64/红果短剧.app`、`dist/mac/红果短剧.app` |
-| DMG / ZIP | `dist/hongguo-downloader-<版本>-mac-<架构>.dmg` 与 `.zip`；公开版本使用两段，内部格式见 `package.json`。正式 DMG 另以发行页中的名称提供 |
-
-### FFmpeg 的准确对应源码
-
-Mac 包内置的 FFmpeg / FFprobe 基于 **FFmpeg 9.0.2** 与 **x264 `b35605ace3ddf7c1a5d67a2eb553f034aef41d55`** 的未修改源码编译。此构建为 **GPLv3-or-later**，仅静态链接 x264，保留 VideoToolbox，未启用 `nonfree`；动态依赖仅为 macOS 系统库，不依赖使用者的 Homebrew 环境。
-
-[各版本的 Release](https://github.com/jackotom/hongguo-drama/releases) 附有**应用源码 ZIP**以及独立的 **FFmpeg/x264 完整对应源码包**，后者包含准确源码归档、构建脚本、清单与许可文本。请按需要的应用版本与平台选择对应附件。只下载 GitHub 自动生成的项目源码归档，不能代替这一媒体工具对应源码包。
-
-- [FFmpeg 来源、源码校验值与构建说明](build/ffmpeg/MACOS-NOTICE.txt)
-- [准确版本与构建配置](build/ffmpeg/MACOS-VERSIONS.txt)
-- [FFmpeg 源码构建脚本](scripts/build-ffmpeg-source-mac.sh)
-- [FFmpeg GPLv3 许可全文](build/ffmpeg/MACOS-LICENSE.txt) · [x264 许可全文](build/ffmpeg/MACOS-X264-LICENSE.txt)
-
-FFmpeg 二进制不提交到 Git。重新分发编译包时，请按 GPL 要求同时提供完整对应源码及构建材料。
-
-</details>
-
-## 从源码构建 Windows 版
-
-在 Windows x64 上构建安装版或便携 EXE，需准备匹配的 FFmpeg / FFprobe；完整依赖、媒体工具源码与构建命令见 [三平台发行与 Windows 构建说明](docs/RELEASING.md)。云端工作流同时生成 NSIS 安装版、更新清单与便携版。自行构建不会自动获得代码签名。
-
-## 贡献者
-
-### 4.1
-
-- **[jayeeliu](https://github.com/jayeeliu)**：通过 [PR #61](https://github.com/jackotom/hongguo-drama/pull/61) 提出并提供随批量下载导出弹幕、评论、剧评 JSON 的初始实现。4.1 在审查基础上重新接入实际视频任务路径，修复异步结果与部分弹幕重试问题；原 PR 未直接合并，保留其功能贡献署名。
-
-## 上游、许可证与使用边界
-
-本项目延续上游的 **[GPL-3.0](LICENSE)** 许可，并保留修改与来源声明。Mac 分支自 2026-10-07 开始适配，详细变更见 [NOTICE](NOTICE)，组件许可见 [第三方声明](THIRD-PARTY-NOTICES.md)。
-
-感谢以下项目提供的基础工作与参考：
-
-- **[327044572/hongguo-downloader](https://github.com/327044572/hongguo-downloader)**：原始上游项目。
-- **[zhenyong97/hongguo-downloader](https://github.com/zhenyong97/hongguo-downloader)**：本次 Mac 移植的直接基础。
-- **[woshishiq1/drpys](https://github.com/woshishiq1/drpys)** 与 **[N3urda/hongguoTV](https://github.com/N3urda/hongguoTV)**：App 片源相关算法来源；准确提交与修改说明见 [算法来源声明](src/native/licenses/NOTICE.txt)。
-- **[Hululu007/drpy-node](https://github.com/Hululu007/drpy-node/tree/295f2b7047e14122d542a7736cb931e81abcf85c)**：西饭接口路径与返回结构参考；本项目独立编写适配器。
-- **Electron、React、FFmpeg 与 x264**：桌面运行、界面和媒体处理组件，许可详情见上述声明。
-
-开源许可适用于软件，不授予剧集内容的再分发权。安装包不包含剧集媒体；作品版权归原平台及创作者所有。请仅处理你有权访问、下载或备份的内容，遵守平台条款与相关法律，勿用于未经授权的传播或商业盗版。平台接口可能调整，某次验证通过不保证后续片源持续可用。
+Giấy phép mã nguồn mở áp dụng cho phần mềm, không cấp quyền tái phân phối nội dung các tập phim. Gói cài đặt không chứa bất kỳ tệp video phim nào; bản quyền tác phẩm thuộc về nền tảng gốc và tác giả sáng tạo. Vui lòng chỉ xử lý nội dung mà bạn có quyền truy cập, tải về hoặc sao lưu hợp pháp, tuân thủ điều khoản dịch vụ của nền tảng và luật pháp hiện hành.

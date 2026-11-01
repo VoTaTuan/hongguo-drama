@@ -17,7 +17,7 @@ export function initializePosterSize() {
 }
 
 export function setPosterSize(size) {
-  if (!POSTER_SIZES.includes(size)) throw new Error('请选择有效的海报大小');
+  if (!POSTER_SIZES.includes(size)) throw new Error('Vui lòng chọn kích thước poster hợp lệ');
   window.localStorage.setItem(POSTER_SIZE_KEY, size);
   initializePosterSize();
 }
@@ -37,7 +37,7 @@ function applyTheme(preference) {
 }
 
 export function setThemePreference(preference) {
-  if (!PREFERENCES.includes(preference)) throw new Error('请选择浅色、深色或跟随系统');
+  if (!PREFERENCES.includes(preference)) throw new Error('Vui lòng chọn giao diện sáng, tối hoặc theo hệ thống');
   window.localStorage.setItem(STORAGE_KEY, preference);
   applyTheme(preference);
 }

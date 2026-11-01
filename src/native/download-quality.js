@@ -1,7 +1,7 @@
 const DOWNLOAD_QUALITIES = ['auto', '1080p', '720p'];
 
 function normalizeDownloadQuality(value = 'auto') {
-  if (!DOWNLOAD_QUALITIES.includes(value)) throw new Error('下载清晰度无效，请选择自动、1080p 或 720p');
+  if (!DOWNLOAD_QUALITIES.includes(value)) throw new Error('Độ phân giải tải xuống không hợp lệ, vui lòng chọn Tự động, 1080p hoặc 720p');
   return value;
 }
 

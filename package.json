@@ -1,7 +1,7 @@
 {
   "name": "hongguo-downloader",
   "version": "5.3.0",
-  "description": "红果短剧播放与下载",
+  "description": "Phát và tải phim ngắn Hồng Quả",
   "main": "main.js",
   "license": "GPL-3.0",
   "scripts": {
@@ -46,7 +46,7 @@
   },
   "build": {
     "appId": "io.github.jackotom.hongguo-drama-mac",
-    "productName": "红果短剧",
+    "productName": "Phim Ngắn Hồng Quả",
     "directories": {
       "output": "dist"
     },
@@ -99,14 +99,14 @@
       ]
     },
     "portable": {
-      "artifactName": "${productName}-5.3-便携版.${ext}"
+      "artifactName": "${productName}-5.3-Portable.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "红果短剧下载器",
+      "shortcutName": "Phim Ngắn Hồng Quả",
       "artifactName": "hongguo-downloader-5.3-win-x64-setup.${ext}"
     },
     "mac": {

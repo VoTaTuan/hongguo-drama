@@ -9,12 +9,12 @@ const activeRequests = new Map();
 const plainText = value => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : '';
 
 function validateSource(draft) {
-  if (!draft || typeof draft !== 'object') throw new Error('自定义源配置无效');
+  if (!draft || typeof draft !== 'object') throw new Error('Cấu hình nguồn tùy chỉnh không hợp lệ');
   const name = plainText(draft.name);
-  if (!name || name.length > 80) throw new Error('来源名称需为 1 至 80 个字符');
-  if (draft.id != null && !UUID.test(String(draft.id))) throw new Error('自定义源编号无效');
+  if (!name || name.length > 80) throw new Error('Tên nguồn phải từ 1 đến 80 ký tự');
+  if (draft.id != null && !UUID.test(String(draft.id))) throw new Error('Mã nguồn tùy chỉnh không hợp lệ');
   if (typeof draft.url !== 'string' || draft.url.length > 4096 || !isPublicMediaUrl(draft.url)) {
-    throw new Error('接口需为不含账号密码的公网 HTTP 或 HTTPS 地址');
+    throw new Error('API phải là địa chỉ HTTP hoặc HTTPS công khai không chứa tài khoản/mật khẩu');
   }
   const url = new URL(draft.url);
   if (url.pathname === '/') url.pathname = '/api.php/provide/vod/';
@@ -34,14 +34,14 @@ function assertEnabled(value) {
   const id = sourceId(value);
   const sources = store.getSettings().custom_sources;
   const source = Array.isArray(sources) && sources.find(item => String(item?.id).toLowerCase() === id);
-  if (!source || source.enabled !== true) throw new Error('该自定义源已禁用或删除');
+  if (!source || source.enabled !== true) throw new Error('Nguồn tùy chỉnh này đã bị vô hiệu hóa hoặc bị xóa');
   return validateSource(source);
 }
 
 function parseId(value, episode = false) {
   const parts = String(value || '').split(':');
   if (parts[0] !== 'custom' || parts.length !== (episode ? 5 : 3) || !UUID.test(parts[1]) || !ID.test(parts[2])
-    || (episode && !parts.slice(3).every(part => /^\d{1,5}$/.test(part)))) throw new Error('自定义剧集编号无效');
+    || (episode && !parts.slice(3).every(part => /^\d{1,5}$/.test(part)))) throw new Error('Mã phim tùy chỉnh không hợp lệ');
   return { id: parts[1].toLowerCase(), vodId: parts[2], seriesId: `custom:${parts[1].toLowerCase()}:${parts[2]}`,
     line: Number(parts[3]), episode: Number(parts[4]) };
 }
@@ -53,7 +53,7 @@ function cancelRequests(value) {
 
 async function request(source, params, draft = false) {
   const check = () => {
-    if (!draft && assertEnabled(source.id).url !== source.url) throw new Error('来源配置已变更，请重新加载');
+    if (!draft && assertEnabled(source.id).url !== source.url) throw new Error('Cấu hình nguồn đã thay đổi, vui lòng tải lại');
   };
   check();
   const url = new URL(source.url);
@@ -83,16 +83,16 @@ async function request(source, params, draft = false) {
     });
     check();
     let data;
-    try { data = JSON.parse(response.data); } catch (_) { throw new Error('自定义源未返回有效 JSON'); }
+    try { data = JSON.parse(response.data); } catch (_) { throw new Error('Nguồn tùy chỉnh không trả về JSON hợp lệ'); }
     if (!data || Number(data.code) !== 1 || !Array.isArray(data.list) || data.list.length > 500) {
-      throw new Error('自定义源返回的苹果 CMS 数据无效');
+      throw new Error('Dữ liệu Apple CMS trả về từ nguồn tùy chỉnh không hợp lệ');
     }
     return data;
   } catch (error) {
     // Never forward remote messages or Axios diagnostics containing signed URLs.
     if (/^(自定义源|该自定义源|来源配置)/.test(error.message)) throw error;
     throw new Error(controller.signal.aborted || ['ECONNABORTED', 'ETIMEDOUT'].includes(error.code)
-      ? '自定义源请求已取消或超时，请重试' : '自定义源请求失败，请检查公网接口与网络');
+      ? 'Yêu cầu nguồn tùy chỉnh đã bị hủy hoặc quá thời gian, vui lòng thử lại' : 'Yêu cầu nguồn tùy chỉnh thất bại, vui lòng kiểm tra API công khai và mạng');
   } finally {
     clearTimeout(timer); requests.delete(controller);
     if (!requests.size && activeRequests.get(source.id) === requests) activeRequests.delete(source.id);
@@ -113,7 +113,7 @@ function normalizeItem(item, source) {
 }
 
 function pageResult(data, source, page) {
-  if (data.page != null && Number(data.page) !== page) throw new Error('自定义源返回的页码不一致');
+  if (data.page != null && Number(data.page) !== page) throw new Error('Số trang trả về từ nguồn tùy chỉnh không khớp');
   const seen = new Set();
   const results = data.list.map(item => normalizeItem(item, source)).filter(item => {
     if (!item || seen.has(item.series_id)) return false;
@@ -132,7 +132,7 @@ function pageResult(data, source, page) {
 async function fetchCatalog({ source, genre = '', page = 1 } = {}) {
   try {
     const config = assertEnabled(source), pg = Number(page);
-    if (!Number.isSafeInteger(pg) || pg < 1 || pg > 100000 || (genre && !ID.test(String(genre)))) throw new Error('自定义源分类或页码无效');
+    if (!Number.isSafeInteger(pg) || pg < 1 || pg > 100000 || (genre && !ID.test(String(genre)))) throw new Error('Phân loại hoặc số trang của nguồn tùy chỉnh không hợp lệ');
     const data = await request(config, { pg, ...(genre ? { t: genre } : {}) });
     return pageResult(data, config, pg);
   } catch (error) { return { success: false, error: error.message }; }
@@ -141,7 +141,7 @@ async function fetchCatalog({ source, genre = '', page = 1 } = {}) {
 async function searchSeries(keyword, { source, page = 1 } = {}) {
   try {
     const config = assertEnabled(source), pg = Number(page), wd = String(keyword || '').trim();
-    if (!wd || wd.length > 200 || !Number.isSafeInteger(pg) || pg < 1 || pg > 100000) throw new Error('自定义源搜索词或页码无效');
+    if (!wd || wd.length > 200 || !Number.isSafeInteger(pg) || pg < 1 || pg > 100000) throw new Error('Từ khóa tìm kiếm hoặc số trang của nguồn tùy chỉnh không hợp lệ');
     return pageResult(await request(config, { wd, pg }), config, pg);
   } catch (error) { return { success: false, error: error.message }; }
 }
@@ -149,9 +149,9 @@ async function searchSeries(keyword, { source, page = 1 } = {}) {
 async function detail(seriesId) {
   const id = parseId(seriesId), source = assertEnabled(id.id);
   const data = await request(source, { ids: id.vodId });
-  if (data.list.length !== 1 || String(data.list[0]?.vod_id) !== id.vodId) throw new Error('自定义源返回的剧集与请求不一致');
+  if (data.list.length !== 1 || String(data.list[0]?.vod_id) !== id.vodId) throw new Error('Phim trả về từ nguồn tùy chỉnh không khớp với yêu cầu');
   const item = data.list[0];
-  if (!normalizeItem(item, source)) throw new Error('自定义源详情无效');
+  if (!normalizeItem(item, source)) throw new Error('Chi tiết nguồn tùy chỉnh không hợp lệ');
   return { id, source, item };
 }
 
@@ -179,7 +179,7 @@ function mediaLines(item) {
 async function fetchEpisodeList(seriesId) {
   const { id, source, item } = await detail(seriesId);
   const lines = mediaLines(item).sort((a, b) => b.episodes.length - a.episodes.length);
-  if (!lines.length) throw new Error('该剧没有可直接播放的 MP4 或 M3U8 分集，不支持网页解析');
+  if (!lines.length) throw new Error('Phim này không có tập MP4 hoặc M3U8 có thể phát trực tiếp, không hỗ trợ phân tích trang web');
   const normalized = normalizeItem(item, source), seen = new Set();
   const episodes = lines[0].episodes.filter(episode => {
     if (seen.has(episode.key)) return false; seen.add(episode.key); return true;
@@ -192,12 +192,12 @@ async function fetchEpisodeList(seriesId) {
 async function fetchPlayUrlSingle(vid, sid) {
   try {
     const id = parseId(vid, true);
-    if (sid != null && sid !== '' && parseId(sid).seriesId !== id.seriesId) throw new Error('自定义分集不属于当前剧集');
+    if (sid != null && sid !== '' && parseId(sid).seriesId !== id.seriesId) throw new Error('Tập tùy chỉnh không thuộc về bộ phim hiện tại');
     const { source, item } = await detail(id.seriesId);
-    if (isLocked(item)) return { url: null, source: 'custom', locked: true, error: '该剧当前需付费或密码，请在来源平台确认观看权限' };
+    if (isLocked(item)) return { url: null, source: 'custom', locked: true, error: 'Phim này hiện cần trả phí hoặc mật khẩu, vui lòng xác nhận quyền xem trên nền tảng nguồn' };
     const lines = mediaLines(item);
     const selected = lines.find(line => line.line === id.line)?.episodes.find(episode => episode.episode === id.episode);
-    if (!selected) throw new Error('自定义源未找到可直接播放的分集');
+    if (!selected) throw new Error('Nguồn tùy chỉnh không tìm thấy tập phim có thể phát trực tiếp');
     const candidates = [selected, ...lines.flatMap(line => line.episodes.filter(episode => episode.key === selected.key))]
       .filter((episode, index, all) => all.findIndex(other => other.url === episode.url) === index)
       .map(episode => ({ url: episode.url, format: episode.format, source: 'custom', spadeA: null, codec: '',

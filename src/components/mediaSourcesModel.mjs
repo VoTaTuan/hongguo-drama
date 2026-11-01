@@ -1,5 +1,5 @@
 export const BUILTIN_MEDIA_SOURCES = [
-  { id: 'hongguo', label: '红果短剧' }, { id: 'xifan', label: '西饭短剧' }, { id: 'hema', label: '河马短剧' },
+  { id: 'hongguo', label: 'Phim Ngắn Hồng Quả' }, { id: 'xifan', label: 'Phim Ngắn Tây Phạn' }, { id: 'hema', label: 'Phim Ngắn Hà Mã' },
 ];
 export const CUSTOM_SOURCE_ID = /^custom:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -17,7 +17,7 @@ export function mediaSourceLabel(seriesOrSource, sources = BUILTIN_MEDIA_SOURCES
   const source = id.startsWith('custom:') ? id.split(':').slice(0, 2).join(':')
     : id.startsWith('xifan:') ? 'xifan' : id.startsWith('hema:') ? 'hema' : /^\d+$/.test(id) ? 'hongguo' : id;
   return sources.find(item => item.id === source)?.label || BUILTIN_MEDIA_SOURCES.find(item => item.id === source)?.label
-    || (source.startsWith('custom:') ? '自定义源（未启用或已移除）' : '未知来源');
+    || (source.startsWith('custom:') ? 'Nguồn tùy chỉnh (chưa bật hoặc đã xóa)' : 'Nguồn không xác định');
 }
 
 export function createMediaSourcesStore(load) {
@@ -37,11 +37,11 @@ export function createMediaSourcesStore(load) {
         try {
           const result = await load();
           if (snapshot.revision !== revision) return;
-          if (!result?.success || !Array.isArray(result.sources)) throw new Error(result?.error || '来源列表加载失败，请重试');
+          if (!result?.success || !Array.isArray(result.sources)) throw new Error(result?.error || 'Tải danh sách nguồn thất bại, vui lòng thử lại');
           loaded = true;
           emit({ sources: normalizeMediaSources(result.sources), loading: false });
         } catch (error) {
-          if (snapshot.revision === revision) emit({ loading: false, error: error.message || '来源列表加载失败，请重试' });
+          if (snapshot.revision === revision) emit({ loading: false, error: error.message || 'Tải danh sách nguồn thất bại, vui lòng thử lại' });
         } finally { if (snapshot.revision === revision) pending = null; }
       })();
       return pending;

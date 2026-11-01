@@ -1,29 +1,29 @@
-# 红果短剧设计系统
+# Hệ thống Thiết kế Phim Ngắn Hồng Quả (Design System)
 
-适用源码版本：5.3。产品交互与视觉规范沿用以下约定；搜索在官网没有同名结果时从 App 上新目录补搜，结果带「今日上新」/「App 新剧」标记。发现与热播推荐的目录线路复用现有选择器，两页独立记忆，窄窗口换行。失败保留旧片单，分页状态与实际内容一致；分集弹窗优先快速展示，慢请求并行重试。播放控制条提供系统原生画中画小窗入口，悬浮播放使用同一视频元素，不重复下载。登录管理独立成页，APP 观看记录不从原观看历史页混入；只有登录管理内的记录可直接继续播放。实际发行和验收状态见 `docs/release-5.3.md`。
+Phiên bản mã nguồn áp dụng: 5.3. Các quy chuẩn thị giác và tương tác sản phẩm tuân theo các quy định dưới đây; khi tìm kiếm trên trang web chính thức không có kết quả trùng tên, hệ thống sẽ tự động tìm kiếm bổ sung từ danh mục phim mới trên App, kết quả được gắn nhãn "Hôm nay mới lên" / "Phim mới trên App". Tuyến danh mục Khám phá và Thịnh hành tái sử dụng bộ chọn hiện có, ghi nhớ độc lập trên cả hai trang, tự động xuống dòng trên cửa sổ hẹp. Khi lỗi vẫn giữ lại danh sách phim cũ, trạng thái phân trang nhất quán với nội dung thực tế; hộp thoại chọn tập ưu tiên hiển thị nhanh, các yêu cầu chậm được thử lại song song. Thanh điều khiển phát cung cấp lối vào hình trong hình (PiP) gốc của hệ thống, phát nổi dùng chung phần tử video duy nhất, không tải lại lặp lại. Quản lý đăng nhập tách thành trang độc lập, lịch sử xem trên APP không trộn lẫn vào trang lịch sử xem cục bộ gốc; chỉ các bản ghi trong Quản lý đăng nhập mới có thể tiếp tục phát trực tiếp. Trạng thái phát hành và nghiệm thu thực tế xem tại `docs/release-5.3.md`.
 
 ## Direction
-以 macOS 影音资料库为基准。内容为主，操作为辅；浅暖灰侧栏与白色内容区构成连续窗口，珊瑚红只用于选择与主要动作。主控已确定这一方向，替换旧版深色侧栏与渐变宣传块。
+Lấy thư viện đa phương tiện macOS làm chuẩn mực. Nội dung là chính, thao tác là phụ; thanh bên màu xám ấm nhạt và vùng nội dung màu trắng tạo nên một cửa sổ liền mạch, màu đỏ san hô chỉ dùng cho trạng thái lựa chọn và hành động chính. Đây là định hướng thiết kế đã được xác định, thay thế cho thanh bên tối màu và các khối quảng cáo chuyển màu trước đây.
 
 ## Tokens
-- Canvas `#faf9f7`，sidebar `#f0eeeb`，surface `#ffffff`。
-- Primary text `#252523`，secondary `#686661`，muted `#77736c`。
-- Accent `#c8383d`，hover `#ae2b31`，selection `#fae9e7`。
-- Success `#33745c`，danger `#ba3438`，border `#e4e1dc`。
-- Type: macOS system UI / PingFang SC，Windows fallback Microsoft YaHei。Native typography is an explicit platform choice. Headings 28px/700, body 13px/400, labels 12px/500, captions 11px.
-- Spacing: 4/8/12/16/20/24/32px; main content 36px horizontal.
-- Sidebar 214px, toolbar 48px; macOS top-left reserves 58px for traffic lights.
-- Controls 7–9px radius; posters 12px; sheets 16px. Border or elevation, not both.
+- Canvas `#faf9f7`, sidebar `#f0eeeb`, surface `#ffffff`.
+- Chữ chính `#252523`, chữ phụ `#686661`, chữ mờ `#77736c`.
+- Màu nhấn (Accent) `#c8383d`, hover `#ae2b31`, vùng chọn `#fae9e7`.
+- Thành công `#33745c`, cảnh báo/nguy hiểm `#ba3438`, đường viền `#e4e1dc`.
+- Phông chữ: macOS system UI / SF Pro / PingFang SC, Windows dự phòng Segoe UI / Microsoft YaHei. Kiểu chữ nguyên bản là lựa chọn rõ ràng của từng nền tảng. Tiêu đề 28px/700, nội dung 13px/400, nhãn 12px/500, chú thích 11px.
+- Khoảng cách: 4/8/12/16/20/24/32px; nội dung chính đệm ngang 36px.
+- Thanh bên 214px, thanh công cụ 48px; góc trên bên trái macOS chừa 58px cho các nút đèn giao thông (traffic lights).
+- Bo góc bộ điều khiển 7–9px; áp phích (poster) 12px; bảng trượt 16px. Dùng đường viền hoặc đổ bóng nổi, không dùng cả hai.
 
 ## Surfaces
-发现短剧：分类与题材在海报上方；3:4 海报直接呈现真实内容。无结果提供重载与搜索，加载采用等比例占位，不虚构片单。
-搜索与下载：分段选择搜索/链接；结果、选集和提交构成一个连续任务。
-下载管理：主要操作常显，批量维护收进原生可展开菜单；列表是紧凑行而非叠放卡片。
-我的剧库：深炭视频舞台保留媒体控制，周围界面使用同一浅色系统。
-设置：纵向分组、真实保存与代理测试，避免内部术语堆砌。
+- **Khám phá phim ngắn**: Phân loại và thể loại nằm phía trên áp phích; áp phích tỷ lệ 3:4 thể hiện trực tiếp nội dung thực tế. Khi không có kết quả cung cấp nút tải lại và tìm kiếm; khi đang tải sử dụng khung giữ chỗ đúng tỷ lệ, không tạo danh sách phim giả lập.
+- **Tìm kiếm và tải về**: Bộ chọn phân đoạn giữa tìm kiếm từ khóa / liên kết; kết quả, chọn tập và gửi tải tạo thành một luồng tác vụ liền mạch.
+- **Quản lý tải xuống**: Các thao tác chính luôn hiển thị, bảo trì hàng loạt thu gọn vào menu mở rộng gốc; danh sách hiển thị dưới dạng các hàng nhỏ gọn chứ không xếp chồng thẻ.
+- **Kho phim của tôi**: Sân khấu video màu than đậm giữ lại các nút điều khiển media, giao diện xung quanh dùng cùng hệ thống màu sáng.
+- **Cài đặt**: Gom nhóm theo chiều dọc, lưu cấu hình thực tế và kiểm tra proxy, tránh xếp chồng các thuật ngữ kỹ thuật phức tạp.
 
 ## Interaction
-所有导航和海报为按钮；选择有 pressed 状态；输入有标签；焦点可见。对话框支持 Escape、Tab 循环和焦点返回。尊重 reduced motion。真实播放、下载、合并和持久化沿用原有 API。
+Tất cả các mục điều hướng và áp phích đều là nút bấm; trạng thái lựa chọn có hiệu ứng pressed; ô nhập liệu có nhãn rõ ràng; tiêu điểm (focus) hiển thị trực quan. Hộp thoại hỗ trợ phím Escape, lặp Tab và khôi phục tiêu điểm. Tôn trọng chế độ giảm chuyển động (reduced motion). Các tính năng phát thực tế, tải xuống, gộp phim và lưu trữ dữ liệu tuân theo API nguyên bản.
 
 ## Verification boundary
-代码实施完成后由主控统一构建并进行真实窗口检查；本文不代表远程服务、下载或播放验收。
+Sau khi triển khai mã nguồn hoàn tất, ứng dụng được build thống nhất và kiểm tra trên cửa sổ thực tế; tài liệu này không đại diện cho việc nghiệm thu dịch vụ từ xa, tải xuống hoặc phát video.

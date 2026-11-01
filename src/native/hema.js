@@ -18,14 +18,14 @@ function httpsUrl(value) {
 function parseId(value, episode = false) {
   const parts = String(value || '').split(':');
   if (parts[0] !== 'hema' || parts.length !== (episode ? 3 : 2) || !parts.slice(1).every(part => ID.test(part))) {
-    throw new Error('河马剧集编号无效');
+    throw new Error('Mã phim Hà Mã không hợp lệ');
   }
   return { bookId: parts[1], chapterId: parts[2], seriesId: parts.slice(0, 2).join(':') };
 }
 
 async function request(apiPath, body, options = {}) {
   const remaining = Number(options.deadline) > 0 ? options.deadline - Date.now() : 10000;
-  if (remaining <= 0) throw new Error('河马加载超时，请重试');
+  if (remaining <= 0) throw new Error('Hà Mã tải quá thời gian, vui lòng thử lại');
   const timeout = Math.min(10000, remaining);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
@@ -40,7 +40,7 @@ async function request(apiPath, body, options = {}) {
     return response.data;
   } catch (error) {
     throw new Error(controller.signal.aborted || error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT'
-      ? '河马加载超时，请重试' : '河马来源暂不可用，请稍后重试');
+      ? 'Hà Mã tải quá thời gian, vui lòng thử lại' : 'Nguồn Hà Mã tạm thời không khả dụng, vui lòng thử lại sau');
   } finally { clearTimeout(timer); }
 }
 
@@ -61,7 +61,7 @@ function pageData(html) {
     const data = JSON.parse(match?.[1]).props.pageProps;
     if (!data || typeof data !== 'object') throw new Error('invalid page');
     return data;
-  } catch (_) { throw new Error('河马目录数据异常，请稍后重试'); }
+  } catch (_) { throw new Error('Dữ liệu danh mục Hà Mã bất thường, vui lòng thử lại sau'); }
 }
 
 async function browseList(options = {}) {
@@ -70,7 +70,7 @@ async function browseList(options = {}) {
     const pg = Number(page);
     const slug = String(genre || '0');
     if (!Number.isSafeInteger(pg) || pg < 1 || !/^\d{1,30}(?:-\d{1,30}){0,15}$/.test(slug)) {
-      throw new Error('河马题材或页码无效，请重新选择');
+      throw new Error('Thể loại hoặc số trang Hà Mã không hợp lệ, vui lòng chọn lại');
     }
     let firstHtml;
     if (forceRefresh || !genreCache || genreCache.expires <= Date.now()) {

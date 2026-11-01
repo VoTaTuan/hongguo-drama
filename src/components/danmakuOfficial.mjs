@@ -14,8 +14,8 @@ export function normalizeDanmakuSource(value) {
 }
 
 export const SOURCE_LABELS = Object.freeze({
-  official: '时间轴弹幕',
-  comments: '本集评论',
+  official: 'Danmaku theo dòng thời gian',
+  comments: 'Bình luận tập này',
 });
 
 // 一道弹幕占满整屏所需的时间由宽度和速度决定；这里只约束"同一道里前后两条
@@ -109,9 +109,9 @@ export function appendOfficialPage(feed, data) {
   feed.loaded = true;
   feed.truncated = data.truncated === true;
   feed.partial = data.partial === true;
-  feed.notice = (typeof data.notice === 'string' ? data.notice : '') || (feed.partial ? '仅取得部分弹幕，可重试加载' : feed.truncated ? '已达到本次读取限制，仅展示部分弹幕' : '');
+  feed.notice = (typeof data.notice === 'string' ? data.notice : '') || (feed.partial ? 'Chỉ lấy được một phần danmaku, có thể thử tải lại' : feed.truncated ? 'Đã đạt giới hạn đọc lần này, chỉ hiển thị một phần danmaku' : '');
   feed.animation.lastTime = undefined;
-  feed.error = data.success === false ? (typeof data.error === 'string' && data.error ? data.error : '弹幕加载失败') : '';
+  feed.error = data.success === false ? (typeof data.error === 'string' && data.error ? data.error : 'Tải danmaku thất bại') : '';
   return feed;
 }
 
@@ -229,15 +229,15 @@ export function advanceTimedDanmaku(state, danmaku, currentTime, elapsed, option
  * 因此所有路径都必须调用这里，不在别处拼字符串。
  */
 export function resolveDanmakuStatus({ source, supported, enabled, active, visible, error, loading, notice, loaded, count }) {
-  if (!supported) return source === 'official' ? '仅红果来源的剧集支持弹幕' : '仅红果来源的当前集支持评论弹幕';
-  if (!enabled) return source === 'official' ? '开启后按视频时间展示时间轴弹幕' : '开启后展示本集公开评论';
-  if (!active) return source === 'official' ? '播放本集后显示弹幕' : '播放本集后显示评论弹幕';
+  if (!supported) return source === 'official' ? 'Chỉ nguồn Hồng Quả mới hỗ trợ danmaku' : 'Chỉ tập hiện tại nguồn Hồng Quả mới hỗ trợ bình luận danmaku';
+  if (!enabled) return source === 'official' ? 'Bật sau đó hiển thị danmaku theo dòng thời gian video' : 'Bật sau đó hiển thị bình luận công khai của tập này';
+  if (!active) return source === 'official' ? 'Phát tập này sau đó hiển thị danmaku' : 'Phát tập này sau đó hiển thị bình luận danmaku';
   if (!visible) return '';
   // 失败优先于一切：宁可说"没取到"，也不能说成"没有弹幕"
   if (error) return error;
-  if (loading) return '正在加载弹幕…';
+  if (loading) return 'Đang tải danmaku…';
   if (notice && !count) return notice;
-  if (!loaded) return '正在加载弹幕…';
-  if (!count) return notice || '本集暂无弹幕';
-  return `已载入 ${count} 条弹幕${notice ? `（${notice}）` : ''}`;
+  if (!loaded) return 'Đang tải danmaku…';
+  if (!count) return notice || 'Tập này tạm thời chưa có danmaku';
+  return `Đã tải ${count} danmaku${notice ? ` (${notice})` : ''}`;
 }

@@ -80,19 +80,19 @@ function tagsOf(video) {
 /** 把接口返回的 searchList 转成应用内统一的搜索结果结构。 */
 function parseSearchResponse(payload) {
   if (payload == null || payload === '') {
-    throw new HongguoSearchError('搜索响应为空', 'upstream');
+    throw new HongguoSearchError('Phản hồi tìm kiếm rỗng', 'upstream');
   }
   if (typeof payload === 'string') {
-    throw new HongguoSearchError('搜索返回了网页内容', 'upstream');
+    throw new HongguoSearchError('Tìm kiếm trả về nội dung trang web', 'upstream');
   }
   if (typeof payload !== 'object' || Array.isArray(payload)) {
-    throw new HongguoSearchError('搜索返回异常数据', 'format', { fallback: true });
+    throw new HongguoSearchError('Tìm kiếm trả về dữ liệu bất thường', 'format', { fallback: true });
   }
   if (typeof payload.code === 'string') {
-    throw new HongguoSearchError(`搜索服务暂不可用（${payload.message || payload.code}）`, 'upstream');
+    throw new HongguoSearchError(`Dịch vụ tìm kiếm tạm thời không khả dụng (${payload.message || payload.code})`, 'upstream');
   }
   if (!Array.isArray(payload.searchList)) {
-    throw new HongguoSearchError('搜索返回异常数据', 'format', { fallback: true });
+    throw new HongguoSearchError('Tìm kiếm trả về dữ liệu bất thường', 'format', { fallback: true });
   }
   const results = [];
   const seen = new Set();
@@ -116,7 +116,7 @@ function parseSearchResponse(payload) {
   }
   // 有数据但一条都认不出，通常是字段改名；这是解析失败，不是“没有结果”。
   if (!results.length && payload.searchList.length > 0) {
-    throw new HongguoSearchError('搜索返回的条目无法识别', 'format', { fallback: true });
+    throw new HongguoSearchError('Mục trả về từ tìm kiếm không nhận dạng được', 'format', { fallback: true });
   }
   const total = Number(payload.totalCount);
   const totalPages = Number(payload.totalPages);
@@ -133,21 +133,21 @@ function parseSearchResponse(payload) {
 function classifyRequestError(error) {
   const status = Number(error?.response?.status);
   if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT' || /timeout/i.test(String(error?.message || ''))) {
-    return new HongguoSearchError('搜索超时，请稍后重试', 'timeout', { cause: error });
+    return new HongguoSearchError('Tìm kiếm quá thời gian, vui lòng thử lại sau', 'timeout', { cause: error });
   }
   if (status === 408) {
-    return new HongguoSearchError('搜索超时，请稍后重试', 'timeout', { cause: error });
+    return new HongguoSearchError('Tìm kiếm quá thời gian, vui lòng thử lại sau', 'timeout', { cause: error });
   }
   if (status === 429) {
-    return new HongguoSearchError('搜索请求过于频繁，请稍后重试', 'upstream', { cause: error });
+    return new HongguoSearchError('Yêu cầu tìm kiếm quá thường xuyên, vui lòng thử lại sau', 'upstream', { cause: error });
   }
   if (status >= 500) {
-    return new HongguoSearchError(`搜索服务暂不可用（HTTP ${status}）`, 'upstream', { cause: error });
+    return new HongguoSearchError(`Dịch vụ tìm kiếm tạm thời không khả dụng (HTTP ${status})`, 'upstream', { cause: error });
   }
   if (status >= 400) {
-    return new HongguoSearchError(`搜索接口已变化（HTTP ${status}）`, 'format', { fallback: true, cause: error });
+    return new HongguoSearchError(`Giao diện tìm kiếm đã thay đổi (HTTP ${status})`, 'format', { fallback: true, cause: error });
   }
-  return new HongguoSearchError(`搜索网络异常：${error?.message || '连接失败'}`, 'upstream', { cause: error });
+  return new HongguoSearchError(`Lỗi mạng khi tìm kiếm: ${error?.message || 'Kết nối thất bại'}`, 'upstream', { cause: error });
 }
 
 async function defaultRequest(keyword, page, { timeout }) {
@@ -170,7 +170,7 @@ async function defaultRequest(keyword, page, { timeout }) {
   }
   const data = response?.data;
   if (data && typeof data === 'object' && typeof data.code === 'string') {
-    throw new HongguoSearchError(`搜索服务暂不可用（${data.message || data.code}）`, 'upstream');
+    throw new HongguoSearchError(`Dịch vụ tìm kiếm tạm thời không khả dụng (${data.message || data.code})`, 'upstream');
   }
   return data;
 }
@@ -191,8 +191,8 @@ function delay(ms) {
  */
 async function searchHongguo(keyword, options = {}) {
   const kw = normalizeKeyword(keyword);
-  if (!kw) throw new HongguoSearchError('请输入 1 至 200 字的搜索词', 'input');
-  if (kw.length > 200) throw new HongguoSearchError('请输入 1 至 200 字的搜索词', 'input');
+  if (!kw) throw new HongguoSearchError('Vui lòng nhập từ khóa tìm kiếm từ 1 đến 200 ký tự', 'input');
+  if (kw.length > 200) throw new HongguoSearchError('Vui lòng nhập từ khóa tìm kiếm từ 1 đến 200 ký tự', 'input');
   const page = Math.max(1, Math.min(50, Number(options.page) || 1));
   const request = typeof options.request === 'function' ? options.request : defaultRequest;
   const timeout = Math.max(1000, Number(options.timeout) || DEFAULT_TIMEOUT_MS);
@@ -207,7 +207,7 @@ async function searchHongguo(keyword, options = {}) {
   let lastError = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
     if (remaining() < 1000) {
-      lastError = new HongguoSearchError('搜索超时，请稍后重试', 'timeout');
+      lastError = new HongguoSearchError('Tìm kiếm quá thời gian, vui lòng thử lại sau', 'timeout');
       break;
     }
     try {
@@ -220,7 +220,7 @@ async function searchHongguo(keyword, options = {}) {
     } catch (error) {
       lastError = error instanceof HongguoSearchError
         ? error
-        : new HongguoSearchError(`搜索失败：${error?.message || '未知错误'}`, 'upstream', { cause: error });
+        : new HongguoSearchError(`Tìm kiếm thất bại: ${error?.message || 'Lỗi không xác định'}`, 'upstream', { cause: error });
       if (lastError.fallback || attempt === retries) break;
       await delay(RETRY_DELAY_MS * (attempt + 1));
     }

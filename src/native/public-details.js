@@ -21,9 +21,9 @@ function reviews(value, max = 50) {
 function parsePublicDetails(html, seriesId, vid = '', options = {}) {
   const router = readRouterData(html);
   const data = Object.values(router.loaderData || {}).find(value => value?.seriesDetail && value.isSuccess !== false);
-  if (!data) throw new Error('来源页面未返回公开剧集信息');
-  if (String(data.seriesDetail.series_id) !== seriesId) throw new Error('来源页面剧集不匹配');
-  if (vid && String(data.vid) !== vid) throw new Error('来源页面分集不匹配');
+  if (!data) throw new Error('Trang nguồn không trả về thông tin phim công khai');
+  if (String(data.seriesDetail.series_id) !== seriesId) throw new Error('Phim trên trang nguồn không khớp');
+  if (vid && String(data.vid) !== vid) throw new Error('Tập phim trên trang nguồn không khớp');
   const social = data.seriesSocialInfo || {};
   return { success: true, series_id: seriesId, episode_id: vid || null,
     ...publicMetadata(data.seriesDetail),
@@ -40,7 +40,7 @@ async function fetchPublicDetails(seriesId, vid = '', options = {}) {
   seriesId = String(seriesId || '');
   vid = String(vid || '');
   const reviewsLimit = Number.isInteger(options.reviewsLimit) && options.reviewsLimit > 0 ? options.reviewsLimit : 50;
-  if (!/^\d{6,30}$/.test(seriesId) || (vid && !/^\d{6,30}$/.test(vid))) return { success: false, error: '仅支持有效的红果剧集和分集编号' };
+  if (!/^\d{6,30}$/.test(seriesId) || (vid && !/^\d{6,30}$/.test(vid))) return { success: false, error: 'Chỉ hỗ trợ mã phim và mã tập Hồng Quả hợp lệ' };
   const url = vid ? `${SITE}/player/${seriesId}/${vid}` : `${SITE}/detail?series_id=${seriesId}`;
   const cacheKey = `${url}#r${reviewsLimit}`;
   if (cache.get(cacheKey)?.expires > Date.now()) return cache.get(cacheKey).data;
@@ -63,12 +63,12 @@ async function fetchPublicDetails(seriesId, vid = '', options = {}) {
               new RegExp(`^/player/${seriesId}/\\d{6,30}$`).test(redirect.pathname) &&
               redirect.searchParams.get('pc_locked_episode') === vid) {
             return { success: false, sourceUrl: url, source_limited: true,
-              code: 'EPISODE_COMMENTS_UNAVAILABLE', error: '官网未开放本集评论，请到红果短剧 App 查看。' };
+              code: 'EPISODE_COMMENTS_UNAVAILABLE', error: 'Trang web chính thức chưa mở bình luận tập này, vui lòng xem trên App Phim Ngắn Hồng Quả.' };
           }
         } catch (_) {}
       }
       return { success: false, sourceUrl: url, error: ['ECONNABORTED', 'ERR_CANCELED'].includes(error.code)
-        ? '公开评论加载超时，请重试' : error.response ? `公开评论加载失败（HTTP ${error.response.status}）` : error.message };
+        ? 'Tải bình luận công khai quá thời gian, vui lòng thử lại' : error.response ? `Tải bình luận công khai thất bại (HTTP ${error.response.status})` : error.message };
     } finally { pending.delete(cacheKey); }
   })();
   pending.set(cacheKey, request);

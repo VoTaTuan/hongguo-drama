@@ -23,9 +23,9 @@ export default function CustomSources({ active = true }) {
     try {
       const result = await window.electronAPI.getCustomSources();
       if (version !== listVersion.current) return;
-      if (!result?.success) throw new Error(result?.error || '自定义源加载失败');
+      if (!result?.success) throw new Error(result?.error || 'Tải nguồn tùy chỉnh thất bại');
       setSources(result.sources || []);
-    } catch (cause) { if (version === listVersion.current) setError(cause.message || '自定义源加载失败'); }
+    } catch (cause) { if (version === listVersion.current) setError(cause.message || 'Tải nguồn tùy chỉnh thất bại'); }
     finally { if (version === listVersion.current) setLoading(false); }
   }, []);
   useEffect(() => {
@@ -47,11 +47,11 @@ export default function CustomSources({ active = true }) {
     testController.current = controller;
     setBusy('test'); setMessage(''); setError('');
     try {
-      const result = await waitForRequest(window.electronAPI.testCustomSource(draft), { signal: controller.signal, message: '测试超时，请检查 API 地址后重试' });
+      const result = await waitForRequest(window.electronAPI.testCustomSource(draft), { signal: controller.signal, message: 'Kiểm tra hết thời gian, vui lòng kiểm tra lại địa chỉ API rồi thử lại' });
       if (controller.signal.aborted) return;
-      if (!result?.success) throw new Error(result?.error || '测试失败，请检查 API 地址');
-      setMessage(`目录连接成功，返回 ${result.count || 0} 部。测试不代表每一集都能播放；保存后加入来源。`);
-    } catch (cause) { if (!controller.signal.aborted) setError(cause.message || '来源测试失败'); }
+      if (!result?.success) throw new Error(result?.error || 'Kiểm tra thất bại, vui lòng kiểm tra địa chỉ API');
+      setMessage(`Kết nối danh mục thành công, trả về ${result.count || 0} phim. Kiểm tra không đảm bảo mọi tập đều phát được; nhấn lưu để thêm vào danh sách nguồn.`);
+    } catch (cause) { if (!controller.signal.aborted) setError(cause.message || 'Kiểm tra nguồn thất bại'); }
     finally { if (!controller.signal.aborted) setBusy(''); }
   };
 
@@ -61,42 +61,42 @@ export default function CustomSources({ active = true }) {
     try {
       const result = kind === 'delete' ? await window.electronAPI.deleteCustomSource(source.id)
         : await window.electronAPI.saveCustomSource(source);
-      if (!result?.success) throw new Error(result?.error || '来源配置未保存，请重试');
+      if (!result?.success) throw new Error(result?.error || 'Cấu hình nguồn chưa được lưu, vui lòng thử lại');
       notifyMediaSourcesChanged();
       if (kind === 'save' || (kind === 'delete' && draft.id === source.id)) setDraft(emptyDraft());
       setDeleting('');
-      setMessage(kind === 'delete' ? '已移除来源配置，本地视频保留。' : kind === 'toggle' ? (source.enabled ? '来源已启用。' : '来源已停用。') : '来源已保存，可在搜索、发现和摇一摇中选择。');
+      setMessage(kind === 'delete' ? 'Đã xóa cấu hình nguồn, video cục bộ vẫn được giữ nguyên.' : kind === 'toggle' ? (source.enabled ? 'Nguồn đã được bật.' : 'Nguồn đã tạm dừng.') : 'Nguồn đã được lưu, có thể chọn trong Tìm kiếm, Khám phá và Xem ngẫu nhiên.');
       await load();
-    } catch (cause) { setError(cause.message || '来源配置未保存，请重试'); }
+    } catch (cause) { setError(cause.message || 'Cấu hình nguồn chưa được lưu, vui lòng thử lại'); }
     finally { mutation.current = false; setBusy(''); }
   };
 
   return <section className="settings-card custom-sources" aria-labelledby="custom-sources-title">
-    <div className="custom-sources-heading"><Globe size={18} /><h3 id="custom-sources-title">自定义播放源</h3></div>
-    <p className="settings-hint">接入你有权使用的苹果 CMS V10 JSON API。仅支持接口返回的 MP4 / M3U8 直链，不支持任意网页、插件或付费解锁。</p>
+    <div className="custom-sources-heading"><Globe size={18} /><h3 id="custom-sources-title">Nguồn phát tùy chỉnh</h3></div>
+    <p className="settings-hint">Kết nối Apple CMS V10 JSON API mà bạn có quyền sử dụng. Chỉ hỗ trợ liên kết trực tiếp MP4 / M3U8 từ API, không hỗ trợ trang web tùy ý, plugin hoặc mở khóa trả phí.</p>
     <form onSubmit={event => { event.preventDefault(); persist(draft); }}>
       <fieldset disabled={!!busy} className="custom-source-form">
-        <label>来源名称<input className="input-field" value={draft.name} maxLength={60} required placeholder="例如：我的片库" onChange={event => patch('name', event.target.value)} /></label>
-        <label>API 地址<input className="input-field" type="url" value={draft.url} maxLength={2048} required placeholder="https://example.com/api.php/provide/vod/" spellCheck={false} autoComplete="off" onChange={event => patch('url', event.target.value)} /></label>
-        <label className="custom-source-enabled"><input type="checkbox" checked={draft.enabled !== false} onChange={event => patch('enabled', event.target.checked)} />保存后启用</label>
-        <div className="custom-source-actions"><button type="button" className="btn btn-outline" disabled={!draft.name.trim() || !draft.url.trim()} onClick={test}><RefreshCw size={14} />{busy === 'test' ? '测试中…' : '测试连接'}</button>
-          <button className="btn btn-primary" type="submit">{busy === 'save' ? '保存中…' : draft.id ? '保存修改' : '保存来源'}</button>
-          {draft.id && <button className="btn btn-outline" type="button" onClick={reset}>取消编辑</button>}
+        <label>Tên nguồn<input className="input-field" value={draft.name} maxLength={60} required placeholder="Ví dụ: Kho phim của tôi" onChange={event => patch('name', event.target.value)} /></label>
+        <label>Địa chỉ API<input className="input-field" type="url" value={draft.url} maxLength={2048} required placeholder="https://example.com/api.php/provide/vod/" spellCheck={false} autoComplete="off" onChange={event => patch('url', event.target.value)} /></label>
+        <label className="custom-source-enabled"><input type="checkbox" checked={draft.enabled !== false} onChange={event => patch('enabled', event.target.checked)} />Bật sau khi lưu</label>
+        <div className="custom-source-actions"><button type="button" className="btn btn-outline" disabled={!draft.name.trim() || !draft.url.trim()} onClick={test}><RefreshCw size={14} />{busy === 'test' ? 'Đang kiểm tra…' : 'Kiểm tra kết nối'}</button>
+          <button className="btn btn-primary" type="submit">{busy === 'save' ? 'Đang lưu…' : draft.id ? 'Lưu thay đổi' : 'Lưu nguồn'}</button>
+          {draft.id && <button className="btn btn-outline" type="button" onClick={reset}>Hủy chỉnh sửa</button>}
         </div>
       </fieldset>
     </form>
-    {busy === 'test' && <button className="btn btn-outline btn-sm" onClick={() => { testController.current?.abort(); setBusy(''); setMessage('已取消测试。'); }}>取消测试</button>}
+    {busy === 'test' && <button className="btn btn-outline btn-sm" onClick={() => { testController.current?.abort(); setBusy(''); setMessage('Đã hủy kiểm tra.'); }}>Hủy kiểm tra</button>}
     {message && <p className="custom-source-message" role="status">{message}</p>}
-    {error && <div className="custom-source-error" role="alert"><p>{error}</p><button className="btn btn-outline btn-sm" disabled={!!busy || loading} onClick={() => { setError(''); load(); }}>重新读取配置</button></div>}
-    <div className="custom-source-list" aria-label="已保存的自定义源">
-      {loading && <p className="settings-hint" role="status">正在读取来源…</p>}
-      {!loading && sources.length === 0 && <p className="settings-hint">还没有自定义源。内置来源可在上方设置。</p>}
+    {error && <div className="custom-source-error" role="alert"><p>{error}</p><button className="btn btn-outline btn-sm" disabled={!!busy || loading} onClick={() => { setError(''); load(); }}>Tải lại cấu hình</button></div>}
+    <div className="custom-source-list" aria-label="Nguồn tùy chỉnh đã lưu">
+      {loading && <p className="settings-hint" role="status">Đang tải danh sách nguồn…</p>}
+      {!loading && sources.length === 0 && <p className="settings-hint">Chưa có nguồn tùy chỉnh nào. Các nguồn tích hợp sẵn có thể cấu hình ở trên.</p>}
       {sources.map(source => <div className="custom-source-row" key={source.id}>
-        <div className="custom-source-info"><strong>{source.name}</strong><span>{source.enabled ? '已启用' : '已停用'}</span><p>{source.url}</p></div>
-        <div className="custom-source-actions"><button className="btn btn-outline btn-sm" disabled={!!busy} onClick={() => persist({ ...source, enabled: !source.enabled }, 'toggle')}>{source.enabled ? '停用' : '启用'}</button>
-          <button className="btn btn-outline btn-sm" disabled={!!busy} onClick={() => edit(source)}>编辑</button>
-          <button className="btn btn-outline btn-sm" disabled={!!busy} onClick={() => setDeleting(source.id)}>删除</button></div>
-        {deleting === source.id && <div className="custom-source-delete" role="group" aria-label={`确认删除${source.name}`}><p>移除「{source.name}」配置？本地视频会保留；此来源在线播放将不可用。</p><button className="btn btn-danger-solid btn-sm" disabled={!!busy} onClick={() => persist(source, 'delete')}>确认移除</button><button className="btn btn-outline btn-sm" disabled={!!busy} onClick={() => setDeleting('')}>保留来源</button></div>}
+        <div className="custom-source-info"><strong>{source.name}</strong><span>{source.enabled ? 'Đã bật' : 'Đã tắt'}</span><p>{source.url}</p></div>
+        <div className="custom-source-actions"><button className="btn btn-outline btn-sm" disabled={!!busy} onClick={() => persist({ ...source, enabled: !source.enabled }, 'toggle')}>{source.enabled ? 'Tắt' : 'Bật'}</button>
+          <button className="btn btn-outline btn-sm" disabled={!!busy} onClick={() => edit(source)}>Sửa</button>
+          <button className="btn btn-outline btn-sm" disabled={!!busy} onClick={() => setDeleting(source.id)}>Xóa</button></div>
+        {deleting === source.id && <div className="custom-source-delete" role="group" aria-label={`Xác nhận xóa ${source.name}`}><p>Xóa cấu hình "{source.name}"? Video đã tải trên máy vẫn được giữ lại; tính năng phát trực tuyến từ nguồn này sẽ không còn khả dụng.</p><button className="btn btn-danger-solid btn-sm" disabled={!!busy} onClick={() => persist(source, 'delete')}>Xác nhận xóa</button><button className="btn btn-outline btn-sm" disabled={!!busy} onClick={() => setDeleting('')}>Giữ lại nguồn</button></div>}
       </div>)}
     </div>
   </section>;

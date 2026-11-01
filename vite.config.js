@@ -1,4 +1,4 @@
-// 红果短剧 5.3：前端构建配置，运行版本由 package.json 提供。
+// Phim Ngắn Hồng Quả 5.3: Cấu hình build frontend, phiên bản chạy do package.json cung cấp.
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 

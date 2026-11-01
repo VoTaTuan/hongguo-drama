@@ -28,7 +28,7 @@ export default function NasDownload({ seriesId, quality = 'auto', disabled = fal
     const unsubscribe = window.electronAPI?.onNasExportDone?.(event => {
       if (!event || String(event.seriesId) !== String(currentSeries.current)) return;
       if (!event.success) {
-        const failure = { version: request.current, message: event.error || `第 ${event.vidIndex} 集整理到 NAS 失败。` };
+        const failure = { version: request.current, message: event.error || `Tập ${event.vidIndex} đồng bộ sang NAS thất bại.` };
         eventFailure.current = failure;
         setFeedback({ kind: 'error', message: failure.message, warnings: [] });
       }
@@ -45,22 +45,22 @@ export default function NasDownload({ seriesId, quality = 'auto', disabled = fal
     setFeedback(null);
     setSubmitting(true);
     try {
-      if (!window.electronAPI?.downloadSeriesToNas) throw new Error('当前环境暂不支持下载到 NAS');
+      if (!window.electronAPI?.downloadSeriesToNas) throw new Error('Môi trường hiện tại chưa hỗ trợ tải về NAS');
       const result = await window.electronAPI.downloadSeriesToNas(seriesId, quality);
       if (version !== request.current || requestedSeries !== String(currentSeries.current)) return;
       if (result?.success) {
         if (eventFailure.current?.version === version) return;
         setFeedback({
           kind: 'success',
-          message: `新增 ${Number(result.count) || 0} 集下载，复用 ${Number(result.copied) || 0} 集。保存目录：${result.directory}`,
+          message: `Đã thêm ${Number(result.count) || 0} tập tải về, dùng lại ${Number(result.copied) || 0} tập có sẵn. Thư mục lưu: ${result.directory}`,
           warnings: Array.isArray(result.warnings) ? result.warnings.filter(Boolean) : [],
         });
       } else if (!result?.canceled) {
-        setFeedback({ kind: 'error', message: result?.error || '下载到 NAS 失败，请重试。', warnings: [] });
+        setFeedback({ kind: 'error', message: result?.error || 'Tải về NAS thất bại, vui lòng thử lại.', warnings: [] });
       }
     } catch (failure) {
       if (version === request.current && requestedSeries === String(currentSeries.current)) {
-        setFeedback({ kind: 'error', message: failure.message || '下载到 NAS 失败，请重试。', warnings: [] });
+        setFeedback({ kind: 'error', message: failure.message || 'Tải về NAS thất bại, vui lòng thử lại.', warnings: [] });
       }
     } finally {
       if (version === request.current && requestedSeries === String(currentSeries.current)) {
@@ -73,13 +73,13 @@ export default function NasDownload({ seriesId, quality = 'auto', disabled = fal
   if (!seriesId) return null;
   return <div className="nas-download">
     <button type="button" className="btn btn-outline" onClick={submit} disabled={disabled || submitting}
-      aria-describedby={descriptionId} aria-label="下载到 NAS">
+      aria-describedby={descriptionId} aria-label="Tải về NAS">
       <Download size={15} />
-      {submitting ? '提交中…' : '下载到 NAS'}
+      {submitting ? 'Đang gửi…' : 'Tải về NAS'}
     </button>
     <div id={descriptionId} className="nas-download-description">
-      <p>一并保存封面与剧情简介，直接写入所选的 NAS 文件夹。已下载视频直接复用，缺失分集与配套资料自动补齐。</p>
-      <p>先将 NAS 共享文件夹挂载到电脑，再选择保存位置。分集按季号、集号规范命名，资料以来源实际提供为准。</p>
+      <p>Lưu cùng ảnh bìa và tóm tắt nội dung, ghi trực tiếp vào thư mục NAS đã chọn. Tự động dùng lại các tập đã tải và bổ sung các tập còn thiếu.</p>
+      <p>Vui lòng gắn kết thư mục chia sẻ NAS vào máy tính trước khi chọn vị trí lưu. Các tập được đặt tên chuẩn theo mùa và số tập.</p>
     </div>
     {feedback?.kind === 'success' && <p className="nas-download-success" role="status">{feedback.message}</p>}
     {feedback?.kind === 'error' && <p className="nas-download-error" role="alert">{feedback.message}</p>}

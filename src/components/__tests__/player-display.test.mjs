@@ -10,8 +10,8 @@ test('clock uses a zero-padded 24 hour minute display', () => {
 });
 
 test('quality meta reports the shorter side and real pixels', () => {
-  assert.equal(formatQualityMeta(1920, 1080), '当前画面 1080P（1920 × 1080）');
-  assert.equal(formatQualityMeta(1280, 720), '当前画面 720P（1280 × 720）');
-  assert.equal(formatQualityMeta(0, 0), '当前画面 等待视频信息');
-  assert.equal(formatQualityMeta(undefined, 1080), '当前画面 等待视频信息');
+  assert.equal(formatQualityMeta(1920, 1080), 'Hình ảnh hiện tại: 1080P (1920 × 1080)');
+  assert.equal(formatQualityMeta(1280, 720), 'Hình ảnh hiện tại: 720P (1280 × 720)');
+  assert.equal(formatQualityMeta(0, 0), 'Hình ảnh hiện tại: Đang chờ thông tin video');
+  assert.equal(formatQualityMeta(undefined, 1080), 'Hình ảnh hiện tại: Đang chờ thông tin video');
 });

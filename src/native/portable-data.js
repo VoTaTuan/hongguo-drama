@@ -130,7 +130,7 @@ function resolvePortableDataDir({
     return {
       ...fallback,
       portableDir,
-      reason: '便携版程序目录不可写，已继续使用系统配置目录；请把程序放到有写入权限的位置，或改用安装版。',
+      reason: 'Thư mục chương trình bản di động không có quyền ghi, đã tiếp tục dùng thư mục cấu hình hệ thống; vui lòng đặt chương trình vào vị trí có quyền ghi hoặc chuyển sang bản cài đặt.',
     };
   }
   const recovered = recoverIncompleteMigration(target);
@@ -138,7 +138,7 @@ function resolvePortableDataDir({
     return {
       ...fallback,
       portableDir,
-      reason: '上次便携资料迁移未完成，已继续使用系统配置目录；请检查程序目录的 data 文件夹后重试。',
+      reason: 'Lần di chuyển dữ liệu di động trước chưa hoàn thành, đã tiếp tục dùng thư mục cấu hình hệ thống; vui lòng kiểm tra thư mục data trong thư mục chương trình rồi thử lại.',
       copied: [],
     };
   }
@@ -147,7 +147,7 @@ function resolvePortableDataDir({
     return {
       ...fallback,
       portableDir,
-      reason: '旧资料复制失败，已继续使用系统配置目录；请检查程序目录权限后重启。原文件未删除。',
+      reason: 'Sao chép dữ liệu cũ thất bại, đã tiếp tục dùng thư mục cấu hình hệ thống; vui lòng kiểm tra quyền thư mục chương trình rồi khởi động lại. Tệp gốc chưa bị xóa.',
       copied: [],
     };
   }
@@ -164,7 +164,7 @@ function applyPortableDataDir({ app, env, platform, execPath, defaultUserData } 
     app.setPath('userData', resolved.dir);
     try { app.setPath('sessionData', resolved.dir); }
     catch (_) {
-      resolved.reason = '便携版会话目录设置失败，界面数据可能仍保存在系统目录；设置与下载记录已使用程序目录。';
+      resolved.reason = 'Thiết lập thư mục phiên bản di động thất bại, dữ liệu giao diện có thể vẫn lưu trong thư mục hệ thống; cài đặt và lịch sử tải về đã dùng thư mục chương trình.';
     }
   }
   return resolved;

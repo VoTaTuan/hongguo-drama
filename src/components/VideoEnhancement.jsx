@@ -22,22 +22,22 @@ export function useVideoEnhancement() {
 export function VideoEnhancementControls({ enhancement, available = true }) {
   const { mode, strength, update, status, saveError } = enhancement;
   return <div className="video-enhancement-settings">
-    <label>画质增强
-      <select aria-label="画质增强" value={mode} disabled={!available} onChange={event => update({ mode: event.target.value })}>
-        <option value="original">原画</option>
-        <option value="sharpen">锐化</option>
+    <label>Tăng cường chất lượng hình ảnh
+      <select aria-label="Tăng cường chất lượng hình ảnh" value={mode} disabled={!available} onChange={event => update({ mode: event.target.value })}>
+        <option value="original">Gốc</option>
+        <option value="sharpen">Làm nét</option>
         <option value="anime4k">Anime4K 2×</option>
       </select>
     </label>
-    {mode === 'sharpen' && <label className="video-enhancement-strength">锐化强度
-      <input aria-label="锐化强度" type="range" min="0" max="100" step="5" value={strength}
+    {mode === 'sharpen' && <label className="video-enhancement-strength">Độ làm nét
+      <input aria-label="Độ làm nét" type="range" min="0" max="100" step="5" value={strength}
         disabled={!available} onChange={event => update({ strength: Number(event.target.value) })} />
       <output>{strength}%</output>
     </label>}
-    <p className="video-enhancement-note">只增强播放画面，下载文件保持原画。</p>
-    {mode === 'anime4k' && <p className="video-enhancement-note">适合动漫；支持 1080p 及以下片源，真人画面可能偏平滑。</p>}
+    <p className="video-enhancement-note">Chỉ tăng cường khi phát video, tệp tải về vẫn giữ chất lượng gốc.</p>
+    {mode === 'anime4k' && <p className="video-enhancement-note">Thích hợp cho hoạt hình/anime; hỗ trợ nguồn phim 1080p trở xuống.</p>}
     {status.message && <p className={`video-enhancement-note ${status.state === 'error' ? 'enhancement-error' : ''}`} role="status">{status.message}</p>}
-    {saveError && <p className="video-enhancement-note" role="status">设置未能保存，下次打开可能恢复默认。</p>}
+    {saveError && <p className="video-enhancement-note" role="status">Cài đặt chưa được lưu, lần sau mở có thể trở về mặc định.</p>}
   </div>;
 }
 
@@ -56,7 +56,7 @@ export default function VideoEnhancement({ videoRef, source, available = true, e
     if (!available || !source || mode === 'original') return;
     if (mode === 'sharpen') {
       video.style.filter = `url(#${filterId})`;
-      setStatus({ state: 'ready', message: '锐化已开启' });
+      setStatus({ state: 'ready', message: 'Đã bật làm nét' });
       return () => { video.style.filter = originalFilter; };
     }
 
@@ -82,8 +82,8 @@ export default function VideoEnhancement({ videoRef, source, available = true, e
       canvas.style.visibility = 'hidden';
       renderer?.dispose();
       setStatus({ state: 'error', message: error.name === 'SecurityError'
-        ? '此片源限制画面处理；已恢复原画，可改用锐化'
-        : (/^[\u4e00-\u9fff]/.test(error.message || '') ? error.message : '此片源暂不支持画质增强；已恢复原画，可改用锐化') });
+        ? 'Nguồn phim này giới hạn xử lý hình ảnh; đã khôi phục gốc, có thể chuyển sang làm nét'
+        : (error.message || 'Nguồn phim này chưa hỗ trợ tăng cường; đã khôi phục gốc, có thể chuyển sang làm nét') });
     };
     const schedule = () => {
       cancelFrame();
@@ -101,7 +101,7 @@ export default function VideoEnhancement({ videoRef, source, available = true, e
         const rendered = await renderer.draw();
         if (!abort.signal.aborted && !failed && visible() && !video.seeking && drawRevision === revision && rendered) {
           canvas.style.visibility = 'visible';
-          setStatus(current => current.state === 'ready' ? current : { state: 'ready', message: 'Anime4K 2× 已开启' });
+          setStatus(current => current.state === 'ready' ? current : { state: 'ready', message: 'Đã bật Anime4K 2×' });
         }
       } catch (error) { fail(error); }
       finally {
@@ -113,7 +113,7 @@ export default function VideoEnhancement({ videoRef, source, available = true, e
     const initialize = async () => {
       if (pending || renderer || failed || abort.signal.aborted || !visible() || video.readyState < 2 || !video.videoWidth) return;
       pending = true;
-      setStatus({ state: 'loading', message: '正在准备 Anime4K…' });
+      setStatus({ state: 'loading', message: 'Đang chuẩn bị Anime4K…' });
       try {
         const next = await createAnime4KRenderer(video, canvas, { signal: abort.signal, onError: fail });
         if (abort.signal.aborted || failed) { next.dispose(); return; }

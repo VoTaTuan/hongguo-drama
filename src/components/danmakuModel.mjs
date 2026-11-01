@@ -47,16 +47,16 @@ export function appendCommentPage(feed, data, settings) {
   }
   feed.loaded = true;
   feed.sourceLimited = data.source_limited === true;
-  if (feed.sourceLimited) feed.notice = typeof data.notice === 'string' && data.notice ? data.notice : '公开网页仅提供部分评论，暂无可用后续页';
+  if (feed.sourceLimited) feed.notice = typeof data.notice === 'string' && data.notice ? data.notice : 'Trang web công khai chỉ cung cấp một phần bình luận, tạm thời không có trang tiếp theo';
   feed.pages++;
   feed.emptyPages = accepted ? 0 : feed.emptyPages + 1;
   const next = typeof data.next_cursor === 'string' && data.next_cursor ? data.next_cursor : null;
   feed.hasMore = data.has_more === true && next !== null && next !== feed.cursor && !feed.cursors.has(next);
-  if (data.has_more === true && !feed.hasMore) feed.notice = '评论游标未前进，已停止加载';
+  if (data.has_more === true && !feed.hasMore) feed.notice = 'Con trỏ bình luận không tiến lên, đã dừng tải';
   if (feed.hasMore) { feed.cursor = next; feed.cursors.add(next); }
-  if (feed.hasMore && feed.emptyPages >= 5) feed.error = '连续多页没有可显示的新评论，可继续加载';
+  if (feed.hasMore && feed.emptyPages >= 5) feed.error = 'Nhiều trang liên tiếp không có bình luận mới để hiển thị, có thể tiếp tục tải';
   // shortcut: bound per-episode memory and requests; add queue compaction if a real viewing session reaches this limit.
-  if (feed.pages >= 500) { feed.hasMore = false; feed.notice = '已达到本次评论加载上限'; }
+  if (feed.pages >= 500) { feed.hasMore = false; feed.notice = 'Đã đạt giới hạn tải bình luận lần này'; }
 }
 
 export function danmakuLayout({ height, settings, reducedMotion, bottomInset = 76 }) {

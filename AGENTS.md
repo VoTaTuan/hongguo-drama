@@ -1,64 +1,64 @@
-# 红果短剧项目规则
+# Quy tắc Dự án Phim Ngắn Hồng Quả
 
-## 视频测试素材与声音
+## Tư liệu kiểm thử video và âm thanh
 
-- 用户于 2026-10-29 明确要求：测试视频须在红果短剧中随机选择并真实下载；禁止使用彩条视频测试。
-- 播放、画中画、连播和自动删除验收必须使用上述真实下载素材，不得用彩条或测试图替代。
-- 测试全程静音，不得让测试视频发出声音；开始播放前先确认静音状态。
-- 使用独立测试资料和下载目录。自动删除只针对本轮测试下载，不影响正式应用的视频、账号或记录。
-- 在项目内记录测试素材来源、步骤、结果和限制；不得记录登录凭据或带签名的媒体地址。
+- Người dùng đã yêu cầu rõ ràng vào ngày 29-10-2026: Video kiểm thử phải được chọn ngẫu nhiên và tải về thực tế từ Phim Ngắn Hồng Quả; nghiêm cấm sử dụng video dải màu (color bars) để kiểm thử.
+- Việc nghiệm thu phát video, hình trong hình (PiP), phát liên tục và tự động xóa phải sử dụng các tư liệu tải về thực tế nêu trên, không được thay thế bằng dải màu hay hình ảnh thử nghiệm.
+- Quá trình kiểm thử phải tắt tiếng hoàn toàn, không được để video thử nghiệm phát ra âm thanh; trước khi bắt đầu phát phải xác nhận trạng thái tắt tiếng.
+- Sử dụng dữ liệu kiểm thử và thư mục tải xuống độc lập. Tính năng tự động xóa chỉ áp dụng cho lượt tải kiểm thử hiện tại, không ảnh hưởng đến video, tài khoản hoặc lịch sử của ứng dụng chính thức.
+- Ghi lại nguồn gốc tư liệu kiểm thử, các bước thực hiện, kết quả và hạn chế trong dự án; không được ghi lại thông tin đăng nhập hoặc địa chỉ media có chữ ký bảo mật.
 
-## 4.5 发行
+## Phát hành 4.5
 
-- 发现页“换一批”沿当前来源和分类的真实分页；不打乱来源榜单。
-- 真人剧、漫剧、AI剧及题材按钮重复点击也需换批；仅四个热播榜保持热度顺序。
-- 本轮发行、验证及限制见 `docs/release-4.5.md`。
+- Tính năng "Đổi lượt khác" trên trang Khám phá tuân theo phân trang thực tế của nguồn và phân loại hiện tại; không làm xáo trộn bảng xếp hạng của nguồn.
+- Nhấp lặp lại vào các nút Phim người đóng, Hoạt hình, Phim AI và Thể loại cũng phải đổi lượt; chỉ 4 bảng xếp hạng phát sóng thịnh hành giữ nguyên thứ tự độ hot.
+- Phát hành, xác minh và hạn chế của đợt này xem tại `docs/release-4.5.md`.
 
-## 4.6 发行
+## 4.6 Phát hành
 
-- 4K 与宽窗口自适应排版，不按分辨率自动放大界面。
-- 默认缩放100%；仅用户手动调整后保存偏好。海报大小单独保存。
-- 本轮发行、验证与限制见 `docs/release-4.6.md`。
+- Tự điều chỉnh bố cục cho 4K và cửa sổ rộng, không tự động phóng to giao diện theo độ phân giải.
+- Tỷ lệ thu phóng mặc định 100%; chỉ lưu tùy chọn khi người dùng tự tay điều chỉnh. Kích thước áp phích được lưu riêng biệt.
+- Phát hành, xác minh và hạn chế của đợt này xem tại `docs/release-4.6.md`.
 
-## 4.7 发行
+## 4.7 Phát hành
 
-- 下载恢复以真实任务状态为准；手动重试允许重新提交，自动恢复保持防循环。
-- 自带画中画在主窗口所在显示器右下角显示并聚焦；本地媒体流支持取消和拖动。
-- 本轮发行、验证与限制见 `docs/release-4.7.md`。
+- Khôi phục tải xuống dựa trên trạng thái tác vụ thực tế; thử lại thủ công cho phép gửi lại, khôi phục tự động duy trì cơ chế chống lặp vô hạn.
+- Cửa sổ hình trong hình tích hợp hiển thị và tập trung tiêu điểm ở góc dưới bên phải màn hình chứa cửa sổ chính; luồng media cục bộ hỗ trợ hủy và kéo tua.
+- Phát hành, xác minh và hạn chế của đợt này xem tại `docs/release-4.7.md`.
 
-## 4.8 发行
+## 4.8 Phát hành
 
-- 自动在线播放按1080P、720P、兼容片源有界尝试，保留进度和暂停状态；手动固定画质不自动降级。
-- 解码问题保留当前档的兼容转码及一次缓存重建，再尝试低档；切集和手动重试重新优先1080P。
-- 本轮发行、验证与限制见 `docs/release-4.8.md`。
+- Tự động phát trực tuyến thử lần lượt theo giới hạn: 1080P, 720P, nguồn tương thích; giữ nguyên tiến độ phát và trạng thái tạm dừng; cố định chất lượng thủ công không tự động hạ cấp.
+- Vấn đề giải mã giữ nguyên chuyển mã tương thích của chất lượng hiện tại và một lần tái tạo bộ nhớ đệm, sau đó mới thử mức chất lượng thấp hơn; chuyển tập và thử lại thủ công ưu tiên lại 1080P.
+- Phát hành, xác minh và hạn chế của đợt này xem tại `docs/release-4.8.md`.
 
-## 4.9 发行目标
+## Mục tiêu phát hành 4.9
 
-- 整合老电脑 H.264 优先播放与 Mac Dock 图标保持修复；不通过改变整个应用进程类型来实现小窗跨桌面显示。
-- 4.9 已正式发布；正式下载、验证与限制见下方发行文档。
-- 开发、验证与限制见 `docs/release-4.9.md`。
+- Tích hợp ưu tiên phát H.264 cho máy tính đời cũ và sửa lỗi giữ biểu tượng Dock trên Mac; không thay đổi loại tiến trình của toàn bộ ứng dụng để cửa sổ nhỏ hiển thị xuyên màn hình nền.
+- Bản 4.9 đã chính thức phát hành; tải về chính thức, kiểm thử và hạn chế xem tại tài liệu phát hành bên dưới.
+- Phát triển, xác minh và hạn chế xem tại `docs/release-4.9.md`.
 
-## 5.0 发行
+## Phát hành 5.0
 
-- 观看记录检测范围与隐藏低季偏好持久保存。
-- 明确季号归组；模糊关系仅提示，不进入隐藏、批量归组、红点或系统通知。
-- 5.0 已正式发布；正式下载、验证与限制见 `docs/release-5.0.md`。
+- Phạm vi phát hiện lịch sử xem và tùy chọn ẩn các phần thấp hơn cùng bộ phim được lưu vĩnh viễn.
+- Phân nhóm rõ ràng theo số phần; các mối quan hệ mơ hồ chỉ đưa ra gợi ý, không đưa vào danh sách ẩn, gom nhóm hàng loạt, chấm đỏ hay thông báo hệ thống.
+- Bản 5.0 đã chính thức phát hành; tải về chính thức, xác minh và hạn chế xem tại `docs/release-5.0.md`.
 
-## 5.1 发行
+## Phát hành 5.1
 
-- 「红果账号」移至「下载管理」下方；「设置」保留在底部。
-- 对外更新说明：修复了已知问题
-- 5.1 已正式发布；正式下载、验证与限制见 `docs/release-5.1.md`。
+- Chuyển "Tài khoản Hồng Quả" xuống dưới "Quản lý tải xuống"; "Cài đặt" giữ lại ở dưới cùng.
+- Mô tả cập nhật bên ngoài: Đã sửa các sự cố đã biết.
+- Bản 5.1 đã chính thức phát hành; tải về chính thức, xác minh và hạn chế xem tại `docs/release-5.1.md`.
 
-## 5.2 发行
+## Phát hành 5.2
 
-- macOS 只恢复普通主窗口位置、大小及所在显示器；特殊状态不覆盖普通窗口记录，启动总是普通窗口。
-- 原显示器缺失时使用默认位置和大小；同屏可用区域缩小时约束至屏幕内。
-- 5.2 已正式发布；正式下载、验证与限制见 `docs/release-5.2.md`。
+- macOS chỉ khôi phục vị trí, kích thước và màn hình hiển thị của cửa sổ chính thông thường; các trạng thái đặc biệt không ghi đè bản ghi cửa sổ thông thường, khởi động luôn là cửa sổ thông thường.
+- Khi thiếu màn hình ban đầu sẽ sử dụng vị trí và kích thước mặc định; khi vùng khả dụng của màn hình bị thu nhỏ sẽ ràng buộc cửa sổ nằm trong màn hình.
+- Bản 5.2 đã chính thức phát hành; tải về chính thức, xác minh và hạn chế xem tại `docs/release-5.2.md`.
 
-## 5.3 发行
+## Phát hành 5.3
 
-- 下载到 NAS 直接使用用户选择的已挂载目录，视频、封面、简介与 NFO 同层保存。
-- 规范分集命名，已有视频安全复用、缺失资料补齐，不覆盖冲突文件。直接 NAS 视频跳过看完自动删除。
-- 5.3 已正式发布；未替换本机正式安装。
-- 发行、验证及限制见 `docs/release-5.3.md`。
+- Tải xuống NAS sử dụng trực tiếp thư mục chia sẻ đã mount do người dùng chọn, video, ảnh bìa, tóm tắt và tệp NFO được lưu cùng cấp.
+- Chuẩn hóa quy tắc đặt tên tập phim, tái sử dụng an toàn video đã có, bổ sung dữ liệu còn thiếu, không ghi đè tệp xung đột. Video trực tiếp trên NAS bỏ qua tính năng tự động xóa sau khi xem xong.
+- Bản 5.3 đã chính thức phát hành; chưa thay thế bản cài đặt chính thức trên máy.
+- Phát hành, xác minh và hạn chế xem tại `docs/release-5.3.md`.

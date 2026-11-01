@@ -1,7 +1,6 @@
 /**
- * store.js - 红果短剧 3.2 持久化模块（沿用原资料格式）
- * 用单个 JSON 文件保存「设置」与「下载任务」，替代原项目里的 sql.js 数据库 + electron-store，
- * 减少依赖，方便独立打包。
+ * store.js - Module lưu trữ dữ liệu Phim Ngắn Hồng Quả
+ * Dùng một tệp JSON duy nhất lưu "Cài đặt" và "Nhiệm vụ tải về"
  */
 const fs = require('fs');
 const path = require('path');
@@ -12,14 +11,14 @@ let durable = '{}';
 let errorHandler = null;
 let readError = null;
 let writeError = false;
-const READ_ERROR_MESSAGE = '读取本地数据失败，已保留原文件并暂停保存；请检查文件或目录权限，恢复数据后重启应用。';
+const READ_ERROR_MESSAGE = 'Đọc dữ liệu cục bộ thất bại, đã giữ nguyên tệp gốc và tạm dừng lưu; vui lòng kiểm tra quyền truy cập tệp hoặc thư mục rồi khởi động lại ứng dụng.';
 
 function reportReadError() {
   try { errorHandler?.({ error: READ_ERROR_MESSAGE }); } catch {}
 }
 
 function loadCache() {
-  if (!dataFile) throw new Error('store 未初始化');
+  if (!dataFile) throw new Error('store chưa được khởi tạo');
   if (cache) return cache;
   try {
     cache = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
@@ -76,7 +75,7 @@ function flush() {
     try { fs.unlinkSync(temporary); } catch {}
     cache = JSON.parse(durable);
     writeError = true;
-    try { errorHandler?.({ error: '保存失败，请检查磁盘空间或目录权限；本次变更未能保存。' }); } catch {}
+    try { errorHandler?.({ error: 'Lưu thất bại, vui lòng kiểm tra dung lượng ổ đĩa hoặc quyền thư mục; thay đổi chưa được lưu.' }); } catch {}
     throw e;
   }
 }
@@ -117,7 +116,7 @@ function saveTasks(tasks) {
   flush();
 }
 
-// ===== 短剧档案（让播放页在没有下载任务时也能列出完整分集）=====
+// ===== Hồ sơ phim ngắn (giúp trang phát liệt kê đầy đủ các tập ngay cả khi không có tác vụ tải xuống) =====
 function getSeries() {
   const c = loadCache();
   if (!Array.isArray(c.series)) c.series = [];
@@ -129,7 +128,7 @@ function saveSeries(list) {
   flush();
 }
 
-// ===== 播放进度（断点续播）=====
+// ===== Tiến độ phát (tiếp tục phát từ điểm dừng) =====
 function getPlayback() {
   const c = loadCache();
   if (!c.playback || typeof c.playback !== 'object') c.playback = {};
@@ -141,7 +140,7 @@ function savePlayback(map) {
   flush();
 }
 
-// ===== 合并任务记录 =====
+// ===== Lịch sử tác vụ gộp tập =====
 function getMergeTasks() {
   const c = loadCache();
   if (!Array.isArray(c.mergeTasks)) c.mergeTasks = [];

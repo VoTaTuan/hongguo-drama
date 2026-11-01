@@ -39,7 +39,7 @@ function attachFloatingPlayerWindow(mainWindow, {
     try {
       return normalizeSize(store.getSettings()?.floating_player_size);
     } catch (error) {
-      console.warn('[FloatingPlayer] 悬浮窗尺寸读取失败:', error?.message || error);
+      console.warn('[FloatingPlayer] Đọc kích thước cửa sổ nổi thất bại:', error?.message || error);
       return null;
     }
   };
@@ -49,7 +49,7 @@ function attachFloatingPlayerWindow(mainWindow, {
       store.saveSettings({ ...settings, floating_player_size: size });
       return true;
     } catch (error) {
-      console.warn('[FloatingPlayer] 悬浮窗尺寸保存失败:', error?.message || error);
+      console.warn('[FloatingPlayer] Lưu kích thước cửa sổ nổi thất bại:', error?.message || error);
       return false;
     }
   };

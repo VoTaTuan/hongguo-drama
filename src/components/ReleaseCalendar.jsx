@@ -26,25 +26,25 @@ export default function ReleaseCalendar({ onPlay, opening = '', active = true })
   const undated = filtered.filter(item => !item.date);
   const favoritesCount = rows.filter(item => item.favorite).length;
   const row = item => <li key={item.id} className="release-row">
-    <div className="release-poster" aria-hidden="true"><span>暂无海报</span>{item.cover && <img key={item.cover} src={item.cover} alt="" loading="lazy" onError={event => { event.currentTarget.style.display = 'none'; }} />}</div>
-    <div className="release-title"><strong>{item.title}</strong><span>{item.date ? `首次公开 ${item.date}` : '暂无首次公开时间'}</span></div>
+    <div className="release-poster" aria-hidden="true"><span>Chưa có poster</span>{item.cover && <img key={item.cover} src={item.cover} alt="" loading="lazy" onError={event => { event.currentTarget.style.display = 'none'; }} />}</div>
+    <div className="release-title"><strong>{item.title}</strong><span>{item.date ? `Công chiếu ${item.date}` : 'Chưa có ngày công chiếu'}</span></div>
     <div className="release-row-actions">
-      <button type="button" className="btn btn-sm btn-outline" aria-label={`${item.favorite ? '取消收藏' : '收藏'}《${item.title}》`} aria-pressed={item.favorite} onClick={() => setLibrary(saveLocalSeries({ id: item.id, title: item.title, favorite: !item.favorite }))}>{item.favorite ? '已收藏' : '收藏'}</button>
-      <button type="button" className="btn btn-sm btn-outline" aria-label={`移除《${item.title}》`} title="仅移除本机收藏与日历记录，不删除视频文件" onClick={() => setLibrary(removeLocalSeries(item.id))}>移除</button>
-      <button type="button" className="btn btn-sm" disabled={!onPlay || !!opening || !active} aria-label={`播放《${item.title}》`} onClick={() => onPlay?.({ seriesId: item.id, title: item.title })}>{opening === item.id ? '打开中…' : '播放'}</button>
+      <button type="button" className="btn btn-sm btn-outline" aria-label={`${item.favorite ? 'Bỏ yêu thích' : 'Yêu thích'} "${item.title}"`} aria-pressed={item.favorite} onClick={() => setLibrary(saveLocalSeries({ id: item.id, title: item.title, favorite: !item.favorite }))}>{item.favorite ? 'Đã thích' : 'Yêu thích'}</button>
+      <button type="button" className="btn btn-sm btn-outline" aria-label={`Xóa "${item.title}"`} title="Chỉ xóa khỏi danh sách yêu thích và lịch trên máy, không xóa tệp video" onClick={() => setLibrary(removeLocalSeries(item.id))}>Xóa</button>
+      <button type="button" className="btn btn-sm" disabled={!onPlay || !!opening || !active} aria-label={`Phát "${item.title}"`} onClick={() => onPlay?.({ seriesId: item.id, title: item.title })}>{opening === item.id ? 'Đang mở…' : 'Phát'}</button>
     </div>
   </li>;
 
   return <section className="release-calendar">
-    <header><h2>上新日历</h2><p className="page-description">已浏览剧集的首次公开日历。打开剧集的「公开剧评」后，真实日期会保存在这里。</p></header>
-    <p className="release-coverage">本机收录 {rows.length} 部 · 有公开日期 {dated.length} 部{dated.length > 0 ? ` · ${dated[dated.length - 1].date} 至 ${dated[0].date}` : ''}。按北京时间显示，不是完整上新排期。</p>
-    {library.error && <div className="release-error" role="alert"><p>{library.error}</p><button type="button" className="btn btn-sm" onClick={() => setLibrary(readLocalLibrary())}>重新读取</button></div>}
+    <header><h2>Lịch phát hành & Cập nhật</h2><p className="page-description">Lịch công chiếu của các phim đã duyệt. Khi mở "Bình luận công khai", ngày công chiếu sẽ được lưu lại đây.</p></header>
+    <p className="release-coverage">Đã lưu trên máy {rows.length} phim · Có ngày công chiếu {dated.length} phim{dated.length > 0 ? ` · ${dated[dated.length - 1].date} đến ${dated[0].date}` : ''}. Hiển thị theo múi giờ địa phương.</p>
+    {library.error && <div className="release-error" role="alert"><p>{library.error}</p><button type="button" className="btn btn-sm" onClick={() => setLibrary(readLocalLibrary())}>Tải lại</button></div>}
     <div className="release-toolbar">
-      <div className="release-filter" role="group" aria-label="日历范围"><button type="button" aria-pressed={!favoritesOnly} onClick={() => setFavoritesOnly(false)}>全部已浏览</button><button type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(true)}>本机收藏 {favoritesCount}</button></div>
-      {months.length > 0 && <label className="release-month">月份<select value={month} onChange={event => setChosenMonth(event.target.value)}>{months.map(value => <option key={value} value={value}>{value.slice(0, 4)} 年 {Number(value.slice(5))} 月</option>)}</select></label>}
+      <div className="release-filter" role="group" aria-label="Phạm vi lịch"><button type="button" aria-pressed={!favoritesOnly} onClick={() => setFavoritesOnly(false)}>Tất cả đã duyệt</button><button type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(true)}>Yêu thích {favoritesCount}</button></div>
+      {months.length > 0 && <label className="release-month">Tháng<select value={month} onChange={event => setChosenMonth(event.target.value)}>{months.map(value => <option key={value} value={value}>Tháng {Number(value.slice(5))} năm {value.slice(0, 4)}</option>)}</select></label>}
     </div>
-    {!library.error && !filtered.length && <div className="release-empty"><h3>{favoritesOnly ? '还没有本机收藏' : '还没有可展示的剧集'}</h3><p>前往「发现短剧」打开官方短剧，展开「公开剧评」读取首次公开日期；也可以点「收藏到本机」，留待下次观看。</p></div>}
-    {days.map(day => <section className="release-day" key={day} aria-label={`${day} 首次公开`}><h3><span>{Number(day.slice(8))}</span><small>{Number(day.slice(5, 7))} 月</small></h3><ul>{monthItems.filter(item => item.date === day).map(row)}</ul></section>)}
-    {undated.length > 0 && <section className="release-undated"><h3>公开日期待提供 <span>{undated.length} 部</span></h3><p>这些剧集已保存在本机，但服务尚未返回首次公开日期。</p><ul>{undated.map(row)}</ul></section>}
+    {!library.error && !filtered.length && <div className="release-empty"><h3>{favoritesOnly ? 'Chưa có phim yêu thích trên máy' : 'Chưa có phim nào để hiển thị'}</h3><p>Đến mục "Khám phá phim" mở phim, bấm xem "Bình luận công khai" để cập nhật ngày công chiếu; hoặc nhấn "Yêu thích" để lưu xem sau.</p></div>}
+    {days.map(day => <section className="release-day" key={day} aria-label={`Công chiếu ngày ${day}`}><h3><span>{Number(day.slice(8))}</span><small>Tháng {Number(day.slice(5, 7))}</small></h3><ul>{monthItems.filter(item => item.date === day).map(row)}</ul></section>)}
+    {undated.length > 0 && <section className="release-undated"><h3>Chờ cập nhật ngày công chiếu <span>{undated.length} phim</span></h3><p>Các phim này đã được lưu trên máy nhưng nguồn chưa cung cấp ngày công chiếu đầu tiên.</p><ul>{undated.map(row)}</ul></section>}
   </section>;
 }

@@ -9,8 +9,8 @@ export function DramaPoster({ item, className = '' }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [item?.cover]);
   return <div className={`drama-poster ${className}`}>
-    {item?.cover && !failed ? <img key={`${item.series_id}:${item.cover}`} src={item.cover} alt={`${item.series_title}海报`} onError={() => setFailed(true)} />
-      : <div className="drama-poster-fallback"><Film size={36} /><span>暂无海报</span></div>}
+    {item?.cover && !failed ? <img key={`${item.series_id}:${item.cover}`} src={item.cover} alt={`Poster ${item.series_title}`} onError={() => setFailed(true)} />
+      : <div className="drama-poster-fallback"><Film size={36} /><span>Chưa có poster</span></div>}
   </div>;
 }
 
@@ -58,9 +58,9 @@ export default function RandomDrama({ active, refreshKey = 0, onNavigate }) {
       const result = await loadRandomPool(options => window.electronAPI.browseList(options), { source, forceRefresh, signal: controller.signal, sources: mediaSources });
       if (controller.signal.aborted) return;
       setPool(result.items); setUnavailable(result.unavailable);
-      if (!result.items.length) setError('这个来源暂时没有可抽的短剧。重新加载，或换个来源试试。');
+      if (!result.items.length) setError('Nguồn này hiện chưa có phim nào để quay. Hãy tải lại hoặc đổi nguồn khác.');
     } catch (cause) {
-      if (!controller.signal.aborted) setError(cause.message || '片单加载失败，请重试');
+      if (!controller.signal.aborted) setError(cause.message || 'Tải danh sách phim thất bại, vui lòng thử lại');
     } finally { if (!controller.signal.aborted) setLoading(false); }
   }, [source, mediaSources]);
 
@@ -76,7 +76,7 @@ export default function RandomDrama({ active, refreshKey = 0, onNavigate }) {
   const draw = () => {
     if (!active || loading || sourcesLoading || shaking || resolving) return;
     const next = pickRandomDrama(pool, previous.current);
-    if (!next) { setError('这份片单里暂时没有另一部。刷新片单，或换个来源再抽。'); return; }
+    if (!next) { setError('Danh sách hiện chưa có phim khác. Hãy làm mới danh sách hoặc đổi nguồn khác.'); return; }
     setError(''); setPlayError(''); setShaking(true);
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     drawTimer.current = setTimeout(() => {
@@ -91,53 +91,53 @@ export default function RandomDrama({ active, refreshKey = 0, onNavigate }) {
     playController.current = controller;
     setResolving(true); setPlayError('');
     try { await playRecommendedDrama(window.electronAPI, selected, { signal: controller.signal }); }
-    catch (cause) { if (!controller.signal.aborted) setPlayError(cause.message || '打开失败，请重试'); }
+    catch (cause) { if (!controller.signal.aborted) setPlayError(cause.message || 'Mở thất bại, vui lòng thử lại'); }
     finally { if (!controller.signal.aborted) setResolving(false); }
   };
 
   const sourceLabel = id => mediaSourceLabel(id, mediaSources);
   return <div className="random-drama">
     <div className="random-drama-toolbar">
-      <p>不想挑？把下一部交给短剧签筒。</p>
-      <label>抽取范围<select value={source} onChange={event => setSource(event.target.value)}>
-        <option value="all">全部来源</option>{mediaSources.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
+      <p>Ngại chọn phim? Hãy để ống quay chọn ngẫu nhiên tập tiếp theo.</p>
+      <label>Phạm vi quay<select value={source} onChange={event => setSource(event.target.value)}>
+        <option value="all">Tất cả nguồn</option>{mediaSources.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
       </select></label>
     </div>
     <div className={`random-drama-stage ${selected ? 'has-result' : ''}`}>
       <div className="random-drama-ritual">
         <button className="story-ticket-button" onClick={draw} disabled={loading || sourcesLoading || shaking || resolving || !pool.length}
-          aria-label={selected ? '摇动短剧签筒，再抽一部' : '摇动短剧签筒，抽一部短剧'}>
+          aria-label={selected ? 'Lắc ống quay, chọn phim khác' : 'Lắc ống quay, chọn một bộ phim'}>
           <StoryTickets shaking={shaking} />
-          <span>{shaking ? '好故事，马上揭晓' : selected ? '点击签筒，再遇见一部' : '点一下，摇出下一部'}</span>
+          <span>{shaking ? 'Phim hay sắp hé lộ…' : selected ? 'Bấm để quay bộ khác' : 'Bấm để quay ngẫu nhiên'}</span>
         </button>
-        {!selected && <div className="random-drama-opening"><h3>今晚，看点意料之外的</h3><p>一签一部真实短剧，喜欢就开看。</p></div>}
+        {!selected && <div className="random-drama-opening"><h3>Khám phá phim đầy bất ngờ</h3><p>Mỗi lượt quay một bộ phim, thấy thích là xem ngay.</p></div>}
       </div>
       {selected && <div className="random-drama-result" aria-live="polite">
         <DramaPoster item={selected} />
-        <div className="random-drama-result-copy"><p className="drama-source-label">{sourceLabel(selected.source)} · 随机抽取</p>
+        <div className="random-drama-result-copy"><p className="drama-source-label">{sourceLabel(selected.source)} · Quay ngẫu nhiên</p>
           <h3>{selected.series_title}</h3>
-          {selected.episode_count > 0 && <p>共 {selected.episode_count} 集</p>}
+          {selected.episode_count > 0 && <p>Tổng {selected.episode_count} tập</p>}
           {selected.tags?.length > 0 && <p className="random-drama-tags">{selected.tags.join(' · ')}</p>}
           <div className="random-drama-actions">
-            <button className="btn btn-primary" disabled={resolving || shaking} onClick={play}><Play size={16} />{resolving ? '正在打开…' : '在剧库播放'}</button>
-            <button className="btn btn-outline" disabled={resolving || shaking} onClick={draw}><RefreshCw size={15} />再抽一次</button>
+            <button className="btn btn-primary" disabled={resolving || shaking} onClick={play}><Play size={16} />{resolving ? 'Đang mở…' : 'Phát trong kho phim'}</button>
+            <button className="btn btn-outline" disabled={resolving || shaking} onClick={draw}><RefreshCw size={15} />Quay lại</button>
           </div>
-          {resolving && <button className="drama-text-button" onClick={() => { playController.current?.abort(); setResolving(false); setPlayError('已取消加载，可以重试或再抽一部。'); }}>取消加载</button>}
+          {resolving && <button className="drama-text-button" onClick={() => { playController.current?.abort(); setResolving(false); setPlayError('Đã hủy tải, bạn có thể thử lại hoặc quay phim khác.'); }}>Hủy tải</button>}
           {playError && <p className="drama-inline-error" role="alert">{playError}</p>}
         </div>
       </div>}
     </div>
     <div className="random-drama-status" aria-live="polite">
-      {loading || sourcesLoading ? <><p><RefreshCw size={14} className="spin" />正在把真实短剧装进签筒…</p><button className="drama-text-button" onClick={() => {
-        listController.current?.abort(); setLoading(false); setError('已取消加载。可以重新加载，或换个来源。');
-      }}>取消加载</button></> : <>
-        {error ? <p role="alert">{error}</p> : <p>签筒已装好 {pool.length} 部 · 不会连续抽到同一部</p>}
-        {unavailable.length > 0 && pool.length > 0 && <p>{unavailable.map(sourceLabel).join('、')}暂未取到片单，本次从其余来源抽取。</p>}
-        {(error || unavailable.length > 0) && <button className="drama-text-button" onClick={() => load(true)}>重新加载片单</button>}
-        {!pool.length && onNavigate && <button className="drama-text-button" onClick={() => onNavigate('download')}>按剧名搜索</button>}
+      {loading || sourcesLoading ? <><p><RefreshCw size={14} className="spin" />Đang chuẩn bị danh sách phim vào ống quay…</p><button className="drama-text-button" onClick={() => {
+        listController.current?.abort(); setLoading(false); setError('Đã hủy tải. Bạn có thể tải lại hoặc đổi nguồn khác.');
+      }}>Hủy tải</button></> : <>
+        {error ? <p role="alert">{error}</p> : <p>Đã chuẩn bị {pool.length} phim · Không trùng lặp liên tiếp</p>}
+        {unavailable.length > 0 && pool.length > 0 && <p>{unavailable.map(sourceLabel).join(', ')} tạm thời chưa lấy được danh sách, lượt này lấy từ các nguồn còn lại.</p>}
+        {(error || unavailable.length > 0) && <button className="drama-text-button" onClick={() => load(true)}>Tải lại danh sách phim</button>}
+        {!pool.length && onNavigate && <button className="drama-text-button" onClick={() => onNavigate('download')}>Tìm kiếm theo tên phim</button>}
       </>}
     </div>
-    {sourcesError && <p className="random-drama-note" role="status">来源列表更新失败，暂用上次列表；可在设置重新保存来源后重试。</p>}
-    <p className="random-drama-note">从所选来源当前目录随机抽取，不代表热播排名。播放以来源实际可用的免费分集为准。</p>
+    {sourcesError && <p className="random-drama-note" role="status">Cập nhật danh sách nguồn thất bại, tạm thời dùng danh sách cũ; bạn có thể cấu hình lại nguồn trong Cài đặt.</p>}
+    <p className="random-drama-note">Quay ngẫu nhiên từ danh mục nguồn đã chọn, không đại diện cho bảng xếp hạng. Việc phát phụ thuộc vào các tập khả dụng của nguồn.</p>
   </div>;
 }
