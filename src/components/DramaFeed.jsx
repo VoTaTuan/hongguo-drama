@@ -6,6 +6,7 @@ import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { feedCacheKey, readFeedCache, writeFeedCache } from './feedCache.mjs';
 import { loadRandomPool, playRecommendedDrama, waitForRequest } from './randomDramaModel.mjs';
 import { translateGenre } from './genreMap';
+import { DramaTitle, DramaDescription } from './TranslatedText';
 import './DramaFeed.css';
 
 const CATALOG_CHANNEL_KEY = 'hongguo.feed.catalog.channel.v1';
@@ -230,10 +231,11 @@ function DramaFeed({ active = true, onNavigate }) {
         <div className="drama-feed-feature">
           <DramaPoster item={selected} />
           <div className="drama-feed-copy">
-            <p className="drama-feed-rank">{ranking && selected.rank > 0 ? `Hạng ${selected.rank} BXH` : `Phim thứ ${index + 1} trong danh sách`}{ranking && selected.heat ? ` · ${selected.heat}` : ''}</p>
+            <p className="drama-feed-rank">{ranking && selected.rank > 0 ? `Hạng ${selected.rank} BXH` : `Phim thứ ${index + 1} trong danh sách`}{ranking && selected.heat ? ` · ${translateGenre(selected.heat)}` : ''}</p>
             <h3>{selected.series_title}</h3>
+            <DramaTitle title={selected.series_title} className="drama-feed-trans-title" showOriginal={false} />
             <p className="drama-feed-tags">{[selected.episode_count > 0 && `${selected.episode_count} tập`, ...(selected.tags || []).map(translateGenre)].filter(Boolean).join(' · ') || `Từ danh sách ${sourceLabel}`}</p>
-            {typeof introduction === 'string' && introduction.trim() && <p className="drama-feed-intro">{introduction}</p>}
+            {typeof introduction === 'string' && introduction.trim() && <DramaDescription description={introduction} className="drama-feed-intro">{introduction}</DramaDescription>}
             <p className="drama-feed-play-note">Chọn tập, phát trong "Kho phim của tôi", tiếp tục xem từ lần trước.</p>
             <div className="drama-feed-actions"><button className="btn btn-primary" disabled={resolving} onClick={startItem}><Play size={16} />{resolving ? 'Đang mở kho phim…' : 'Phát trong kho phim'}</button>
               {resolving && <button className="btn btn-outline" onClick={() => { playController.current?.abort(); setResolving(false); setPlayError('Đã hủy tải, có thể thử lại phim này.'); }}>Hủy tải</button>}</div>

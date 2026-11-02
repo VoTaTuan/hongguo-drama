@@ -48,7 +48,10 @@
 .browse-drawer-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .browse-drawer-body { overflow: auto; display: flex; flex-direction: column; gap: 22px; }
 .browse-drawer-info { display: flex; gap: 20px; }
+.browse-drawer-cover-box { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; width: 100px; }
 .browse-drawer-cover { width: 100px; height: 134px; border-radius: 9px; object-fit: cover; flex-shrink: 0; }
+.download-cover-btn { width: 100%; font-size: 11px; padding: 4px 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.browse-drawer-desc { margin-top: 6px; font-size: 12px; max-height: 85px; overflow-y: auto; padding-right: 4px; }
 .browse-drawer-meta { flex: 1; min-width: 0; }
 .browse-drawer-count { font-size: 15px; font-weight: 500; }
 .browse-drawer-count b { color: var(--success); }

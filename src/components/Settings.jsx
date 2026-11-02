@@ -7,6 +7,7 @@ import ShortcutSettings from './ShortcutSettings';
 import CustomSources from './CustomSources';
 import BuiltinSources from './BuiltinSources';
 import AnnouncementSettings from './AnnouncementSettings';
+import AiTranslationSettings from './AiTranslationSettings';
 import { Settings, Folder, Check, Globe, X, RefreshCw, AlertCircle } from './icons';
 
 
@@ -418,6 +419,7 @@ function SettingsPage({ active = true, preview = false, appInfo = null }) {
         </>}
 
         {!preview && <AnnouncementSettings />}
+        <AiTranslationSettings />
 
         <div className="settings-footer">
           {dirty && <span className="settings-hint" role="status">Có thay đổi chưa lưu</span>}

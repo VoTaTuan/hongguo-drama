@@ -12,6 +12,7 @@ import SequelFinder from './SequelFinder';
 import NasDownload from './NasDownload';
 import CastPanel from './CastPanel';
 import VideoEnhancement, { useVideoEnhancement } from './VideoEnhancement';
+import { DramaTitle } from './TranslatedText';
 import './Player.css';
 import { Play, Film, Download, Check, RefreshCw, Layers, X, Trash2, ChevronDown, Zap } from './icons';
 
@@ -1421,9 +1422,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       {/* Chọn phim: Phim hiện tại + Bảng quản lý thả xuống (thay thế thanh ngang trước đây ngày càng dài) */}
       <div className="player-series-row" hidden={actionsHidden}>
         <div className="player-series-current">
-          <span className="player-series-name" title={detail ? detail.series_title : ''}>
-            {detail ? detail.series_title : '—'}
-          </span>
+          <DramaTitle title={detail ? detail.series_title : '—'} className="player-series-name" as="span">{detail ? detail.series_title : '—'}</DramaTitle>
           <span className="player-stat">Đã tải {playableCount} / {episodes.length || 0} tập</span>
         </div>
       </div>

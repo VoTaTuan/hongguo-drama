@@ -7,6 +7,7 @@ import { Film, RefreshCw, ExternalLink, Download, Play, Check, X, Search } from 
 import { isSubmitKey, parseEpisodeRange } from './episodeRange';
 import { rememberCatalogTitles } from '../searchHistory';
 import { translateGenre } from './genreMap';
+import { DramaTitle, DramaDescription } from './TranslatedText';
 
 const PAGE_CACHE_TTL_MS = 60_000;
 const LIST_TIMEOUT_MS = 25_000;
@@ -434,13 +435,56 @@ function Browse({ onNavigate, active = true }) {
         progress: statusMap[ep.vid_index] ? statusMap[ep.vid_index].progress : 0,
         fileUrl: statusMap[ep.vid_index] ? statusMap[ep.vid_index].fileUrl : null,
       }));
-      setDetail({ ...data, episodes, completedCount: episodes.filter((e) => e.status === 'completed').length });
+      const initialDetail = {
+        ...data,
+        series_title: item.series_title || data.series_title,
+        cover: item.cover || data.cover || '',
+        description: item.description || data.description || '',
+        episodes,
+        completedCount: episodes.filter((e) => e.status === 'completed').length,
+      };
+      setDetail(initialDetail);
       // Mặc định chọn tất cả các tập chưa tải
       setSelectedIdx(new Set(episodes.filter((e) => !e.locked && e.status !== 'completed').map((e) => e.vid_index)));
+
+      if (!initialDetail.description && window.electronAPI?.getPublicDetails && /^\d+$/.test(String(item.series_id))) {
+        window.electronAPI.getPublicDetails(item.series_id).then((pub) => {
+          if (pub && pub.description && request === detailRequest.current) {
+            setDetail((prev) => prev && prev.series_id === item.series_id ? { ...prev, description: pub.description, cover: pub.cover || prev.cover } : prev);
+          }
+        }).catch(() => {});
+      }
     } catch (e) {
       if (request === detailRequest.current) showToast('Mở thất bại: ' + e.message, 'error');
     } finally {
       if (request === detailRequest.current) setDetailLoading(false);
+    }
+  };
+
+  const downloadThumbnail = async () => {
+    if (!detail?.cover) return;
+    try {
+      showToast('Đang tải ảnh bìa…', 'info');
+      const response = await fetch(detail.cover);
+      if (!response.ok) throw new Error('Không thể tải ảnh');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const cleanName = (detail.series_title || 'thumbnail').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').trim();
+      link.download = `${cleanName}_cover.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast('Đã tải ảnh bìa thành công!');
+    } catch (err) {
+      if (window.electronAPI?.openExternalUrl) {
+        window.electronAPI.openExternalUrl(detail.cover);
+      } else {
+        window.open(detail.cover, '_blank');
+      }
+      showToast('Đã mở ảnh bìa trong trình duyệt');
     }
   };
 
@@ -639,7 +683,7 @@ function Browse({ onNavigate, active = true }) {
                     <div className="cover-placeholder"><Film size={22} /></div>
                   )}
                   {(item.episode_label || item.episode_count > 0) && (
-                    <span className="browse-ep-badge">{item.episode_label || `${item.episode_count} tập`}</span>
+                    <span className="browse-ep-badge">{translateGenre(item.episode_label) || `${item.episode_count} tập`}</span>
                   )}
                   {dl && dl.completed > 0 && (
                     <span className="browse-dl-badge">
@@ -652,10 +696,10 @@ function Browse({ onNavigate, active = true }) {
                     </span>
                   </div>
                 </div>
-                <div className="browse-card-title">{item.series_title}</div>
+                <DramaTitle title={item.series_title} className="browse-card-title">{item.series_title}</DramaTitle>
                 {item.completion_status === 'completed' && <div className="browse-completion-label">Đã hoàn thành</div>}
                 {item.completion_status === 'ongoing' && <div className="browse-completion-label">Đang cập nhật</div>}
-                {item.heat && <div className="browse-card-heat">{item.heat}</div>}
+                {item.heat && <div className="browse-card-heat">{translateGenre(item.heat)}</div>}
                 {item.tags && item.tags.length > 0 && (
                   <div className="browse-card-tags">
                     {item.tags.slice(0, 2).map((t) => (
@@ -698,7 +742,7 @@ function Browse({ onNavigate, active = true }) {
             <div className="browse-drawer-head">
               <div className="browse-drawer-title">
                 <Film size={18} />
-                <span>{detail ? `《${detail.series_title}》` : 'Đang tải…'}</span>
+                <span>{detail ? <DramaTitle title={detail.series_title} as="span" showOriginal={false}>{`《${detail.series_title}》`}</DramaTitle> : 'Đang tải…'}</span>
               </div>
               <button className="icon-btn" onClick={closeDetail} title="Đóng">
                 <X size={16} />
@@ -716,11 +760,27 @@ function Browse({ onNavigate, active = true }) {
               <>
                 <div className="browse-drawer-body">
                   <div className="browse-drawer-info">
-                    {detail.cover && <img src={detail.cover} alt="" className="browse-drawer-cover" />}
+                    <div className="browse-drawer-cover-box">
+                      {detail.cover && <img src={detail.cover} alt="" className="browse-drawer-cover" />}
+                      {detail.cover && (
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm download-cover-btn"
+                          onClick={downloadThumbnail}
+                          title="Tải ảnh bìa (thumbnail) về máy"
+                        >
+                          <Download size={13} /> Tải ảnh bìa
+                        </button>
+                      )}
+                    </div>
                     <div className="browse-drawer-meta">
                       <div className="browse-drawer-count">
                         {mediaSourceLabel(detail.series_id, mediaSources)} · Tổng {detail.total} tập · Đã tải <b>{detail.completedCount}</b> tập
                       </div>
+                      <DramaTitle title={detail.series_title} as="h3" style={{ margin: '6px 0', fontSize: '15px' }}>{detail.series_title}</DramaTitle>
+                      {(detail.description || detail.intro) && (
+                        <DramaDescription description={detail.description || detail.intro} className="browse-drawer-desc">{detail.description || detail.intro}</DramaDescription>
+                      )}
                       {detail.web_accessible_episodes != null && detail.web_accessible_episodes < detail.total && (
                         <div className="browse-drawer-sub">Nguồn web cung cấp {detail.web_accessible_episodes} tập đầu, các tập sau tự động thử nguồn App.</div>
                       )}

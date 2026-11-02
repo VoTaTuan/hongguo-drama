@@ -7,6 +7,7 @@ import { readSearchHistory, saveSearchTerm, removeSearchTerm, clearSearchHistory
 import useMediaSources from './useMediaSources';
 import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { rankSearchResults } from './searchRanking.mjs';
+import { DramaTitle } from './TranslatedText';
 
 const SEARCH_SAFETY_TIMEOUT_MS = 25000;
 
@@ -395,7 +396,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
                   )}
                 </div>
                 <div className="search-card-body">
-                  <div className="search-card-title">{item.series_title}</div>
+                  <DramaTitle title={item.series_title} className="search-card-title">{item.series_title}</DramaTitle>
                   <div className="search-card-sub">
                     {pickingId === item.series_id ? (
                       <>

@@ -1,0 +1,53 @@
+.drama-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.drama-title-main {
+  font-weight: 600;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drama-title-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-tertiary, #888);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.85;
+}
+
+.drama-desc-wrap {
+  position: relative;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.drama-desc-content {
+  white-space: pre-line;
+}
+
+.drama-desc-toggle {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-soft, rgba(235, 87, 87, 0.1));
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drama-desc-toggle:hover {
+  background: var(--accent-hover, rgba(235, 87, 87, 0.2));
+}

@@ -3,6 +3,8 @@ export const GENRE_MAP = {
   '古装': 'Cổ trang',
   '玄幻': 'Huyền huyễn',
   '奇幻': 'Kỳ ảo',
+  '魔幻': 'Ma huyễn',
+  '科幻': 'Khoa học viễn tưởng',
   '成长': 'Trưởng thành',
   '悬疑': 'Hồi hộp',
   '惊悚': 'Kinh dị',
@@ -22,12 +24,16 @@ export const GENRE_MAP = {
   '萌宝': 'Bảo bối',
   '团宠': 'Đoàn sủng',
   '豪门': 'Hào môn',
+  '家族': 'Gia tộc',
+  '传奇': 'Truyền kỳ',
+  '灾难': 'Thảm họa',
+  '综艺': 'Show giải trí',
+  '剧情': 'Chính kịch',
   '职场': 'Công sở',
   '复仇': 'Báo thù',
   '现代': 'Hiện đại',
   '武侠': 'Võ hiệp',
   '仙侠': 'Tiên hiệp',
-  '科幻': 'Khoa học viễn tưởng',
   '家庭': 'Gia đình',
   '年代': 'Niên đại',
   '青春': 'Thanh xuân',
@@ -112,12 +118,12 @@ export const GENRE_MAP = {
   '现言': 'Hiện ngôn',
   '年代爱情': 'Tình yêu niên đại',
   '民国爱情': 'Tình yêu dân quốc',
+  '民国传奇': 'Truyền kỳ dân quốc',
   '志怪': 'Chí quái',
   '女性成长': 'Nữ giới trưởng thành',
   '法律': 'Pháp luật',
   '求生': 'Sinh tồn',
   '家国情怀': 'Tình yêu quê hương',
-  '民国传奇': 'Truyền kỳ dân quốc',
   '现代都市': 'Đô thị hiện đại',
   '都市异能': 'Dị năng đô thị',
   '都市修真': 'Tu chân đô thị',
@@ -132,9 +138,76 @@ export const GENRE_MAP = {
   '惊悚恐怖': 'Kinh dị kinh hãi',
   '武侠仙侠': 'Võ hiệp tiên hiệp',
   '玄幻仙侠': 'Huyền huyễn tiên hiệp',
+  '动漫': 'Anime',
+  '动画': 'Hoạt hình',
+  '动态漫': 'Truyện tranh động',
+  '真人': 'Người thật',
+  '真人剧': 'Phim người thật',
+  '短剧': 'Phim ngắn',
+  '微短剧': 'Phim ngắn vi mô',
+  '网络电影': 'Phim mạng',
+  '纪录片': 'Phim tài liệu',
+  '少儿': 'Thiếu nhi',
+  '音乐': 'Âm nhạc',
+  '歌舞': 'Ca vũ',
+  '体育': 'Thể thao',
+  '神话': 'Thần thoại',
+  '武打': 'Võ thuật',
+  '功夫': 'Kungfu',
+  '警匪': 'Cảnh sát hình sự',
+  '黑帮': 'Xã hội đen',
+  '谍影': 'Bóng điệp viên',
+  '卧底': 'Nằm vùng',
+  '纯爱': 'Thuần ái',
+  '虐心': 'Ngược tâm',
+  '治愈': 'Chữa lành',
+  '温情': 'Ấm áp',
+  '霸道总裁': 'Tổng tài bá đạo',
+  '闪婚': 'Kết hôn chớp nhoáng',
+  '契约婚姻': 'Hôn nhân hợp đồng',
+  '追妻火葬场': 'Truy thê hỏa táng tràng',
+  '打脸虐渣': 'Vả mặt trừng ác',
+  '反转': 'Bẻ lái',
+  '大佬': 'Đại lão',
+  '双男主': 'Song nam chủ',
+  '百合': 'Bách hợp',
+  '耽美': 'Đam mỹ',
+  '民国': 'Dân quốc',
+  '古代': 'Cổ đại',
+  '热播': 'Thịnh hành',
+  '热度': 'Độ hot',
+  '榜单': 'Bảng xếp hạng',
+  '总榜': 'Bảng tổng hợp',
+  '完结': 'Hoàn thành',
+  '连载': 'Đang cập nhật',
 };
 
 export function translateGenre(label) {
   if (!label || typeof label !== 'string') return label;
-  return GENRE_MAP[label] || label;
+  const trimmed = label.trim();
+  if (GENRE_MAP[trimmed]) return GENRE_MAP[trimmed];
+
+  let result = trimmed;
+  // Replace Chinese units, counts, and status terms
+  result = result
+    .replace(/([\d.,]+)\s*万\s*热度/g, '$1 vạn độ hot')
+    .replace(/([\d.,]+)\s*亿\s*热度/g, '$1 tỷ độ hot')
+    .replace(/([\d.,]+)\s*万\s*播放/g, '$1 vạn lượt xem')
+    .replace(/([\d.,]+)\s*亿\s*播放/g, '$1 tỷ lượt xem')
+    .replace(/([\d.,]+)\s*万\s*人在看/g, '$1 vạn người xem')
+    .replace(/([\d.,]+)\s*万/g, '$1 vạn')
+    .replace(/([\d.,]+)\s*亿/g, '$1 tỷ')
+    .replace(/热度/g, 'độ hot')
+    .replace(/播放/g, 'lượt xem')
+    .replace(/点赞/g, 'lượt thích')
+    .replace(/已完结/g, 'Đã hoàn thành')
+    .replace(/连载中/g, 'Đang cập nhật')
+    .replace(/全\s*(\d+)\s*集/g, 'Trọn bộ $1 tập')
+    .replace(/更新至\s*(\d+)\s*集/g, 'Cập nhật tập $1')
+    .replace(/第\s*(\d+)\s*季/g, 'Phần $1')
+    .replace(/第\s*(\d+)\s*部/g, 'Phần $1');
+
+  if (GENRE_MAP[result]) return GENRE_MAP[result];
+
+  return result;
 }
