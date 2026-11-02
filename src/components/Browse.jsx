@@ -539,6 +539,19 @@ function Browse({ onNavigate, active = true }) {
     setEditTitleState(null);
   };
 
+  const handleCopyTitleOnly = async () => {
+    if (!detail) return;
+    const titleZh = detail.series_title || '';
+    const titleVi = getCachedTranslation(titleZh) || titleZh;
+    const textToCopy = titleZh && titleZh !== titleVi ? `${titleVi} (${titleZh})` : titleVi;
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      showToast('Đã sao chép tựa đề phim!');
+    } catch (err) {
+      showToast('Sao chép thất bại: ' + err.message, 'error');
+    }
+  };
+
   const toggleIdx = (idx) => {
     if (!detail?.episodes.some((ep) => ep.vid_index === idx && !ep.locked)) return;
     const next = new Set(selectedIdx);
@@ -848,6 +861,24 @@ function Browse({ onNavigate, active = true }) {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '6px 0' }}>
                         <DramaTitle title={detail.series_title} as="h3" style={{ margin: 0, fontSize: '15px', flex: 1 }}>{detail.series_title}</DramaTitle>
+                        <button
+                          type="button"
+                          className="btn-icon-subtle"
+                          onClick={handleCopyTitleOnly}
+                          title="Sao chép tựa đề phim"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--text-tertiary)',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Copy size={14} />
+                        </button>
                         <button
                           type="button"
                           className="btn-icon-subtle"

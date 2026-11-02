@@ -3,6 +3,8 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .drama-title-main {
@@ -10,6 +12,8 @@
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .drama-title-sub {
@@ -20,6 +24,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   opacity: 0.85;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .drama-desc-wrap {
@@ -28,16 +34,26 @@
   font-size: 13px;
   line-height: 1.6;
   color: var(--text-secondary);
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .drama-desc-content {
   white-space: pre-line;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.drama-desc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .drama-desc-toggle {
   display: inline-flex;
   align-items: center;
-  margin-top: 6px;
   padding: 2px 8px;
   font-size: 11px;
   color: var(--accent);
@@ -46,6 +62,7 @@
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+  user-select: none;
 }
 
 .drama-desc-toggle:hover {

@@ -8,7 +8,7 @@
  *   4. Quản lý tải xuống: Đẩy tiến độ, tạm dừng/hủy, thử lại, xóa, mở thư mục chứa
  *   5. Cài đặt: Thư mục tải về, quy tắc đặt tên, số luồng đồng thời (Lưu trữ tệp JSON)
  */
-const { app, BrowserWindow, BaseWindow, View, WebContentsView, globalShortcut, ipcMain: rawIpcMain, dialog, shell, session, protocol, Menu, Notification, screen, safeStorage } = require('electron');
+const { app, BrowserWindow, BaseWindow, View, WebContentsView, globalShortcut, ipcMain: rawIpcMain, dialog, shell, session, protocol, Menu, MenuItem, Notification, screen, safeStorage } = require('electron');
 const path = require('path');
 const IS_PREVIEW = require('./package.json').name === 'hongguo-experience-preview';
 if (IS_PREVIEW) {
@@ -5293,6 +5293,21 @@ function createWindow() {
   mainWindow.webContents.on('did-finish-load', syncMainWindowScale);
   mainWindow.webContents.on('zoom-changed', (_event, direction) => changeMainWindowZoom(direction));
   syncMainWindowScale();
+  contents.on('context-menu', (_event, params) => {
+    const menu = new Menu();
+    if (params.selectionText && params.selectionText.trim()) {
+      menu.append(new MenuItem({ label: 'Sao chép', role: 'copy' }));
+    }
+    if (params.isEditable) {
+      menu.append(new MenuItem({ label: 'Cắt', role: 'cut' }));
+      menu.append(new MenuItem({ label: 'Dán', role: 'paste' }));
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(new MenuItem({ label: 'Chọn tất cả', role: 'selectAll' }));
+    }
+    if (menu.items.length > 0) {
+      menu.popup({ window: mainWindow, x: params.x, y: params.y });
+    }
+  });
   rendererSecurity.protectWindow(mainWindow);
   attachFloatingPlayerWindow(mainWindow, {
     BrowserWindow,

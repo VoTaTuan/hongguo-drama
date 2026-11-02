@@ -28,24 +28,46 @@ export function DramaDescription({ description, children, className = '' }) {
   const textContent = description || (typeof children === 'string' ? children : '');
   const { translated, original, isTranslated } = useTranslatedText(textContent);
   const [viewOriginal, setViewOriginal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (!textContent || !textContent.trim()) return null;
+
+  const currentText = viewOriginal || !isTranslated ? original : translated;
+
+  const handleCopy = async (e) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(currentText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (_) {}
+  };
 
   return (
     <div className={`drama-desc-wrap ${className}`}>
       <div className="drama-desc-content">
-        {viewOriginal || !isTranslated ? original : translated}
+        {currentText}
       </div>
-      {isTranslated && (
+      <div className="drama-desc-actions">
+        {isTranslated && (
+          <button
+            type="button"
+            className="drama-desc-toggle"
+            onClick={() => setViewOriginal(!viewOriginal)}
+            title={viewOriginal ? 'Xem bản dịch tiếng Việt' : 'Xem văn bản gốc tiếng Trung'}
+          >
+            {viewOriginal ? 'Xem tiếng Việt' : 'Xem gốc'}
+          </button>
+        )}
         <button
           type="button"
           className="drama-desc-toggle"
-          onClick={() => setViewOriginal(!viewOriginal)}
-          title={viewOriginal ? 'Xem bản dịch tiếng Việt' : 'Xem văn bản gốc tiếng Trung'}
+          onClick={handleCopy}
+          title="Sao chép nội dung tóm tắt này"
         >
-          {viewOriginal ? 'Xem tiếng Việt' : 'Xem gốc'}
+          {copied ? 'Đã sao chép! ✓' : 'Sao chép mô tả'}
         </button>
-      )}
+      </div>
     </div>
   );
 }
