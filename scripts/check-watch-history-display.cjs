@@ -155,7 +155,7 @@ const button = (ui, label) => {
     const result = [];
     const visit = node => {
       if (!node || typeof node !== 'object') return;
-      if (node.props?.className === 'history-name') result.push(text(node).replace(/^已看完 · /, ''));
+      if (node.props?.className === 'history-name') result.push(text(node).replace(/^(?:已看完|Đã xem xong) · /, ''));
       node.children?.forEach(visit);
     };
     visit(ui.find(node => node.props?.className === 'history-list'));

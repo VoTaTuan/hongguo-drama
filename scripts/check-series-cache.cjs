@@ -4,7 +4,15 @@ const os=require('node:os');
 const path=require('node:path');
 const vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../main.js'),'utf8');
-const slice=(from,to)=>{const start=source.indexOf(from),end=source.indexOf(to,start);assert.ok(start>0&&end>start);return source.slice(start,end);};
+const slice=(from,to)=>{
+  const start=source.indexOf(from);
+  let end=source.indexOf(to,start);
+  if(end<0&&to==='// 按命名模板渲染文件名') {
+    end=source.indexOf('function renderName(',start);
+  }
+  assert.ok(start>0&&end>start, `Failed to slice from "${from}" to "${to}" (start: ${start}, end: ${end})`);
+  return source.slice(start,end);
+};
 const naming=[
  slice('function sanitizeFolderName(', '// 按命名模板渲染文件名'),
  slice('function playbackQuality(', 'function onlineCacheKey('),
