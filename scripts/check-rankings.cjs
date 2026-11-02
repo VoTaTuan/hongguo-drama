@@ -44,7 +44,7 @@ async function main() {
   response = '<html><script>throw Error("remote scripts must never execute")</script></html>';
   const bad = await browseList({ category: 'hot-drama', forceRefresh: true });
   assert.equal(bad.success, false);
-  assert.match(bad.error, /榜单/);
+  assert.match(bad.error, /(?:榜单|Bảng xếp hạng)/);
   assert.equal(bad.sourceUrl, 'https://hongguoduanju.com/rank/hot-drama');
   response = read('hot-drama').replace(/pc-[A-Za-z][\w-]*/g, 'changed-style');
   const renamed = await browseList({ category: 'hot-drama', forceRefresh: true });

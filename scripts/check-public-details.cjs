@@ -21,8 +21,8 @@ async function main() {
   assert.equal(result.episode_reviews, null);
   const player = parsePublicDetails(html({ series_id: '123456789' }, { vid: '987654321', episodeSocialInfo: { episode_like_count: '3', reviews: { total_count: '1', reviews: [{ content: '单集真实评论' }] } } }), '123456789', '987654321');
   assert.equal(player.episode_reviews.items[0].content, '单集真实评论');
-  assert.throws(() => parsePublicDetails(html({ series_id: '111111111' }), '123456789'), /剧集不匹配/);
-  assert.throws(() => parsePublicDetails(html({ series_id: '123456789' }, { vid: '111111111' }), '123456789', '987654321'), /分集不匹配/);
+  assert.throws(() => parsePublicDetails(html({ series_id: '111111111' }), '123456789'), /(?:剧集不匹配|Phim trên trang nguồn không khớp)/);
+  assert.throws(() => parsePublicDetails(html({ series_id: '123456789' }, { vid: '111111111' }), '123456789', '987654321'), /(?:分集不匹配|Tập.*trên trang nguồn không khớp)/);
   assert.throws(() => parsePublicDetails('<html>登录或错误页面</html>', '123456789'));
   assert.equal((await fetchPublicDetails('http://127.0.0.1')).success, false);
   assert.equal((await fetchPublicDetails('123456789', '../private')).success, false);

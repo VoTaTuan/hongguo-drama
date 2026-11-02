@@ -36,7 +36,7 @@ axios.get = async (url, options) => {
   assert.equal(page.has_more, false);
   assert.equal(page.next_cursor, null);
   assert.equal(page.source_limited, true);
-  assert.match(page.notice, /部分评论/);
+  assert.match(page.notice, /(?:部分评论|một phần bình luận)/i);
   assert.deepEqual(Object.keys(page.items[0]).sort(), ['content', 'id']);
   assert.deepEqual((await fetchEpisodeComments({ seriesId, episodeId })).items, page.items);
   assert.equal(calls, 1, 'reuse the existing bounded public-details cache');

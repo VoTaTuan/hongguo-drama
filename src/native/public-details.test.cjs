@@ -22,8 +22,8 @@ test('公开详情默认仍为50条，导出可取1000条，不改字段协议�
   assert.equal(big.episode_reviews.items.length, 1000);
   assert.equal(big.reviews.total, 15536);
   assert.deepEqual(big.reviews.items[0], { author: 'u0', avatar: '', content: '评0', created_at: 123000, likes: 2, rating: 5 });
-  assert.throws(() => parsePublicDetails(html(), '1234567'), /剧集不匹配/);
-  assert.throws(() => parsePublicDetails(html(SID, VID), SID, '1234567'), /分集不匹配/);
+  assert.throws(() => parsePublicDetails(html(), '1234567'), /(?:剧集不匹配|Phim trên trang nguồn không khớp)/);
+  assert.throws(() => parsePublicDetails(html(SID, VID), SID, '1234567'), /(?:分集不匹配|Tập phim trên trang nguồn không khớp)/);
 });
 
 test('50与1000条缓存独立，同上限并发去重，失败后可重新请求', async t => {
@@ -62,7 +62,7 @@ test('同源同剧锁集跳转明确不可获取，不跟随或返回其他分�
   assert.equal(result.code, 'EPISODE_COMMENTS_UNAVAILABLE');
   assert.equal(result.source_limited, true);
   assert.equal(result.items, undefined);
-  assert.match(result.error, /未开放/);
+  assert.match(result.error, /(?:未开放|chưa mở)/);
 });
 
 test('跨站跨剧与普通跳转、HTTP错误和超时不误报来源未开放', async t => {
@@ -88,5 +88,5 @@ test('跨站跨剧与普通跳转、HTTP错误和超时不误报来源未开放'
     assert.equal((await fetchPublicDetails(SID, VID)).code, undefined);
   }
   failure = { code: 'ECONNABORTED' };
-  assert.match((await fetchPublicDetails(SID, VID)).error, /超时/);
+  assert.match((await fetchPublicDetails(SID, VID)).error, /(?:超时|quá thời gian)/);
 });

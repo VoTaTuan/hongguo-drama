@@ -6,6 +6,7 @@ import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { Film, RefreshCw, ExternalLink, Download, Play, Check, X, Search } from './icons';
 import { isSubmitKey, parseEpisodeRange } from './episodeRange';
 import { rememberCatalogTitles } from '../searchHistory';
+import { translateGenre } from './genreMap';
 
 const PAGE_CACHE_TTL_MS = 60_000;
 const LIST_TIMEOUT_MS = 25_000;
@@ -591,7 +592,7 @@ function Browse({ onNavigate, active = true }) {
               className={`genre-chip ${genre === g.slug ? 'active' : ''}`}
               onClick={() => switchGenre(g.slug)}
             >
-              {g.label}
+              {translateGenre(g.label)}
             </button>
           ))}
         </div>
@@ -658,7 +659,7 @@ function Browse({ onNavigate, active = true }) {
                 {item.tags && item.tags.length > 0 && (
                   <div className="browse-card-tags">
                     {item.tags.slice(0, 2).map((t) => (
-                      <span key={t} className="browse-tag">{t}</span>
+                      <span key={t} className="browse-tag">{translateGenre(t)}</span>
                     ))}
                   </div>
                 )}

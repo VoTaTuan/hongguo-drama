@@ -67,8 +67,8 @@ function DownloadManager({ onNavigate, active = true }) {
   const [merging, setMerging] = useState(false);
   const [mergeError, setMergeError] = useState('');
   const [mergeTasks, setMergeTasks] = useState([]);
-  const [confirmAsk, setConfirmAsk] = useState(null); // 删除确认（可勾选删除本地文件）
-  const [mergeAsk, setMergeAsk] = useState(false);    // 合并格式选择
+  const [confirmAsk, setConfirmAsk] = useState(null); // Xác nhận xóa (có thể chọn xóa kèm tệp cục bộ)
+  const [mergeAsk, setMergeAsk] = useState(false);    // Lựa chọn định dạng ghép
   const [page, setPage] = useState(1);
   const [orderVersion, setOrderVersion] = useState(0);
   const [loadError, setLoadError] = useState('');
@@ -141,7 +141,7 @@ function DownloadManager({ onNavigate, active = true }) {
     } catch (_) {}
   }, []);
 
-  // 列表刷新改选另一部剧时，旧确认框不能继续提交。
+  // Khi làm mới danh sách chuyển sang chọn phim khác, hộp thoại xác nhận cũ không thể tiếp tục gửi.
   useEffect(() => {
     mergeDialogGenerationRef.current += 1;
     setMergeAsk(false);
@@ -265,11 +265,11 @@ function DownloadManager({ onNavigate, active = true }) {
     return v.toFixed(v >= 100 || i === 0 ? 0 : 1) + ' ' + u[i];
   };
 
-  /** 弹删除确认：默认只删记录，可勾选同时删除本地文件 */
+  /** Hiện xác nhận xóa: Mặc định chỉ xóa bản ghi, có thể chọn đồng thời xóa tệp cục bộ */
   const askDelete = (list, label) => {
     const items = (list || []).filter(Boolean);
     if (!items.length) return;
-    // 用已下载字节数估算可释放空间（完成任务才有意义）
+    // Ước tính dung lượng có thể giải phóng bằng số byte đã tải (chỉ có ý nghĩa khi tác vụ hoàn thành)
     const estBytes = items.reduce((s, t) => s + (t.totalBytes || t.receivedBytes || 0), 0);
     const withFile = items.filter((t) => t.status === 'completed').length;
     setConfirmAsk({
@@ -311,7 +311,7 @@ function DownloadManager({ onNavigate, active = true }) {
     }
   };
 
-  // 一键合并选中的短剧
+  // Ghép một chạm các phim ngắn đã chọn
   const openMergeDialog = () => {
     mergeDialogGenerationRef.current += 1;
     setMergeError('');
@@ -374,7 +374,7 @@ function DownloadManager({ onNavigate, active = true }) {
     await window.electronAPI.showInFolder(path);
   };
 
-  // 一键暂停：取消进行中的 + 清空等待队列
+  // Tạm dừng một chạm: Hủy tác vụ đang tiến hành + làm rỗng hàng đợi đang chờ
   const pauseAll = async () => {
     const res = await window.electronAPI.pauseAll();
     await refresh();
@@ -382,7 +382,7 @@ function DownloadManager({ onNavigate, active = true }) {
     showToast(res && res.success ? `Đã tạm dừng ${res.count} tác vụ` : 'Tạm dừng thất bại', res && res.success ? 'success' : 'error');
   };
 
-  // 一键启动：把所有已停止/失败/等待中的任务重新排队开跑
+  // Khởi động một chạm: Đưa tất cả tác vụ đã dừng/thất bại/đang chờ xếp hàng chạy lại
   const resumeAll = async () => {
     const res = await window.electronAPI.resumeAll();
     await refresh();
@@ -390,7 +390,7 @@ function DownloadManager({ onNavigate, active = true }) {
     showToast(res && res.success ? `Đã khởi chạy ${res.count} tác vụ` : 'Khởi chạy thất bại', res && res.success ? 'success' : 'error');
   };
 
-  // 重试失败/已停止的任务
+  // Thử lại các tác vụ thất bại/đã dừng
   const retryAllFailed = async () => {
     const ids = tasks.filter(needsManualRetry).map((t) => t.id);
     if (ids.length === 0) return;
@@ -403,7 +403,7 @@ function DownloadManager({ onNavigate, active = true }) {
     }
   };
 
-  // 一键选中全部失败/已停止的任务（选中后可再点「重试选中」）
+  // Chọn tất cả tác vụ thất bại/đã dừng bằng một chạm (sau khi chọn có thể nhấn "Thử lại mục đã chọn")
   const selectAllFailed = () => {
     const ids = tasks.filter(needsManualRetry).map((t) => t.id);
     if (ids.length === 0) {
@@ -437,13 +437,13 @@ function DownloadManager({ onNavigate, active = true }) {
   );
   const failedCount = failedTasks.length;
 
-  // 可暂停的任务：正在下载、等待中、已停止（未跑完的都算）
+  // Các tác vụ có thể tạm dừng: Đang tải xuống, đang chờ, đã dừng (tất cả các tác vụ chưa chạy xong)
   const pausableCount = useMemo(
     () => tasks.filter((t) => t.status !== 'completed').length,
     [tasks]
   );
 
-  // 已选中项里真正可重试的数量
+  // Số lượng thực sự có thể thử lại trong các mục đã chọn
   const retryableSelectedCount = useMemo(
     () =>
       Array.from(selected).filter((id) => {
@@ -570,7 +570,7 @@ function DownloadManager({ onNavigate, active = true }) {
 
       {seriesList.length > 0 && <p className="settings-hint dm-merge-hint">Chọn tên phim rồi nhấn "Ghép toàn bộ phim" để xuất tất cả tập đã tải của phim đó mà không cần tích chọn từng tác vụ.</p>}
 
-      {/* 合并任务 */}
+      {/* Tác vụ ghép */}
       {mergeTasks.length > 0 && (
         <div className="merge-list">
           {mergeTasks.map((m) => (
@@ -773,7 +773,7 @@ function DownloadManager({ onNavigate, active = true }) {
         </div>
       )}
 
-      {/* 合并格式选择 */}
+      {/* Lựa chọn định dạng ghép */}
       {mergeAsk && (
         <div className="player-confirm-mask" onClick={closeMergeDialog}>
           <div className="player-confirm" role="dialog" aria-modal="true" aria-label={confirmAsk ? confirmAsk.title : 'Xuất ghép video'} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
@@ -805,7 +805,7 @@ function DownloadManager({ onNavigate, active = true }) {
         </div>
       )}
 
-      {/* 删除确认（可选是否连本地文件一起删） */}
+      {/* Xác nhận xóa (tùy chọn có xóa kèm tệp cục bộ hay không) */}
       {confirmAsk && (
         <div className="player-confirm-mask" onClick={() => setConfirmAsk(null)}>
           <div className="player-confirm" role="dialog" aria-modal="true" aria-label={confirmAsk ? confirmAsk.title : 'Xuất ghép video'} tabIndex={-1} onClick={(e) => e.stopPropagation()}>

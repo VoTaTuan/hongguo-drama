@@ -65,7 +65,7 @@ const checks = [
   ['staging reserves space for the final output', async () => {
     const h = fixture(1.6 * MiB);
     try {
-      await assert.rejects(h.run('large', MiB), /空间不足/);
+      await assert.rejects(h.run('large', MiB), /空间不足|Không đủ dung lượng/);
       assert.equal(h.children.length, 0, 'insufficient output space must stop before FFmpeg');
       assert.deepEqual(fs.readdirSync(h.root), [], 'failed stage must clean its files');
     } finally { h.close(); }
@@ -78,20 +78,20 @@ const checks = [
       const second = h.run('second', MiB);
       // Old code incorrectly starts a second child; release it so the negative assertion can finish.
       const release = setInterval(() => h.children[1]?.finish(0), 5);
-      try { await assert.rejects(second, /空间不足/); } finally { clearInterval(release); }
+      try { await assert.rejects(second, /空间不足|Không đủ dung lượng/); } finally { clearInterval(release); }
       assert.equal(h.children.length, 1);
     } finally { for (const child of h.children) child.finish(0); await first; h.close(); }
   }],
   ['available space is checked again immediately before FFmpeg', async () => {
     const h = fixture(8 * MiB);
     h.afterManifest(() => h.setExternal(7.8 * MiB));
-    try { await assert.rejects(h.run('changed', MiB / 4), /空间不足/); assert.equal(h.children.length, 0); }
+    try { await assert.rejects(h.run('changed', MiB / 4), /空间不足|Không đủ dung lượng/); assert.equal(h.children.length, 0); }
     finally { h.close(); }
   }],
   ['space loss during remux cancels the child and releases reservations', async () => {
     const h = fixture(4 * MiB); h.hold();
     const pending = h.run('running', MiB / 2);
-    const rejected = assert.rejects(pending, /空间不足/);
+    const rejected = assert.rejects(pending, /空间不足|Không đủ dung lượng/);
     try {
       await waitFor(() => h.children.length === 1);
       assert.ok(h.monitors.size, 'remux must monitor remaining disk space');

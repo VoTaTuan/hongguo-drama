@@ -144,7 +144,8 @@ function load(platform = 'darwin') {
     const h = load();
     await h.ready();
     assert.equal(h.windows[0].options.webPreferences.zoomMode, 'isolated', 'Zoom must render changes without sharing them with other windows');
-    const out = h.menu().find(item => item.label === '视图').submenu.find(item => item.label === '缩小');
+    const viewMenu = h.menu().find(item => ['视图', 'Xem'].includes(item.label));
+    const out = viewMenu.submenu.find(item => ['缩小', 'Thu nhỏ'].includes(item.label));
     assert.equal(out.accelerator, 'CmdOrCtrl+-');
     out.click();
     const dataFile = path.join(h.root, 'data.json');

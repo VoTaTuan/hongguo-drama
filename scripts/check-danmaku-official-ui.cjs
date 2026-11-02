@@ -73,7 +73,7 @@ function mount({ response, enabled = true } = {}) {
   assert.equal(ui.requests.length, 2, 'loaded source must reuse its current feed');
   assert.equal(ui.intervals.size, 0, 'unselected comments source must stop its request timer');
   ui.props.activeSeriesId = 'custom:example'; await ui.flush();
-  assert.equal(ui.requests.length, 2); assert.match(ui.tree.danmaku.status, /仅红果来源/); ui.unmount();
+  assert.equal(ui.requests.length, 2); assert.match(ui.tree.danmaku.status, /(?:仅红果来源|Chỉ nguồn Hồng Quả)/i); ui.unmount();
 
   const off = mount({ enabled: false }); await off.flush(); assert.equal(off.requests.length, 0); off.unmount();
   const hidden = mount({ enabled: false }); hidden.props.showDanmakuControls = false;

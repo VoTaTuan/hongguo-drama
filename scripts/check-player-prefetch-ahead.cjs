@@ -16,8 +16,16 @@ const tick = (ui, time) => {
   ui.media.currentTime = time;
   ui.find(node => node.type === 'video').props.onTimeUpdate?.({ currentTarget: ui.media });
 };
-const paragraph = (ui, message) => ui.find(node => node.type === 'p'
-  && node.children?.join('') === message);
+const messageMap = {
+  '正在连接片源…': 'Đang kết nối nguồn phim…',
+  '正在加载视频…': 'Đang tải video…',
+  '正在缓冲在线播放…': 'Đang tải đệm phát trực tuyến…',
+};
+const paragraph = (ui, message) => {
+  const vn = messageMap[message];
+  return ui.find(node => node.type === 'p'
+    && (node.children?.join('') === message || (vn && node.children?.join('') === vn)));
+};
 const renderWithoutBuffering = ui => {
   ui.render();
   for (const message of ['正在加载视频…', '正在缓冲在线播放…']) {

@@ -15,7 +15,7 @@ function HongguoDownload({ onNavigate, active = true }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // 短剧解析结果
+  // Kết quả phân tích phim ngắn
   const [seriesData, setSeriesData] = useState(null); // { series_id, series_title, cover, total, episodes: [...] }
   const [selectedVids, setSelectedVids] = useState(new Set());
   const [rangeInput, setRangeInput] = useState('');
@@ -32,7 +32,7 @@ function HongguoDownload({ onNavigate, active = true }) {
   const [openingPlayer, setOpeningPlayer] = useState(false);
   const playPending = useRef(false);
   const firstPlayable = seriesData?.episodes.find((ep) => !ep.locked);
-  // 评论/弹幕/剧评仅红果来源可取（取数函数都以纯数字 ID 为前置校验）；其它来源隐藏导出勾选。
+  // Bình luận/danmaku/đánh giá phim chỉ nguồn Hồng Quả mới hỗ trợ (hàm lấy dữ liệu dùng ID toàn số để kiểm tra trước); các nguồn khác ẩn tùy chọn xuất.
   const isHongguoSource = /^\d{6,30}$/.test(String(seriesData?.series_id || ''));
   const resolveRequest = useRef(0);
   const pendingResolve = useRef(null);
@@ -61,7 +61,7 @@ function HongguoDownload({ onNavigate, active = true }) {
     return () => { cancelled = true; };
   }, [active]);
 
-  // 文字导出转为后台任务，完成后经 text-export-done 事件回报；本订阅只更新提示文案，不阻塞下载。
+  // Xuất văn bản chuyển thành tác vụ nền, sau khi hoàn thành sẽ thông báo qua sự kiện text-export-done; phần đăng ký này chỉ cập nhật thông báo, không chặn tải xuống.
   useEffect(() => {
     const off = window.electronAPI?.onTextExportDone?.((data) => {
       const request = textExportRequest.current;
@@ -94,7 +94,7 @@ function HongguoDownload({ onNavigate, active = true }) {
     setTab(next);
   };
 
-  // 搜索选中一部剧后：复用既有的选集下载界面
+  // Sau khi chọn một bộ phim từ tìm kiếm: Tái sử dụng giao diện chọn tập tải xuống hiện có
   const handleSeriesFromSearch = (data) => {
     if (searchVersion !== resolveRequest.current) return;
     resolveRequest.current++;
@@ -109,7 +109,7 @@ function HongguoDownload({ onNavigate, active = true }) {
     document.querySelector('.main-content:not([hidden])')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 解析红果短剧
+  // Phân tích phim ngắn Hồng Quả
   const handleResolve = async () => {
     if (!inputUrl.trim()) {
       setErrorMsg('Vui lòng nhập liên kết chia sẻ phim ngắn Hồng Quả hoặc ID phim');
@@ -132,7 +132,7 @@ function HongguoDownload({ onNavigate, active = true }) {
       if (request !== resolveRequest.current) return;
       if (res?.success && res.data) {
         setSeriesData(res.data);
-        // 默认全选，网页未提供的集数自动尝试 App 片源。
+        // Mặc định chọn tất cả, các tập mà trang web chưa cung cấp sẽ tự động thử nguồn App.
         const allVids = new Set(res.data.episodes.filter((ep) => !ep.locked).map((ep) => ep.vid));
         setSelectedVids(allVids);
         setSuccessMsg(`Phân tích thành công! Tìm thấy《${res.data.series_title}》tổng cộng ${res.data.total} tập`);
@@ -147,7 +147,7 @@ function HongguoDownload({ onNavigate, active = true }) {
     }
   };
 
-  // 勾选/取消勾选单集
+  // Chọn / Bỏ chọn tập đơn
   const toggleVid = (vid) => {
     if (!seriesData?.episodes.some((ep) => ep.vid === vid && !ep.locked)) return;
     const next = new Set(selectedVids);
@@ -159,13 +159,13 @@ function HongguoDownload({ onNavigate, active = true }) {
     setSelectedVids(next);
   };
 
-  // 全选
+  // Chọn tất cả
   const handleSelectAll = () => {
     if (!seriesData) return;
     setSelectedVids(new Set(seriesData.episodes.filter((ep) => !ep.locked).map((ep) => ep.vid)));
   };
 
-  // 反选
+  // Đảo chọn
   const handleInvertSelect = () => {
     if (!seriesData) return;
     const next = new Set();
@@ -177,12 +177,12 @@ function HongguoDownload({ onNavigate, active = true }) {
     setSelectedVids(next);
   };
 
-  // 清空选择
+  // Xóa lựa chọn
   const handleDeselectAll = () => {
     setSelectedVids(new Set());
   };
 
-  // 快捷集数选择
+  // Chọn tập nhanh
   const handleQuickSelect = (type) => {
     if (!seriesData || !seriesData.episodes) return;
     const eps = seriesData.episodes;
@@ -198,7 +198,7 @@ function HongguoDownload({ onNavigate, active = true }) {
     setSelectedVids(new Set(targetEps.filter((ep) => !ep.locked).map((ep) => ep.vid)));
   };
 
-  // 根据区间字符串应用筛选 (如 "1-30" 或 "1,5,10-20")
+  // Áp dụng bộ lọc theo chuỗi khoảng (ví dụ: "1-30" hoặc "1,5,10-20")
   const handleApplyRange = () => {
     if (!seriesData?.episodes) return;
     try {
@@ -225,7 +225,7 @@ function HongguoDownload({ onNavigate, active = true }) {
     }
   };
 
-  // 提交批量下载
+  // Gửi tải xuống hàng loạt
   const handleBatchDownload = async () => {
     if (!seriesData || selectedVids.size === 0) {
       setErrorMsg('Vui lòng chọn ít nhất một tập phim ngắn cần tải về');
@@ -253,7 +253,7 @@ function HongguoDownload({ onNavigate, active = true }) {
       const isCurrent = () => textExportRequest.current === request && seriesIdRef.current === request.seriesId;
       if (res.success) {
         if (isHongguoSource) {
-          // 偏好保存失败不改变已提交的视频任务或后台导出结果。
+          // Lưu tùy chọn thất bại không làm thay đổi tác vụ video đã gửi hoặc kết quả xuất nền.
           Promise.resolve().then(() => window.electronAPI.saveSettings({ export_text: kinds })).then(saved => {
             if (!saved?.success) throw new Error(saved?.error || 'Vui lòng thử lại sau');
           }).catch(error => {
@@ -279,7 +279,7 @@ function HongguoDownload({ onNavigate, active = true }) {
 
   return (
     <div className="hongguo-container">
-      {/* 头部 Banner 区 */}
+      {/* Khu vực Banner đầu trang */}
       <div className="hongguo-hero">
         <div className="hero-icon">
           <Film size={32} />
@@ -290,7 +290,7 @@ function HongguoDownload({ onNavigate, active = true }) {
         </div>
       </div>
 
-      {/* 方式切换 */}
+      {/* Chuyển đổi phương thức */}
       <div className="mode-tabs">
         <button
           className={`mode-tab ${tab === 'search' ? 'active' : ''}`}
@@ -316,7 +316,7 @@ function HongguoDownload({ onNavigate, active = true }) {
         />
       </div>
       {tab === 'input' && (
-        /* 解析输入卡片 */
+        /* Thẻ nhập phân tích */
         <div className="hongguo-card">
           <div className="card-header-title">
             <Link2 size={18} />
@@ -363,7 +363,7 @@ function HongguoDownload({ onNavigate, active = true }) {
         </div>
       )}
 
-      {/* 搜索模式下的提示信息（解析卡片被替换了，这里单独显示） */}
+      {/* Thông báo trong chế độ tìm kiếm (thẻ phân tích đã được thay thế, hiển thị riêng ở đây) */}
       {tab === 'search' && (errorMsg || successMsg) && (
         <div className="hongguo-card" style={{ marginTop: 0 }}>
           {errorMsg && <div className="alert alert-error" role="alert">{errorMsg}</div>}
@@ -371,10 +371,10 @@ function HongguoDownload({ onNavigate, active = true }) {
         </div>
       )}
 
-      {/* 剧集列表与选择控制 */}
+      {/* Danh sách tập và điều khiển lựa chọn */}
       {seriesData && (
         <div className="hongguo-card episode-section">
-          {/* 短剧元信息 */}
+          {/* Siêu dữ liệu phim ngắn */}
           <div className="series-header">
             <div className="series-info">
               {seriesData.cover ? (
@@ -453,7 +453,7 @@ function HongguoDownload({ onNavigate, active = true }) {
 
           {seriesData.episodes.some((ep) => ep.locked) && <p className="settings-hint">Tập bị khóa cần mở khóa trên nền tảng gốc, ứng dụng không cung cấp tính năng mở khóa; chọn tất cả và chọn phạm vi sẽ tự động bỏ qua.</p>}
 
-          {/* 筛选与操作栏 */}
+          {/* Thanh lọc và thao tác */}
           <div className="controls-row">
             <div className="select-buttons">
               <button className="btn-chip" onClick={handleSelectAll}>Chọn tất cả</button>
@@ -480,7 +480,7 @@ function HongguoDownload({ onNavigate, active = true }) {
             </div>
           </div>
 
-          {/* 剧集网格列表 */}
+          {/* Danh sách lưới tập phim */}
           <div className="episode-grid">
             {seriesData.episodes.map((ep) => {
               const isChecked = selectedVids.has(ep.vid);

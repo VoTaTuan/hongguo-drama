@@ -62,7 +62,7 @@ test('partial background sequel lookup keeps local candidates and exposes incomp
   const h = load('1000002', { partial: true });
   try {
     const result = await h.run(); assert.equal(result.checked, 1); assert.equal(result.failed, 1);
-    assert.match(h.record().lastCheckError, /续作检查.*未完成/);
+    assert.match(h.record().lastCheckError, /(?:续作检查.*未完成|kiểm tra phần tiếp theo.*chưa hoàn thành|Chưa hoàn thành kiểm tra phần tiếp theo)/i);
     assert.equal(h.record().lastSequelCheckAt, 1, 'partial result must not become a successful 24-hour checkpoint');
     assert.deepEqual(h.record().sequels.map(row => row.series_title), ['春日来信第四季']);
   } finally { h.cleanup(); }

@@ -30,6 +30,6 @@ const { mount } = require('./check-player-resume.cjs');
   const broken = mount({ local: true, storage: { get() { throw Error('denied'); }, set() { throw Error('full'); } }, props: { setEpisodesOpen() {} } }); await broken.flush();
   broken.find(n => n.props.onPictureModeChange).props.onPictureModeChange('width'); broken.render();
   assert.equal(broken.find(n => n.props.onPictureModeChange).props.pictureMode, 'width');
-  assert.ok(broken.find(n => n.children?.some(c => typeof c === 'string' && c.includes('未能保存')))); broken.unmount();
+  assert.ok(broken.find(n => n.children?.some(c => typeof c === 'string' && (c.includes('未能保存') || c.includes('chưa lưu được'))))); broken.unmount();
   console.log('PASS picture-mode default, persistence, progress/node, episode and window-fill continuity');
 })().catch(error => { console.error(error); process.exitCode = 1; });

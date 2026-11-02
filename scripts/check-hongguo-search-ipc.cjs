@@ -138,7 +138,7 @@ function failure(message, kind, fallback) {
   result = await harness.handlers['search-series']({}, '原词，失败', { source: 'hongguo' });
   assert.equal(result.success, true);
   assert.equal(result.partial, true);
-  assert.match(result.error, /补充搜索未完成/);
+  assert.match(result.error, /补充搜索未完成|Tìm kiếm bổ sung chưa hoàn thành/i);
   assert.equal(result.results.length, 1);
   harness.cleanup();
 

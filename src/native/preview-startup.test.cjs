@@ -4,7 +4,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '../../main.js'), 'utf8');
-const startup = source.slice(source.indexOf('if (IS_PREVIEW) {'), source.indexOf('// Windows 便携版'));
+const portableMarker = source.indexOf('// Windows 便携版') !== -1 ? '// Windows 便携版' : '// Bản di động Windows';
+const startup = source.slice(source.indexOf('if (IS_PREVIEW) {'), source.indexOf(portableMarker));
 for (const platformPath of [path.posix, path.win32]) for (const explicit of [true, false]) {
   const calls = [];
   vm.runInNewContext(startup, {

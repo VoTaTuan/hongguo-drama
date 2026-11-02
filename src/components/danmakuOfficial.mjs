@@ -1,12 +1,12 @@
 // Adapted from dawei233/hongguo-drama, commit c884fab6c6e36ad38173e251738b9b35f958383f (GPL-3.0).
 // https://github.com/dawei233/hongguo-drama
-// 时间轴投放与评论队列分开；两种来源共用视觉设置、轨道布局和窗口重排。
+// Phân phối theo dòng thời gian tách biệt với hàng đợi bình luận; hai nguồn dùng chung cài đặt giao diện, bố cục đường chạy và sắp xếp lại cửa sổ.
 
 import { commentIsBlocked, danmakuLayout, retireDanmaku, takeDanmakuReplay } from './danmakuModel.mjs';
 
 export const DANMAKU_SOURCES = Object.freeze(['official', 'comments']);
 
-/** 默认走真弹幕；存储里出现任何其它值都回落到默认。 */
+/** Mặc định dùng danmaku thật; bất kỳ giá trị nào khác xuất hiện trong bộ nhớ đều quay về mặc định. */
 export const DEFAULT_DANMAKU_SOURCE = 'official';
 
 export function normalizeDanmakuSource(value) {
@@ -18,34 +18,34 @@ export const SOURCE_LABELS = Object.freeze({
   comments: 'Bình luận tập này',
 });
 
-// 一道弹幕占满整屏所需的时间由宽度和速度决定；这里只约束"同一道里前后两条
-// 至少要留出的水平间距"，避免后发的弹幕追尾前面那条。
+// Thời gian một hàng danmaku chiếm toàn màn hình phụ thuộc vào chiều rộng và tốc độ; ở đây chỉ ràng buộc "khoảng cách ngang tối thiểu cần giữ giữa 2 hàng liên tiếp trong cùng một làn"
+// để tránh danmaku phát sau va chạm vào danmaku phía trước.
 const LANE_HEAD_GAP = 24;
 
-// 单帧最多消费多少条待发弹幕，防止一次性涌入（例如长时间卡顿后恢复）把画面糊住。
+// Mỗi khung hình tiêu thụ tối đa bao nhiêu danmaku chờ phát, tránh tràn vào cùng lúc (ví dụ sau khi giật lag lâu rồi phục hồi) làm mờ màn hình.
 const MAX_EMIT_PER_FRAME = 4;
 
-// 时间轴控制出场时机；密度控制突发时的最小间隔，不限制为固定几行。
+// Dòng thời gian kiểm soát thời điểm xuất hiện; mật độ kiểm soát khoảng cách tối thiểu khi bùng phát, không giới hạn số dòng cố định.
 const EMIT_INTERVAL = Object.freeze({ sparse: 0.4, normal: 0.15, dense: 0.05 });
 
-/** 严重迟到的弹幕直接丢弃：它们在时间轴上已经过去了，补发只会突兀。 */
+/** Danmaku trễ nghiêm trọng sẽ bị hủy trực tiếp: chúng đã qua trên dòng thời gian, phát bù chỉ làm rối mắt. */
 const STALE_SECONDS = 5;
 
 /**
- * 减少动态效果模式下每条弹幕的展示时长。
+ * Thời lượng hiển thị của mỗi danmaku trong chế độ giảm hiệu ứng chuyển động.
  *
- * 这个模式一次只轮播一条，所以吞吐量天生比滚动模式低一个量级。迟到阈值必须跟着
- * 放宽到同一个量级 —— 否则排队中的弹幕会在还没轮到时就全部被判"迟到"丢掉，
- * 结果是开了减少动态效果几乎看不到弹幕。
+ * Chế độ này mỗi lần chỉ hiển thị lần lượt 1 mục, vì vậy lưu lượng tự nhiên thấp hơn chế độ cuộn một bậc. Ngưỡng trễ phải được nới lỏng tương ứng
+ * theo cùng bậc —— nếu không các danmaku đang xếp hàng sẽ bị coi là "trễ" và bị hủy hết trước khi đến lượt,
+ * dẫn đến việc bật giảm chuyển động thì gần như không thấy danmaku.
  */
 const REDUCED_MOTION_READ_SECONDS = 6;
 
 /**
- * 认定"用户跳转了进度"的条件。
+ * Điều kiện xác định "người dùng đã tua tiến độ".
  *
- * 正常播放时 `currentTime` 的增量约等于本帧的媒体时间增量；一旦出现负数增量
- * 或远超增量的正跳变，就只能是 seek。这个判断只决定要不要重建后续投放光标，
- * 判错会导致快进后把中间整段弹幕一次性倒到屏幕上。
+ * Khi phát bình thường, mức tăng của `currentTime` xấp xỉ bằng mức tăng thời gian media của khung hình này; khi xuất hiện mức tăng âm
+ * hoặc bước nhảy dương vượt xa mức tăng bình thường, đó chắc chắn là tua (seek). Phán đoán này quyết định có cần tạo lại con trỏ phân phối tiếp theo hay không,
+ * nếu phán đoán sai sẽ dẫn đến việc sau khi tua nhanh, toàn bộ danmaku đoạn giữa sẽ đổ dồn lên màn hình cùng lúc.
  */
 function isSeek(lastTime, currentTime, elapsed) {
   if (lastTime === undefined) return true;
@@ -54,7 +54,7 @@ function isSeek(lastTime, currentTime, elapsed) {
   return jump > elapsed * 3 + 1;
 }
 
-/** 找到第一条 time >= currentTime 的下标（列表按 time 升序）。 */
+/** Tìm chỉ số đầu tiên có time >= currentTime (danh sách sắp xếp tăng dần theo time). */
 export function lowerBoundTime(list, currentTime) {
   let low = 0;
   let high = list.length;
@@ -78,18 +78,18 @@ export function createOfficialFeed(seriesId, vid) {
     notice: '',
     truncated: false,
     partial: false,
-    // 动画状态与评论滚动条同名（items/nextId/cooldown），便于渲染层复用同一套
-    // 绘制与设置变更处理。
+    // Trạng thái hiệu ứng có cùng tên với thanh cuộn bình luận (items/nextId/cooldown), thuận tiện cho lớp render tái sử dụng cùng logic
+    // vẽ và xử lý thay đổi cài đặt.
     animation: { items: [], nextId: 0, cursor: 0, cooldown: 0, lastTime: undefined },
   };
 }
 
 /**
- * 写入一页官方弹幕结果。
+ * Ghi một trang kết quả danmaku chính thức.
  *
- * 上游接口每次返回的是当次抓到的子集（实测同一集在几十秒内会给出 71~104 条
- * 不同结果），因此这里只做合并与排序，**不把 `hasMore` 之类当作"已全部加载"**；
- * 状态文案统一由 `resolveDanmakuStatus` 决定。
+ * Giao diện upstream mỗi lần trả về một tập con thu được (thực nghiệm cùng một tập trong vài chục giây sẽ trả về 71~104 kết quả khác nhau),
+ * vì vậy ở đây chỉ thực hiện gộp và sắp xếp, **không coi `hasMore` là "đã tải toàn bộ"**;
+ * văn bản trạng thái được quyết định thống nhất bởi `resolveDanmakuStatus`.
  */
 export function appendOfficialPage(feed, data) {
   if (!data || typeof data !== 'object' || typeof data.success !== 'boolean' || !Array.isArray(data.items)) throw new Error('Invalid official danmaku page');
@@ -116,14 +116,14 @@ export function appendOfficialPage(feed, data) {
 }
 
 /**
- * 按视频时间投放弹幕，并推进已在屏上的弹幕。
+ * Phân phối danmaku theo thời gian video, và đẩy tiếp các danmaku đang hiển thị trên màn hình.
  *
  * @param {object} state    `feed.animation`
- * @param {Array}  danmaku  按 time 升序的弹幕列表
- * @param {number} currentTime 视频当前播放位置（秒）
- * @param {number} elapsed  本帧推进的**媒体**时间（秒，已乘倍速）
+ * @param {Array}  danmaku  Danh sách danmaku sắp xếp tăng dần theo time
+ * @param {number} currentTime Vị trí phát hiện tại của video (giây)
+ * @param {number} elapsed  Thời gian media khung hình này đã chạy (giây, đã nhân tốc độ)
  * @param {object} options  `{ width, height, settings, reducedMotion, bottomInset }`
- * @returns {boolean} 是否需要重绘
+ * @returns {boolean} Có cần vẽ lại hay không
  */
 export function advanceTimedDanmaku(state, danmaku, currentTime, elapsed, options) {
   const { width, height, settings, reducedMotion } = options;
@@ -164,8 +164,8 @@ export function advanceTimedDanmaku(state, danmaku, currentTime, elapsed, option
   const laneFree = index => {
     const occupants = state.items.filter(item => item.lane === index);
     if (!occupants.length) return true;
-    // 允许同一道里多发：只要最后一条已经走出足够距离，新的一条就不会追尾。
-    // 上游评论滚动条用的是"这道有人就占着"，对真弹幕（一集上百条）会严重丢量。
+    // Cho phép phát nhiều mục trên cùng một làn: chỉ cần mục cuối cùng đã đi đủ xa, mục mới sẽ không bị đè lên mục trước.
+    // Thanh cuộn bình luận upstream dùng quy tắc "làn này có người thì chiếm giữ", đối với danmaku thật (hàng trăm mục mỗi tập) sẽ làm rơi rụng rất nhiều.
     const newest = occupants.reduce((a, b) => (a.x > b.x ? a : b));
     return newest.x + newest.width + LANE_HEAD_GAP <= width;
   };
@@ -185,9 +185,9 @@ export function advanceTimedDanmaku(state, danmaku, currentTime, elapsed, option
     if (state.cooldown > 0) break;
 
     const candidates = Array.from({ length: lanes }, (_, index) => index);
-    // 先复用已有行的安全空位，放不下再扩行，避免短弹幕被摊成整屏横向空档。
+    // Tái sử dụng vị trí trống an toàn của các hàng hiện có trước, không đủ chỗ mới mở thêm hàng, tránh danmaku ngắn bị rải thành khoảng trống ngang trên toàn màn hình.
     const lane = candidates.find(laneFree);
-    if (lane === undefined) break; // 保留 cursor，下一帧再试
+    if (lane === undefined) break; // Giữ lại con trỏ cursor, thử lại ở khung hình tiếp theo
     if (!timed) {
       if (!(delta > 0) || !list.length) break;
       // Nearby fresh supply takes priority; only quiet stretches need retired comments.
@@ -222,18 +222,18 @@ export function advanceTimedDanmaku(state, danmaku, currentTime, elapsed, option
 }
 
 /**
- * 唯一的结束状态出口。
+ * Điểm xuất trạng thái kết thúc duy nhất.
  *
- * 官方弹幕有好几条失败路径（超时、HTTP 错误、部分成功、缓存命中失败结果）。
- * 只要有一条路径自己拼状态文案，就会出现"源坏了却显示本集没有弹幕"这类事故。
- * 因此所有路径都必须调用这里，不在别处拼字符串。
+ * Danmaku chính thức có nhiều luồng thất bại (quá thời gian, lỗi HTTP, thành công một phần, kết quả thất bại từ bộ nhớ đệm).
+ * Chỉ cần một luồng tự ghép văn bản trạng thái thì sẽ xảy ra sự cố kiểu "nguồn hỏng nhưng lại hiển thị tập này không có danmaku".
+ * Vì vậy tất cả các luồng đều phải gọi hàm này, không tự ghép chuỗi ở nơi khác.
  */
 export function resolveDanmakuStatus({ source, supported, enabled, active, visible, error, loading, notice, loaded, count }) {
   if (!supported) return source === 'official' ? 'Chỉ nguồn Hồng Quả mới hỗ trợ danmaku' : 'Chỉ tập hiện tại nguồn Hồng Quả mới hỗ trợ bình luận danmaku';
   if (!enabled) return source === 'official' ? 'Bật sau đó hiển thị danmaku theo dòng thời gian video' : 'Bật sau đó hiển thị bình luận công khai của tập này';
   if (!active) return source === 'official' ? 'Phát tập này sau đó hiển thị danmaku' : 'Phát tập này sau đó hiển thị bình luận danmaku';
   if (!visible) return '';
-  // 失败优先于一切：宁可说"没取到"，也不能说成"没有弹幕"
+  // Thất bại ưu tiên hơn tất cả: thà báo "không lấy được" chứ không thể nói thành "không có danmaku"
   if (error) return error;
   if (loading) return 'Đang tải danmaku…';
   if (notice && !count) return notice;

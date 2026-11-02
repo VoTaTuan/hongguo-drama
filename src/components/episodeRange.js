@@ -11,7 +11,7 @@ export function parseEpisodeRange(value, total) {
     }
     for (let n = Math.max(1, Math.min(a, b)); n <= Math.min(total, Math.max(a, b)); n++) selected.add(n);
   }
-  if (!selected.size) throw new Error(`集数超出范围，请选择 1-${total} 集；原选择已保留。`);
+  if (!selected.size) throw new Error(`Số tập vượt quá phạm vi, vui lòng chọn từ 1-${total} tập; lựa chọn cũ đã được giữ nguyên.`);
   return selected;
 }
 

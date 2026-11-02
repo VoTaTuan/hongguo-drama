@@ -32,9 +32,22 @@ function mount(overrides = {}, propOverrides = {}) {
   const text = node => typeof node === 'string' || typeof node === 'number' ? String(node) : node?.children?.map(text).join('') || '';
   const flush = async () => { for (let i = 0; i < 8; i++) { await Promise.resolve(); render(); } };
   render();
-  return { api, calls, props, render, flush, find, text: () => text(tree), button: label => find(node => node.type === 'button' && text(node) === label),
+  const labelMap = {
+    '查找下一季': 'Tìm phần tiếp theo', '收起': 'Thu gọn', '重试': 'Thử lại', '重新查找': 'Tìm lại', '正在查找…': 'Đang tìm…'
+  };
+  return {
+    api, calls, props, render, flush, find, text: () => text(tree),
+    button: label => {
+      const vn = labelMap[label];
+      return find(node => node.type === 'button' && (text(node) === label || (vn && text(node) === vn)));
+    },
     result: () => find(node => node.type === 'button' && text(node).includes('春日来信第二季')),
-    query: async () => { await flush(); await find(node => node.type === 'button' && text(node) === '查找下一季').props.onClick(); await flush(); },
+    query: async () => {
+      await flush();
+      const btn = find(node => node.type === 'button' && (text(node) === '查找下一季' || text(node) === 'Tìm phần tiếp theo'));
+      await btn.props.onClick();
+      await flush();
+    },
     unmount: () => cleanups.forEach(cleanup => cleanup?.()),
   };
 }
@@ -45,7 +58,7 @@ test('next-season discovery is manual, labeled cautiously, and collapsible', asy
   assert.deepEqual(ui.calls, []); assert.ok(ui.button('查找下一季'));
   await ui.query();
   assert.deepEqual(ui.calls, [['find', 'A', { localOnly: true }], ['find', 'A', null]]);
-  assert.match(ui.text(), /可能的续作，请核对剧名/); assert.ok(ui.result());
+  assert.match(ui.text(), /(?:可能的续作，请核对剧名|Phần tiếp theo có thể có)/); assert.ok(ui.result());
   await ui.button('收起').props.onClick(); await ui.flush();
   assert.equal(ui.result(), undefined); assert.ok(ui.button('查找下一季'));
 });
@@ -72,10 +85,10 @@ test('other play failures remain visible and never resolve online', async () => 
 test('failed query can retry and an empty partial result does not claim no sequel exists', async () => {
   const ui = mount({ findSeriesSequels: async () => { throw new Error('网络断开'); } });
   await ui.query(); assert.match(ui.text(), /网络断开/); assert.ok(ui.button('重试'));
-  assert.match(ui.text(), /查询未完成/); assert.doesNotMatch(ui.text(), /暂未找到/);
+  assert.match(ui.text(), /(?:查询未完成|Tìm kiếm chưa hoàn tất|Một số kết quả chưa tải xong)/); assert.doesNotMatch(ui.text(), /(?:暂未找到|Chưa tìm thấy phần tiếp theo)/);
   ui.api.findSeriesSequels = async () => ({ success: true, results: [], partial: true });
   await ui.button('重试').props.onClick(); await ui.flush();
-  assert.doesNotMatch(ui.text(), /暂未找到/); assert.match(ui.text(), /查询未完成/); assert.doesNotMatch(ui.text(), /没有续作/);
+  assert.doesNotMatch(ui.text(), /(?:暂未找到|Chưa tìm thấy phần tiếp theo)/); assert.match(ui.text(), /(?:查询未完成|Tìm kiếm chưa hoàn tất|Một số kết quả chưa tải xong)/); assert.doesNotMatch(ui.text(), /(?:没有续作|không có phần tiếp theo)/i);
 });
 
 test('local candidates remain playable while remote discovery is pending or fails', async () => {
@@ -138,7 +151,7 @@ test('Player exposes the finder for its current series and passes page activity'
 
 test('successful empty query reports no result without claiming query failure', async () => {
   const ui = mount({ findSeriesSequels: async () => ({ success: true, results: [] }) });
-  await ui.query(); assert.match(ui.text(), /暂未找到/); assert.doesNotMatch(ui.text(), /查询未完成/);
+  await ui.query(); assert.match(ui.text(), /(?:暂未找到|Chưa tìm thấy phần tiếp theo)/); assert.doesNotMatch(ui.text(), /(?:查询未完成|Một số kết quả chưa tải xong)/);
 });
 
 test('a late first query cannot clear the retry timeout', async () => {
@@ -153,7 +166,7 @@ test('a late first query cannot clear the retry timeout', async () => {
   ui.button('查找下一季').props.onClick();
   await new Promise(resolve => setTimeout(resolve, 40));
   await ui.flush();
-  assert.match(ui.text(), /查询超时/);
+  assert.match(ui.text(), /(?:查询超时|Hết thời gian tìm kiếm)/);
 
   ui.button('重试').props.onClick();
   await new Promise(resolve => setTimeout(resolve, 5));
@@ -161,8 +174,8 @@ test('a late first query cannot clear the retry timeout', async () => {
   firstRemote.resolve({ success: true, results: [] });
   await new Promise(resolve => setTimeout(resolve, 40));
   await ui.flush();
-  assert.match(ui.text(), /查询超时/, 'retry must keep its own watchdog');
-  assert.doesNotMatch(ui.text(), /正在查找下一季/);
+  assert.match(ui.text(), /(?:查询超时|Hết thời gian tìm kiếm)/, 'retry must keep its own watchdog');
+  assert.doesNotMatch(ui.text(), /(?:正在查找下一季|Đang tìm phần tiếp theo)/);
   secondRemote.resolve({ success: true, results: [] });
   await ui.flush();
 });
@@ -174,10 +187,10 @@ test('a hanging query times out with retry instead of spinning forever', async (
   ui.button('查找下一季').props.onClick();
   await new Promise(resolve => setTimeout(resolve, 40));
   await ui.flush();
-  assert.match(ui.text(), /查询超时/);
+  assert.match(ui.text(), /(?:查询超时|Hết thời gian tìm kiếm)/);
   assert.ok(ui.button('重试'));
   ui.api.findSeriesSequels = async () => ({ success: true, results: [] });
   await ui.button('重试').props.onClick();
   await ui.flush();
-  assert.doesNotMatch(ui.text(), /查询超时/);
+  assert.doesNotMatch(ui.text(), /(?:查询超时|Hết thời gian tìm kiếm)/);
 });

@@ -17,7 +17,7 @@ test('builtin source preferences persist without changing custom sources or othe
   assert.deepEqual(getMediaSources(both).map(s => s.id), ['hongguo', 'custom:test']);
   assert.deepEqual(getMediaSources(setBuiltinSourceEnabled(both, 'xifan', true)).map(s => s.id), ['hongguo', 'xifan', 'custom:test']);
   assert.equal(getMediaSources({ builtin_sources: { hongguo: false } })[0].id, 'hongguo');
-  assert.throws(() => setBuiltinSourceEnabled(settings, 'hongguo', false), /红果/);
+  assert.throws(() => setBuiltinSourceEnabled(settings, 'hongguo', false), /(?:红果|Hồng Quả)/);
   assert.throws(() => setBuiltinSourceEnabled(settings, 'custom:test', false));
   assert.throws(() => setBuiltinSourceEnabled(settings, 'xifan', 'false'));
 });
@@ -53,7 +53,7 @@ test('IPC persists source changes, notifies every window, and blocks disabled se
     for (const name of ['browse-list', 'search-series', 'search-series-more']) {
       const result = name === 'browse-list' ? await handlers[name]({}, { source: 'xifan' }) : await handlers[name]({}, '测试', { source: 'xifan', page: 2 });
       assert.equal(result.success, false);
-      assert.match(result.error, /来源已关闭/);
+      assert.match(result.error, /(?:来源已关闭|Nguồn này đã tắt)/);
     }
     assert.equal((await handlers['set-builtin-source-enabled']({}, 'xifan', true)).success, true);
     assert.deepEqual((await handlers['get-media-sources']()).sources.map(s => s.id), ['hongguo', 'xifan', 'hema']);

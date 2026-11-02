@@ -85,7 +85,7 @@ assert.ok(p.videoBitrate >= 650000 && p.videoBitrate <= 2000000, `source-aware b
 assert.equal(p.fps, 25, 'do not invent 30 fps when source has 25 fps');
 assert.ok(p.estimatedBytes > 0 && p.estimatedBytes < 15000000);
 assert.equal(p.totalDuration, 40);
-assert.throws(() => plan([info({}, {}, 0)]), /时长|duration/);
+assert.throws(() => plan([info({}, {}, 0)]), /(?:时长|duration|thời lượng)/i);
 const uiSource = fs.readFileSync(path.resolve(__dirname, '../src/components/DownloadManager.jsx'), 'utf8');
 const sortingSource = uiSource.slice(uiSource.indexOf('const STATUS_ORDER'), uiSource.indexOf('function fmtBytes'));
 const sortTasks = require('node:vm').runInNewContext(sortingSource + '; sortTasks');

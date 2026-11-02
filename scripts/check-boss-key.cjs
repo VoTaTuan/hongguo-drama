@@ -29,7 +29,7 @@ async function checkRecorder() {
   key('j', 'KeyJ', { ctrlKey: true, shiftKey: true });
   assert.equal(recorder().children.join(''), 'Ctrl+Shift+J'); assert.equal(recorder().props['aria-pressed'], false);
   assert.equal(saved.length, 0, 'recording must wait for explicit save');
-  await find(tree, node => node.props['aria-label'] === '保存老板键').props.onClick(); render();
+  await find(tree, node => ['保存老板键', 'Lưu phím Boss'].includes(node.props['aria-label'])).props.onClick(); render();
   assert.equal(saved[0].accelerator, 'Control+Shift+J');
   recorder().props.onClick(); render(); key('Backspace', 'Backspace');
   assert.equal(recorder().props['aria-pressed'], true, 'delete must neither edit nor accept a shortcut');
@@ -115,7 +115,7 @@ function fixture() {
   c.restore(); await Promise.resolve(); assert(panel.state.visible && !f.main.state.visible, 'stealth restores its panel only');
 
   f.reserved.set('Control+Shift+J', () => {});
-  assert.throws(() => c.set({ enabled: true, accelerator: 'Ctrl+Shift+J' }), /占用/);
+  assert.throws(() => c.set({ enabled: true, accelerator: 'Ctrl+Shift+J' }), /(?:占用|chiếm dụng)/);
   assert(c.getState().registered && f.reserved.has(defaultAccelerator));
   f.failSave(true);
   assert.throws(() => c.set({ enabled: true, accelerator: 'Ctrl+Shift+K' }), /disk full/);

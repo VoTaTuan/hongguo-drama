@@ -55,8 +55,8 @@ const checks = [
       const f = load('hongguo.js', { './app-source': app });
       const result = await f.fetchPlayUrlSingle('11', '1', { quality });
       assert.equal(result.sources[0].code, 'QUALITY_UNAVAILABLE');
-      assert(result.error.includes(`满足 ${quality}`));
-      assert(result.error.includes('未降级'));
+      assert(result.error.includes(`满足 ${quality}`) || result.error.includes(`thỏa mãn ${quality}`));
+      assert(result.error.includes('未降级') || result.error.includes('chưa hạ cấp'));
     }
     const app = appFixture({ incompatible: { main_url: media('av1'), codec_type: 'av1', width: 1080, height: 1920 } });
     await assert.rejects(app.fetchAppPlayUrl('11'), error => error.code === 'NO_COMPATIBLE_SOURCE');
@@ -76,15 +76,15 @@ const checks = [
   }],
   ['Registration failures retain safe details and remain retryable only for transient causes', async () => {
     for (const [failure, expected, detail] of [
-      [{ code: 'ECONNRESET' }, 'NETWORK_ERROR', '网络连接失败'],
-      [{ code: 'ETIMEDOUT' }, 'TIMEOUT', '请求超时'],
-      [{ status: 503 }, 'HTTP_503', 'HTTP 503'],
-      [{ status: 403 }, 'HTTP_403', 'HTTP 403'],
-      [{ code: 'EMPTY_RESPONSE' }, 'DEVICE_REGISTRATION_FAILED', '空响应'],
-      [{ code: 'INVALID_RESPONSE' }, 'DEVICE_REGISTRATION_FAILED', '有效设备编号'],
-      [{ code: 'BUSINESS_REJECTED' }, 'DEVICE_REGISTRATION_FAILED', '拒绝注册'],
-      [{ code: 'SECURITY_BLOCKED' }, 'DEVICE_REGISTRATION_FAILED', '安全校验'],
-      [{ code: 'secret' }, 'DEVICE_REGISTRATION_FAILED', '10 秒后重试'],
+      [{ code: 'ECONNRESET' }, 'NETWORK_ERROR', ['网络连接失败', 'Kết nối mạng thất bại']],
+      [{ code: 'ETIMEDOUT' }, 'TIMEOUT', ['请求超时', 'Yêu cầu quá thời gian']],
+      [{ status: 503 }, 'HTTP_503', ['HTTP 503']],
+      [{ status: 403 }, 'HTTP_403', ['HTTP 403']],
+      [{ code: 'EMPTY_RESPONSE' }, 'DEVICE_REGISTRATION_FAILED', ['空响应', 'phản hồi rỗng']],
+      [{ code: 'INVALID_RESPONSE' }, 'DEVICE_REGISTRATION_FAILED', ['有效设备编号', 'mã thiết bị hợp lệ']],
+      [{ code: 'BUSINESS_REJECTED' }, 'DEVICE_REGISTRATION_FAILED', ['拒绝注册', 'từ chối đăng ký']],
+      [{ code: 'SECURITY_BLOCKED' }, 'DEVICE_REGISTRATION_FAILED', ['安全校验', 'kiểm tra an toàn']],
+      [{ code: 'secret' }, 'DEVICE_REGISTRATION_FAILED', ['10 秒后重试', '10 giây']],
     ]) {
       const device = load('playback-device.js', {});
       const getPlaybackDevice = async request => device.getPlaybackDevice(async (...args) => {
@@ -100,8 +100,9 @@ const checks = [
       const f = load('hongguo.js', { './app-source': routedApp });
       const result = await f.fetchPlayUrlSingle('11', '1', { quality: '720p' });
       assert.equal(result.sources[0].code, failure.code === 'secret' ? 'NETWORK_ERROR' : expected);
-      assert.match(result.error, /匿名播放设备注册失败/);
-      assert.ok(result.error.includes(detail));
+      assert.match(result.error, /(?:匿名播放设备注册失败|Đăng ký thiết bị phát ẩn danh thất bại)/i);
+      const expectedDetails = Array.isArray(detail) ? detail : [detail];
+      assert.ok(expectedDetails.some(d => result.error.includes(d)));
       assert.doesNotMatch(JSON.stringify(result), /secret|signed\.invalid|private/);
     }
     for (const registrationFailure of ['secret', 'constructor', 'toString', '__proto__']) {
@@ -109,7 +110,8 @@ const checks = [
         throw Object.assign(new Error('secret'), { code: 'DEVICE_REGISTRATION_FAILED', registrationFailure });
       } } });
       const result = await f.fetchPlayUrlSingle('11', '1', { quality: '720p' });
-      assert.equal(result.sources[0].message, '匿名播放设备注册失败，请检查网络，10 秒后重试');
+      assert.ok(result.sources[0].message === '匿名播放设备注册失败，请检查网络，10 秒后重试'
+        || result.sources[0].message === 'Đăng ký thiết bị phát ẩn danh thất bại, vui lòng kiểm tra mạng, thử lại sau 10 giây');
       assert.doesNotMatch(JSON.stringify(result), /secret|function|\[object/);
     }
   }],
@@ -253,8 +255,8 @@ const checks = [
       },
     });
     await assert.rejects(f.fetchEpisodeList('918273646'), error => {
-      assert.match(error.message, /加载超时或连接中断/);
-      assert.match(error.message, /0 字节/);
+      assert.match(error.message, /(?:加载超时或连接中断|Tải quá thời gian hoặc kết nối bị gián đoạn)/i);
+      assert.match(error.message, /(?:0 字节|0 byte)/i);
       assert.doesNotMatch(error.message, /aborted/);
       return true;
     });

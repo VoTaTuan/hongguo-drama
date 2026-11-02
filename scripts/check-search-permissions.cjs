@@ -20,7 +20,8 @@ async function checkWindows() {
   const context = vm.createContext({ BrowserWindow: Window, SEARCH_SITE: 'https://hongguoduanju.com',
     SEARCH_TIMEOUT_MS: 20, SEARCH_UA: '', SNIFFER_JS: 'cards', BROWSE_META_JS: 'meta',
     setTimeout, clearTimeout, URL, console: { log() {}, warn() {} } });
-  vm.runInContext(source.slice(source.indexOf('function sourcePageUrl('), source.indexOf('/**\n * 通用卡片')), context);
+  const cardEnd = source.indexOf('/**\n * 通用卡片') !== -1 ? source.indexOf('/**\n * 通用卡片') : source.indexOf('/**\n * Kịch bản trích xuất thẻ chung');
+  vm.runInContext(source.slice(source.indexOf('function sourcePageUrl('), cardEnd), context);
   vm.runInContext(source.slice(source.indexOf('async function runSniffOnUrl('), source.indexOf('async function runSearchSniff(')), context);
   const visible = context.getSearchWindow(); await visible.loadURL('https://hongguoduanju.com/detail?series_id=1234567');
   assert.equal((await context.runSniffOnUrl('https://hongguoduanju.com/search/fixture', 'Search')).success, true);
@@ -29,7 +30,7 @@ async function checkWindows() {
   const hidden = context.getSearchWindow(true); hidden.loadURL = () => new Promise(() => {});
   const pending = context.runSniffOnUrl('https://hongguoduanju.com/search/stalled', 'Search');
   await visible.loadURL('https://hongguoduanju.com/category/comic');
-  await assert.rejects(pending, /超时/);
+  await assert.rejects(pending, /(?:超时|quá thời gian)/i);
   assert.equal(visible.destroyed, false, 'timeout destroyed the user window');
   assert.equal(hidden.destroyed, true);
   assert.notEqual(context.getSearchWindow(true), hidden);

@@ -7,7 +7,7 @@ const CATEGORIES = new Set(['real-drama', 'comic-drama', 'ai-drama', 'comic']);
 const RANKINGS = new Set(['hot-drama', 'hot-real-drama', 'hot-comic-drama', 'hot-ai-drama']);
 const TIMEOUT_MS = 10000;
 const MAX_PAGE_BYTES = 8 * 1024 * 1024;
-// 分类页与热播页共用同一份目录缓存；30 秒过短会让每次切页都直连来源。
+// Trang phân loại và trang phát sóng thịnh hành dùng chung bộ nhớ đệm danh mục; 30 giây là quá ngắn khiến mỗi lần chuyển trang đều kết nối trực tiếp đến nguồn.
 const CACHE_MS = 120000;
 const cache = new Map();
 const pending = new Map();
@@ -209,7 +209,7 @@ async function fetchCatalogPage(url, signal, proxyLogin, allowTrustedDns, parse)
       fetchCatalogPageWithTrustedDns(url, controller.signal).then(parse),
     ]);
   } catch (aggregate) {
-    throw aggregate.errors?.find(error => /HTTP \d+|超时/.test(error.message)) || aggregate.errors?.[0] || aggregate;
+    throw aggregate.errors?.find(error => /HTTP \d+|超时|quá thời gian|hết thời gian/i.test(error.message)) || aggregate.errors?.[0] || aggregate;
   } finally {
     signal.removeEventListener('abort', abort);
     controller.abort();
@@ -239,9 +239,9 @@ async function browseList(options = {}, proxyLogin) {
       if (cache.size > 32) cache.delete(cache.keys().next().value);
       return data;
     } catch (error) {
-      const message = controller.signal.aborted || error.code === 'ECONNABORTED' ? '目录加载超时，请重试'
+      const message = controller.signal.aborted || error.code === 'ECONNABORTED' ? 'Tải danh mục quá thời gian, vui lòng thử lại'
         : /ECONNRESET|ERR_CONNECTION_RESET/.test(`${error.code} ${error.message}`)
-          ? '红果连接被中断，请重试或切换来源（ECONNRESET）' : error.message;
+          ? 'Kết nối Hồng Quả bị ngắt quãng, vui lòng thử lại hoặc đổi nguồn (ECONNRESET)' : error.message;
       return { success: false, error: message, sourceUrl: url };
     } finally {
       clearTimeout(timer);

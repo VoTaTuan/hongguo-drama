@@ -10,9 +10,9 @@ const API = "https://api5-normal-sinfonlineb.fqnovel.com";
 const UA = "com.phoenix.read/71532 (Linux; U; Android 9; SM-N9860; Build/PQ3A.190705.10241111;tt-ok/3.12.13.20)";
 const VIDEO_REFERER = "https://novelquickapp.com/";
 
-// ===== 优先使用官网网页版，App 接口保留为回退 =====
-// 官网 player 页是服务端渲染的：完整分集 vid 列表与可直接下载的 MP4 直链
-// 都内嵌在 HTML 里，无需任何签名。走的是官网对普通用户开放的同一层。
+// ===== Ưu tiên sử dụng bản web chính thức, API App giữ lại làm dự phòng =====
+// Trang player chính thức được render phía server: danh sách vid đầy đủ và liên kết MP4 tải trực tiếp
+// đều được nhúng trong HTML, không cần bất kỳ chữ ký nào. Đi qua cùng lớp mở cho người dùng thông thường.
 const SITE_ORIGIN = "https://hongguoduanju.com";
 const WEB_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 const WEB_REFERER = SITE_ORIGIN + "/";
@@ -84,20 +84,20 @@ const MODEL_BIZ_PARAM = {
 };
 
 /**
- * API 调用封装
+ * Đóng gói gọi API
  */
 async function apiCall(apiPath, body, retries = 3, timeout = 25000, deadline = 0) {
   const q = { ...COMMON_QUERY, _rticket: Date.now().toString() };
   for (let i = 0; i < retries; i++) {
     const remaining = deadline ? deadline - Date.now() : timeout;
     if (remaining <= 0) throw new Error('Yêu cầu quá thời gian');
-    const signal = {}; // 供错误信息回溯（HTTP 状态 / 字节数 / CDN logid）
+    const signal = {}; // Dùng để truy vết thông tin lỗi (trạng thái HTTP / số byte / CDN logid)
     try {
       const res = await axios.post(API + apiPath, body, {
         params: q,
         headers: HEADERS,
         timeout: Math.min(timeout, remaining),
-        // 200 + 空 body 时 axios 会解析成 ''，这里统一按原始字节处理便于判断
+        // Khi 200 + body rỗng, axios sẽ phân tích thành '', ở đây thống nhất xử lý theo byte gốc để dễ phán đoán
         responseType: 'arraybuffer',
         transformResponse: [(d) => d],
       });
@@ -109,7 +109,7 @@ async function apiCall(apiPath, body, retries = 3, timeout = 25000, deadline = 0
         throw new Error(`HTTP ${res.status}`);
       }
       if (buf.length === 0) {
-        // 服务端返回 200 但无任何内容：网关在做业务处理前就丢弃了请求
+        // Phía server trả về 200 nhưng không có nội dung: cổng gateway đã loại bỏ yêu cầu trước khi xử lý nghiệp vụ
         const err = new Error(
           `API trả về phản hồi rỗng (HTTP 200, 0 byte)${signal.logid ? ' logid=' + signal.logid : ''}`
         );
@@ -147,7 +147,7 @@ async function apiCall(apiPath, body, retries = 3, timeout = 25000, deadline = 0
   }
 }
 
-// ===== 官网网页版数据源实现 =====
+// ===== Triển khai nguồn dữ liệu trang web chính thức =====
 
 const responseCache = new Map();
 const pendingRequests = new Map();
@@ -160,7 +160,7 @@ function markWebMediaFailure(playInfo) {
   if (failedWebMedia.size > 128) failedWebMedia.delete(failedWebMedia.keys().next().value);
 }
 
-/** 仅保留短期成功结果；重复点击共享请求，失败后立即允许重试。 */
+/** Chỉ giữ lại kết quả thành công ngắn hạn; nhấp lặp lại chia sẻ yêu cầu, sau khi thất bại cho phép thử lại ngay. */
 async function cachedRequest(key, ttl, load, { force = false } = {}) {
   const cached = responseCache.get(key);
   if (!force && cached && cached.expires > Date.now()) return cached.value;
@@ -180,7 +180,7 @@ async function cachedRequest(key, ttl, load, { force = false } = {}) {
   return request;
 }
 
-/** MP4 直链：去掉 HTML 转义并剥掉 Range 头，让 CDN 回整段 */
+/** MP4 liên kết trực tiếp: loại bỏ escape HTML và lược bỏ header Range để CDN trả về toàn đoạn */
 function normalizeVideoUrl(raw) {
   return String(raw || '')
     .replace(/\\u002F/g, '/')
@@ -190,7 +190,7 @@ function normalizeVideoUrl(raw) {
     .replace(/[?&]$/, '');
 }
 
-/** 拉取官网页面 HTML */
+/** Lấy HTML trang web chính thức */
 async function fetchSiteHtml(url, timeout = 30000, signal, { trustedOfficialDns = false } = {}) {
   let guarded = {};
   if (trustedOfficialDns) {
@@ -217,8 +217,8 @@ async function fetchSiteHtml(url, timeout = 30000, signal, { trustedOfficialDns 
 }
 
 /**
- * 从官网 player 页内嵌 JSON 取完整分集列表
- * vid_list 按下标即集数顺序（下标 i → 第 i+1 集）
+ * Lấy danh sách phân tập đầy đủ từ JSON nhúng trong trang player chính thức
+ * vid_list theo chỉ số chính là thứ tự tập (chỉ số i → Tập i+1)
  */
 function parseEpisodeListHtml(html, seriesId) {
   const router = require('./catalog').readRouterData(html);
@@ -262,15 +262,15 @@ function parseEpisodeListHtml(html, seriesId) {
     total: episodes.length,
     web_accessible_episodes: webAccessibleEpisodes,
     episodes,
-    source: 'web', // 标记来源，便于排查
+    source: 'web', // Đánh dấu nguồn, thuận tiện điều tra lỗi
   };
 }
 
 /**
- * 从官网取单集可直接下载的 MP4 直链
- * 官网页里与当前分集绑定的 VideoObject.contentUrl 是明文 MP4，无 CENC 加密，
- * 因此不需要 spade_a / 解密这一步。
- * sid 已知时用 /player/{sid}/{vid}；未知时退回 /player/_/{vid} 再自行解析。
+ * Lấy liên kết MP4 có thể tải trực tiếp của từng tập từ trang web chính thức
+ * VideoObject.contentUrl liên kết với tập hiện tại trong trang web là MP4 dạng văn bản rõ, không mã hóa CENC,
+ * do đó không cần bước spade_a / giải mã.
+ * Khi đã biết sid dùng /player/{sid}/{vid}; khi chưa biết quay về /player/_/{vid} rồi tự phân tích.
  */
 async function fetchPlayUrlFromWeb(vid, sid, onFailure) {
   const candidates = [];
@@ -318,13 +318,13 @@ async function fetchPlayUrlFromWeb(vid, sid, onFailure) {
       lastErr = e;
     }
   }
-  if (lastErr) console.warn('[Web] 取播放直链失败:', sourceFailure('web', lastErr).message);
+  if (lastErr) console.warn('[Web] Lấy liên kết phát trực tiếp thất bại:', sourceFailure('web', lastErr).message);
   onFailure?.(lastErr);
   return null;
 }
 
 /**
- * 分享链接 -> series_id
+ * Liên kết chia sẻ -> series_id
  */
 function shareHttpUrl(value, base) {
   // Validate before Axios or URL parsing: network timeouts cannot stop synchronous data: parsing.
@@ -341,7 +341,7 @@ function shareHttpUrl(value, base) {
   return url.href;
 }
 
-/** 直接从分享 URL 里取剧集编号；取到就不需要再发网络请求。 */
+/** Trích xuất mã phim trực tiếp từ URL chia sẻ; nếu lấy được thì không cần gửi yêu cầu mạng nữa. */
 function seriesIdFromShareUrl(value) {
   let url;
   try { url = new URL(value); } catch (_) { return ''; }
@@ -355,7 +355,7 @@ function seriesIdFromShareUrl(value) {
       const raw = decodeURIComponent(scheme);
       const match = raw.match(/"video_id"\s*:\s*"(\d{1,30})"/);
       if (match) return match[1];
-    } catch (_) { /* 可选参数损坏时继续走页面解析 */ }
+    } catch (_) { /* Khi tham số tùy chọn bị hỏng thì tiếp tục phân tích trang */ }
   }
   return '';
 }
@@ -410,8 +410,8 @@ async function resolveSeriesId(shareUrl) {
     }
   } catch (error) {
     const reason = controller.signal.aborted
-      ? '分享链接加载超时，请重试'
-      : `分享链接加载失败：${error.message || '请检查链接后重试'}`;
+      ? 'Tải liên kết chia sẻ quá thời gian, vui lòng thử lại'
+      : `Tải liên kết chia sẻ thất bại: ${error.message || 'Vui lòng kiểm tra liên kết rồi thử lại'}`;
     throw new Error(reason);
   } finally { clearTimeout(timer); }
 
@@ -424,7 +424,7 @@ async function resolveSeriesId(shareUrl) {
 }
 
 /**
- * 获取全集剧集列表
+ * Lấy danh sách tập phim đầy đủ
  */
 async function fetchEpisodeList(seriesId, options = {}) {
   if (String(seriesId).startsWith('custom:')) return require('./custom-source').fetchEpisodeList(seriesId);
@@ -507,7 +507,7 @@ async function fetchEpisodeListFresh(seriesId, { deadline = 0 } = {}) {
     throw new Error(`Lấy danh sách tập thất bại: Nguồn trang web chính thức (${webError.message}), API dự phòng (${e.message})`);
   }
   if (!j || j.code !== 0) {
-    throw new Error("detail API 失败: " + JSON.stringify(j || {}).slice(0, 200));
+    throw new Error("API detail thất bại: " + JSON.stringify(j || {}).slice(0, 200));
   }
   const d = j.data || {};
   const requested = String(seriesId);
@@ -518,7 +518,7 @@ async function fetchEpisodeListFresh(seriesId, { deadline = 0 } = {}) {
   }
   const vd = d[sid]?.video_data || {};
   if (vd.series_id && String(vd.series_id) !== sid) {
-    throw new Error("备用接口返回的剧集与请求不一致");
+    throw new Error("Giao diện dự phòng trả về phim không khớp với yêu cầu");
   }
   const vl = vd.video_list || [];
   if (vl.some(item => item?.series_id && String(item.series_id) !== sid)) {
@@ -544,8 +544,8 @@ async function fetchEpisodeListFresh(seriesId, { deadline = 0 } = {}) {
 }
 
 /**
- * 单条视频流的清晰度评分
- * 返回 { defNum, pixels, bitrate }，数值越大越清晰
+ * Đánh giá độ nét của một luồng video
+ * Trả về { defNum, pixels, bitrate }, giá trị càng lớn càng nét
  */
 function streamScore(v) {
   const meta = v.video_meta || {};
@@ -566,8 +566,8 @@ function streamScore(v) {
 }
 
 /**
- * 解析单个 video_model JSON
- * 选流优先级：H.264 兼容性 > 短边分辨率（无尺寸时用标签） > 像素 > 码率
+ * Phân tích JSON video_model đơn lẻ
+ * Thứ tự ưu tiên chọn luồng: Độ tương thích H.264 > Độ phân giải cạnh ngắn (dùng nhãn khi không có kích thước) > Pixel > Tốc độ bit (bitrate)
  */
 function parseModelVideo(vm) {
   if (typeof vm !== 'string') return [null, null, null];
@@ -583,9 +583,9 @@ function parseModelVideo(vm) {
     if (['h265', 'h265_hvc1', 'hevc', 'hvc1', 'hev1', 'bytevc1'].includes(codec)) return 1;
     return 2;
   };
-  // 比较两条流：返回 >0 表示 a 更适合播放
+  // So sánh hai luồng: trả về >0 biểu thị a thích hợp phát hơn
   const cmp = (a, b) => {
-    if (a.codecRank !== b.codecRank) return b.codecRank - a.codecRank; // rank 越小越好
+    if (a.codecRank !== b.codecRank) return b.codecRank - a.codecRank; // rank càng nhỏ càng tốt
     if (a.defNum !== b.defNum) return a.defNum - b.defNum;
     if (a.pixels !== b.pixels) return a.pixels - b.pixels;
     return a.bitrate - b.bitrate;
@@ -616,7 +616,7 @@ function parseModelVideo(vm) {
 }
 
 /**
- * 获取单集播放直链与 spade_a 加密 key
+ * Lấy liên kết phát trực tiếp và khóa mã hóa spade_a của từng tập
  */
 async function fetchPlayUrlSingle(vid, sid, options = {}) {
   try {
@@ -646,8 +646,8 @@ function sourceFailure(source, error) {
   const code = String(error?.code || '');
   if (code === 'DEVICE_REGISTRATION_FAILED') {
     const reason = String(error.registrationFailure || '');
-    const descriptions = { TIMEOUT: '请求超时', NETWORK_ERROR: '网络连接失败', EMPTY_RESPONSE: '上游返回空响应',
-      INVALID_RESPONSE: '上游未返回有效设备编号', BUSINESS_REJECTED: '上游拒绝注册', SECURITY_BLOCKED: '注册请求被安全校验阻止' };
+    const descriptions = { TIMEOUT: 'Yêu cầu quá thời gian', NETWORK_ERROR: 'Kết nối mạng thất bại', EMPTY_RESPONSE: 'Máy chủ phản hồi rỗng',
+      INVALID_RESPONSE: 'Máy chủ không trả về mã thiết bị hợp lệ', BUSINESS_REJECTED: 'Máy chủ từ chối đăng ký', SECURITY_BLOCKED: 'Yêu cầu đăng ký bị chặn bởi kiểm tra an toàn' };
     const detail = Object.hasOwn(descriptions, reason) ? descriptions[reason]
       : /^HTTP_[3-5]\d{2}$/.test(reason) ? `HTTP ${reason.slice(5)}` : '';
     return { source, code: /^(?:TIMEOUT|NETWORK_ERROR|HTTP_[3-5]\d{2})$/.test(reason) ? reason : code,
@@ -656,24 +656,24 @@ function sourceFailure(source, error) {
   const status = Number(error?.status || error?.response?.status || message.match(/HTTP\s+(\d{3})/)?.[1]);
   if (status >= 300 && status <= 599) return { source, code: `HTTP_${status}`, message: `Yêu cầu thất bại (HTTP ${status})` };
   if (code === 'SECURITY_BLOCKED' || code.startsWith('ERR_WEB_MEDIA_')) return { source, code: 'SECURITY_BLOCKED', message: 'Địa chỉ nguồn phim bị chặn bởi kiểm tra an toàn' };
-  if (code === 'EMPTY_RESPONSE' || error?.emptyResponse || /接口返回空响应/.test(message)) {
+  if (code === 'EMPTY_RESPONSE' || error?.emptyResponse || /接口返回空响应|phản hồi rỗng/i.test(message)) {
     return { source, code: 'EMPTY_RESPONSE', message: 'API phát phản hồi rỗng, có thể do chữ ký hoặc xác thực thiết bị' };
   }
-  if (['ECONNABORTED', 'ETIMEDOUT', 'TIMEOUT'].includes(code) || /超时|timeout/i.test(message)) return { source, code: 'TIMEOUT', message: 'Yêu cầu quá thời gian' };
+  if (['ECONNABORTED', 'ETIMEDOUT', 'TIMEOUT'].includes(code) || /超时|timeout|quá thời gian/i.test(message)) return { source, code: 'TIMEOUT', message: 'Yêu cầu quá thời gian' };
   if (['ENOTFOUND', 'EAI_AGAIN', 'ECONNRESET', 'ECONNREFUSED', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE', 'ERR_NETWORK', 'ERR_CANCELED'].includes(code)) return { source, code: 'NETWORK_ERROR', message: 'Kết nối mạng thất bại, vui lòng thử lại sau' };
   if (code === 'PREVIEW_ONLY') return { source, code, message: 'Trang web chỉ cung cấp bản xem trước, không phải nguồn phim đầy đủ' };
   if (code === 'QUALITY_UNAVAILABLE') return { source, code, message: ['720p', '1080p'].includes(error?.quality)
     ? `Tập này tạm thời không có nguồn H.264/HEVC kích thước xác định và thỏa mãn ${error.quality}, chưa hạ cấp` : 'Chưa lấy được nguồn phim thỏa mãn độ phân giải đã chọn, chưa hạ cấp' };
   if (code === 'NO_COMPATIBLE_SOURCE') return { source, code, message: 'Tập này tạm thời chưa cung cấp nguồn phim H.264/HEVC tương thích' };
   if (code === 'BUSINESS_REJECTED') return { source, code, message: 'API tạm thời từ chối yêu cầu lần này' };
-  if (code === 'MISSING_MODEL' || /未返回目录数据/.test(message)) return { source, code: 'MISSING_MODEL', message: 'API không trả về mô hình nguồn phim của tập này' };
-  if (code === 'INVALID_RESPONSE' || /空响应|有效数据|目录数据不完整|JSON/.test(message)) return { source, code: 'INVALID_RESPONSE', message: 'Dữ liệu nguồn phim không thể phân tích' };
+  if (code === 'MISSING_MODEL' || /未返回目录数据|không trả về dữ liệu danh mục/i.test(message)) return { source, code: 'MISSING_MODEL', message: 'API không trả về mô hình nguồn phim của tập này' };
+  if (code === 'INVALID_RESPONSE' || /空响应|有效数据|目录数据不完整|JSON|không thể phân tích/i.test(message)) return { source, code: 'INVALID_RESPONSE', message: 'Dữ liệu nguồn phim không thể phân tích' };
   return { source, code: 'NO_PLAYABLE_SOURCE', message: 'Tạm thời chưa lấy được nguồn phim khả dụng' };
 }
 
 function unavailableSources(sources, quality = 'auto') {
-  const names = { web: '网页', app: 'App', api: '旧接口' };
-  const error = new Error(`本集取源失败${quality === 'auto' ? '' : `（所选清晰度 ${quality}，未降级）`}：${sources.map(item => `${names[item.source]}：${item.message}`).join('；')}。请重试或在官方 App 确认可播情况。`);
+  const names = { web: 'Trang web', app: 'App', api: 'API cũ' };
+  const error = new Error(`Lấy nguồn tập này thất bại${quality === 'auto' ? '' : ` (độ nét đã chọn ${quality}, chưa hạ cấp)`}: ${sources.map(item => `${names[item.source] || item.source}: ${item.message}`).join('; ')}. Vui lòng thử lại hoặc kiểm tra khả năng phát trong App chính thức.`);
   error.code = 'SOURCE_UNAVAILABLE';
   error.sources = sources;
   return error;
@@ -713,7 +713,7 @@ async function fetchPlayUrlFresh(vid, sid, skipWeb = false) {
 }
 
 /**
- * FFmpeg 兼容 Base64 解码
+ * Giải mã Base64 tương thích FFmpeg
  */
 function avBase64Decode(s) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -756,7 +756,7 @@ function avBase64Decode(s) {
 }
 
 /**
- * spade_a -> 16 字节 AES Key
+ * spade_a -> Khóa AES 16 byte
  */
 function deriveKey(spadeA) {
   if (!spadeA) return null;
@@ -809,7 +809,7 @@ function deriveKey(spadeA) {
 }
 
 /**
- * AES-128-ECB 加密
+ * Mã hóa AES-128-ECB
  */
 function aes128EcbEncrypt(key16, data) {
   const cipher = crypto.createCipheriv('aes-128-ecb', key16, null);
@@ -818,7 +818,7 @@ function aes128EcbEncrypt(key16, data) {
 }
 
 /**
- * CENC-AES-CTR 解密 sample
+ * Giải mã sample CENC-AES-CTR
  */
 function decryptSample(key, nonce, cipher) {
   if (!cipher || cipher.length === 0) return Buffer.alloc(0);
@@ -837,7 +837,7 @@ function decryptSample(key, nonce, cipher) {
 }
 
 /**
- * MP4 Box 结构解析
+ * Phân tích cấu trúc MP4 Box
  */
 function parseBoxes(data, start, end) {
   const boxes = [];
@@ -864,7 +864,7 @@ function parseBoxes(data, start, end) {
 }
 
 /**
- * 重建 moov box
+ * Tái cấu trúc moov box
  */
 function rebuildMoov(data, moovOff, moovSize, top) {
   const moovBox = top.find(b => b.typ === 'moov');
@@ -986,9 +986,9 @@ function rebuildMoov(data, moovOff, moovSize, top) {
 }
 
 /**
- * 解密 CENC-AES-CTR 加密的 MP4（内存版）
- * 输入一个完整的加密 MP4 Buffer，返回解密并重建过 moov 的 Buffer。
- * 注意：会就地修改传入的 Buffer（调用方应独占它）。
+ * Giải mã MP4 mã hóa CENC-AES-CTR (bản trong bộ nhớ)
+ * Đầu vào là một Buffer MP4 mã hóa hoàn chỉnh, trả về Buffer đã giải mã và tái cấu trúc moov.
+ * Chú ý: Sẽ sửa đổi trực tiếp Buffer truyền vào (bên gọi phải độc quyền sở hữu nó).
  */
 function decryptMp4Buffer(data, key) {
   const total = data.length;
@@ -1118,7 +1118,7 @@ function decryptMp4Buffer(data, key) {
 }
 
 /**
- * 解密 MP4 文件并保存
+ * Giải mã tệp MP4 và lưu
  */
 function decryptMp4File(srcPath, dstPath, key) {
   const data = fs.readFileSync(srcPath);

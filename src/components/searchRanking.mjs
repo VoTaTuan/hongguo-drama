@@ -1,6 +1,6 @@
 /**
- * 搜索结果的标题归一化与相关性排序。
- * 全角/半角、空格和标点不影响匹配（例如“言出法随，诸天万界”与“言出法随 诸天万界”）。
+ * Chuẩn hóa tiêu đề và sắp xếp độ liên quan của kết quả tìm kiếm.
+ * Ký tự toàn chiều rộng/bán chiều rộng, khoảng trắng và dấu câu không ảnh hưởng đến việc khớp (ví dụ: "言出法随，诸天万界" và "言出法随 诸天万界").
  */
 export function normalizeSearchText(value) {
   return String(value ?? '')
@@ -19,8 +19,8 @@ export function rankSearchResults(results, keyword) {
     const title = normalizeSearchText(item.series_title);
     const description = normalizeSearchText(item.series_intro || item.description || '');
     const titleMatch = !!query && title.includes(query);
-    // App 上新补搜支持“用户多打了季数/后缀”的反向匹配；这类结果仍算标题命中，
-    // 不能因为标题比搜索词短就被排到“其他结果”里。
+    // Tìm kiếm bổ sung bản phát hành mới của App hỗ trợ khớp đảo ngược khi "người dùng nhập thêm số phần/hậu tố"; các kết quả loại này vẫn được tính là khớp tiêu đề,
+    // không thể vì tiêu đề ngắn hơn từ khóa tìm kiếm mà bị xếp vào "kết quả khác".
     const reverseMatch = item.new_release === true && title.length >= 2 && !!query && query.includes(title);
     const contentMatch = !!query && description.includes(query);
     return { ...item, contentMatch,

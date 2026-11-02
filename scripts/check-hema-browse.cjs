@@ -68,18 +68,18 @@ async function check() {
   assert.equal((await browseList({ page: 2 })).success, false, '分页不一致必须报错');
   assert.equal((await browseList({ genre: '1129' })).success, false, '题材不一致必须报错');
   override = '<html><script>throw Error("must not execute")</script></html>';
-  assert.match((await browseList()).error, /数据异常/);
+  assert.match((await browseList()).error, /数据异常|bất thường/i);
   override = fixture('browse');
   const beforeRefresh = calls.length;
   assert.equal((await browseList({ forceRefresh: true })).success, true);
   assert.equal(calls.length, beforeRefresh + 1, '刷新重新获取题材且复用当前首页响应');
   failure = Object.assign(Error('private network details'), { code: 'ECONNABORTED' });
-  assert.match((await browseList()).error, /超时/);
+  assert.match((await browseList()).error, /超时|quá thời gian/i);
 
   const browse = fs.readFileSync(path.join(root, 'src/components/Browse.jsx'), 'utf8');
   assert.match(browse, /mediaSources\.map\(\(\{ id, label \}\) => <option key=\{id\} value=\{id\}>\{label\}<\/option>\)/);
-  assert.match(fs.readFileSync(path.join(root, 'src/components/mediaSourcesModel.mjs'), 'utf8'), /id: 'hema', label: '河马短剧'/);
-  assert.match(browse, /西饭热播榜暂未接入/);
+  assert.match(fs.readFileSync(path.join(root, 'src/components/mediaSourcesModel.mjs'), 'utf8'), /id: 'hema', label: '(河马短剧|Phim Ngắn Hà Mã)'/);
+  assert.match(browse, /西饭热播榜暂未接入|bảng xếp hạng XiFan tạm thời chưa kết nối/i);
   // Rendered pagination is covered with the actual component in check-ui-state.cjs.
 
   const main = fs.readFileSync(path.join(root, 'main.js'), 'utf8');

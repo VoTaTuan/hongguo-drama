@@ -51,10 +51,10 @@ async function scenario(stage) {
   }
   if (stage === 'failure') {
     assert.equal(outcome[0].success, false, 'a failed page must not be reported as a successful empty search');
-    assert.match(outcome[0].error, /加载失败/);
+    assert.match(outcome[0].error, /(?:加载失败|tải thất bại)/i);
     return;
   }
-  assert.match(outcome[0].message, /超时/);
+  assert.match(outcome[0].message, /(?:超时|quá thời gian)/i);
   assert.equal(outcome[1].success, true);
   assert.equal(windows[0].destroyed, true);
   assert.equal(windows.length, 2, 'next task needs a fresh window');
@@ -86,11 +86,11 @@ async function deadlineScenario() {
   const second = context.runSniffOnUrl('https://hongguoduanju.com/search/two', 'Search', { deadline: Date.now() + 100 }).catch(error => error);
   const secondError = await second;
   const secondWait = Date.now() - queuedAt;
-  assert.match(secondError.message, /超时/, 'a queued page search must respect its deadline');
+  assert.match(secondError.message, /(?:超时|quá thời gian)/i, 'a queued page search must respect its deadline');
   assert.ok(secondWait < 1200, 'a queued page search must return from its own deadline, not after the first task ends');
   assert.equal(firstSettled, false, 'the first task must still be running; otherwise this test cannot prove the queue deadline guard');
   const firstError = await first;
-  assert.match(firstError.message, /超时/);
+  assert.match(firstError.message, /(?:超时|quá thời gian)/i);
 }
 
 (async () => {

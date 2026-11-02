@@ -42,32 +42,32 @@ async function searchSeries(keyword, search, knownSeries = [], { afterSeason = 1
   }
   const errors = [];
   for (const query of queries) {
-    if (deadline && Date.now() >= deadline) { errors.push('搜索时间预算已用完'); break; }
+    if (deadline && Date.now() >= deadline) { errors.push('Thời gian tìm kiếm đã hết ngân sách'); break; }
     try {
       const response = await search(query, { fuzzy: false, deadline });
-      if (!response?.success) throw new Error(response?.error || '来源未返回结果');
+      if (!response?.success) throw new Error(response?.error || 'Nguồn không trả về kết quả');
       results.push(...(response.results || []));
     } catch (error) { errors.push(error.message); }
   }
-  const supplementError = errors.length ? `补充搜索未完成：${[...new Set(errors)].join('；')}` : '';
+  const supplementError = errors.length ? `Tìm kiếm bổ sung chưa hoàn thành: ${[...new Set(errors)].join('; ')}` : '';
   const partialErrors = [primary.error, supplementError].filter(Boolean);
-  return { ...primary, results: rankedUnique(results, kw), ...(partialErrors.length ? { partial: true, error: partialErrors.join('；') } : {}) };
+  return { ...primary, results: rankedUnique(results, kw), ...(partialErrors.length ? { partial: true, error: partialErrors.join('; ') } : {}) };
 }
 
 async function findSeriesSequels(series, localCandidates, search, { localOnly = false, deadline = 0 } = {}) {
   const parsed = seasonTitle(series?.series_title), source = sourceOf(String(series?.series_id || ''));
-  if (!source) return { success: false, results: [], error: '此来源暂不支持查找下一季，请按完整剧名搜索。' };
-  if (!parsed.base || parsed.invalid || parsed.season > 99) return { success: false, results: [], error: '剧名或季数无法识别，请按完整剧名搜索。' };
+  if (!source) return { success: false, results: [], error: 'Nguồn này tạm thời chưa hỗ trợ tìm phần tiếp theo, vui lòng tìm kiếm theo tên phim đầy đủ.' };
+  if (!parsed.base || parsed.invalid || parsed.season > 99) return { success: false, results: [], error: 'Không thể nhận diện tên phim hoặc số phần, vui lòng tìm kiếm theo tên phim đầy đủ.' };
   const local = findSequels(series, localCandidates);
   if (localOnly) return { success: true, results: local, candidates: local };
   try {
     const response = await searchSeries(parsed.base, search, [series, ...local], { afterSeason: parsed.season, deadline });
-    if (!response?.success) throw new Error(response?.error || '来源搜索失败');
+    if (!response?.success) throw new Error(response?.error || 'Tìm kiếm nguồn thất bại');
     // Keep the unfiltered candidates so lower seasons in the same family can reuse one search.
     const candidates = [...local, ...(response.results || [])];
     return { success: true, results: findSequels(series, candidates), candidates, ...(response.partial ? { partial: true, error: response.error } : {}) };
   } catch (error) {
-    return { success: local.length > 0, results: local, candidates: local, partial: true, error: `联网查找未完成：${error.message}${local.length ? '；已保留本机候选。' : '；可稍后重试。'}` };
+    return { success: local.length > 0, results: local, candidates: local, partial: true, error: `Tìm kiếm trực tuyến chưa hoàn thành: ${error.message}${local.length ? '; đã giữ lại danh sách ứng viên trên máy.' : '; có thể thử lại sau.'}` };
   }
 }
 

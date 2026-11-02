@@ -98,7 +98,7 @@ const checks = [
     await bad.run('executeHongguoDownload(downloadTasks[0])');
     const failed = bad.saved()[0];
     assert.equal(failed.status, 'failed');
-    assert.match(failed.error, /解码校验失败/);
+    assert.match(failed.error, /(?:解码校验失败|Kiểm tra giải mã.*thất bại)/i);
     assert.equal(bad.calls.length, 1, 'decode failures must not repeatedly resolve the same bad App rendition');
     assert.equal(appTransfers, 1);
     assert.equal(fs.existsSync(failed.savePath), false);
@@ -130,7 +130,7 @@ const checks = [
     assert.equal(t.status, 'completed', t.error);
     assert.equal(t.downloadQuality, '1080p');
     assert.equal(t.actualQuality, '720p');
-    assert.match(t.qualityNotice, /已下载更低质量.*720P.*1080P/);
+    assert.match(t.qualityNotice, /(?:已下载更低质量|Đã tải.*chất lượng thấp hơn).*720P.*1080P/i);
     assert.equal(h.events.some(e => e.channel === 'download-failed'),false);
   }],
   ['failed higher variants exhaust all tiers, including after four addresses, before reporting an error', async () => {
@@ -149,8 +149,8 @@ const checks = [
     assert.equal(h.saved()[0].status,'completed',h.saved()[0].error);
     assert.equal(h.saved()[0].actualQuality,'480p');
     const notices = h.events.filter(e=>e.channel==='download-progress'&&e.data.qualityNotice).map(e=>e.data.qualityNotice);
-    assert(notices.some(s=>/正在下载更低质量.*720P/.test(s)));
-    assert(notices.some(s=>/正在下载更低质量.*480P/.test(s)));
+    assert(notices.some(s=>/(?:正在下载更低质量|Đang tải.*chất lượng thấp hơn).*720P/i.test(s)));
+    assert(notices.some(s=>/(?:正在下载更低质量|Đang tải.*chất lượng thấp hơn).*480P/i.test(s)));
     assert.equal(h.events.filter(e=>e.channel==='download-failed').length,0);
   }],
   ['all tiers unavailable reports one failure only after lower candidates were attempted', async () => {
@@ -186,7 +186,7 @@ const checks = [
       await h.run('executeHongguoDownload(downloadTasks[0])');
       assert.equal(h.saved()[0].status,'failed');
       assert.equal(h.run('attempts'),1);
-      assert.match(h.saved()[0].error,/工具/);
+      assert.match(h.saved()[0].error, /(?:工具|Công cụ)/i);
     }
   }],
   ['lost files and interrupted or stopped tasks never retain a download notice', async () => {
@@ -205,7 +205,7 @@ const checks = [
     await h.handlers['hongguo-download-batch']({}, payload('1080p'));
     await h.run('executeHongguoDownload(downloadTasks[0])');
     assert.equal(h.saved()[0].status, 'failed');
-    assert.match(h.saved()[0].error, /分辨率|清晰度/);
+    assert.match(h.saved()[0].error, /(?:分辨率|清晰度|độ phân giải|độ nét)/i);
   }],
   ['existing low-resolution file remains unchanged and is not counted as 1080', async () => {
     const h = fixture({ width:720, height:1280 });
@@ -214,7 +214,7 @@ const checks = [
     h.run('downloadTasks[0].status = "completed"');
     const result = await h.handlers['hongguo-download-batch']({}, payload('1080p'));
     assert.equal(result.success, false);
-    assert.match(result.error, /已有|本地/);
+    assert.match(result.error, /(?:已有|本地|hiện có|cục bộ)/i);
     assert.equal(fs.readFileSync(t.savePath)[0], 42);
     assert.equal(h.run('downloadTasks[0].status'), 'completed');
   }],
@@ -320,7 +320,7 @@ const checks = [
     h.run("hongguo.fetchPlayUrlSingle = async () => ({ url:null, error:'该集已锁定' }); downloadTasks = [{ id:'locked', type:'hongguo', filename:'locked.mp4', hongguoInfo:{ vid:'xifan:1:11', series_id:'xifan:1', series_title:'Fixture' } }]");
     await h.run('executeHongguoDownload(downloadTasks[0])');
     assert.equal(h.saved()[0].status, 'failed');
-    assert.match(h.saved()[0].error, /锁定/);
+    assert.match(h.saved()[0].error, /(?:锁定|khóa)/i);
     assert.equal(fs.existsSync(h.saved()[0].savePath), false);
   }],
   ['list refresh never starts a media probe', async () => {

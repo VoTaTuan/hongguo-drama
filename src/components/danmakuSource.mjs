@@ -1,21 +1,21 @@
 // Adapted from dawei233/hongguo-drama, commit c884fab6c6e36ad38173e251738b9b35f958383f (GPL-3.0).
 // https://github.com/dawei233/hongguo-drama
 /**
- * 「用哪个弹幕源」这一项偏好。
+ * Tùy chọn "Sử dụng nguồn đạn mạc nào".
  *
- * 单独一个存储键，理由有两个：
- *  1. 视觉设置（字号/透明度/速度/区域/密度/屏蔽词）应该两个源共用 —— 换源不该
- *     把用户的调参清掉，所以那一份仍然放在 `hongguo:comment-danmaku:v1`；
- *  2. 源的取值属于"用哪条数据通路"，与视觉无关，而且 `Settings` 页和播放器都要
- *     读它。放在独立键里，两边用同一个自定义事件同步，不必让 `Settings` 依赖
- *     播放器的 hook。
+ * Lưu trữ dưới một khóa độc lập vì 2 lý do:
+ *  1. Cài đặt hiển thị (cỡ chữ/độ mờ/tốc độ/vùng hiển thị/mật độ/từ khóa chặn) nên được dùng chung cho cả hai nguồn —— việc đổi nguồn không nên
+ *     xóa các thông số người dùng đã chỉnh, vì vậy phần đó vẫn lưu trong `hongguo:comment-danmaku:v1`;
+ *  2. Giá trị nguồn thuộc về "sử dụng luồng dữ liệu nào", không liên quan đến hiển thị, đồng thời cả trang `Cài đặt` và trình phát đều cần
+ *     đọc nó. Đặt trong khóa độc lập và đồng bộ bằng sự kiện tùy chỉnh chung, không cần để `Cài đặt` phụ thuộc vào
+ *     hook của trình phát.
  */
 
 import { useEffect, useState } from 'react';
 import { DEFAULT_DANMAKU_SOURCE, normalizeDanmakuSource } from './danmakuOfficial.mjs';
 
 const STORAGE_KEY = 'hongguo:danmaku-source:v1';
-// 同窗口内 localStorage 不会触发 storage 事件，所以自己广播一个。
+// localStorage trong cùng cửa sổ sẽ không kích hoạt sự kiện storage, nên tự phát một sự kiện.
 const CHANGE_EVENT = 'hongguo:danmaku-source-change';
 
 const storage = () => {
@@ -40,7 +40,7 @@ export function writeDanmakuSource(value) {
   try {
     storage()?.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
-    // 存储不可用时本次会话仍然生效，只是不持久化；不打断播放。
+    // Khi bộ nhớ không khả dụng phiên này vẫn có hiệu lực, chỉ không lưu lâu dài; không làm gián đoạn phát video.
   }
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: next }));
   return next;

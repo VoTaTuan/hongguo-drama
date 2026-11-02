@@ -1,4 +1,4 @@
-/** 播放器全屏信息的纯格式化函数，便于单元测试。 */
+/** Hàm định dạng thuần túy thông tin toàn màn hình của trình phát, thuận tiện cho việc kiểm thử đơn vị. */
 
 export function formatClock(value = new Date()) {
   const date = value instanceof Date ? value : new Date(value);

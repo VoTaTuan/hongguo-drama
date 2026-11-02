@@ -41,10 +41,10 @@ assert.ok(ffmpeg && video, 'Set HONGGUO_FFMPEG and HONGGUO_VIDEO_FIXTURE');
   await assert.rejects(remuxHls({...options,output:output('privatekey'),request:async(url,args)=>url.endsWith('media.m3u8')
     ? {status:200,headers:{},data:Readable.from(['#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXT-X-KEY:METHOD=AES-128,URI="http://192.168.1.1/key"\n#EXTINF:2,\npart0.ts\n#EXT-X-ENDLIST\n']),url}:request(url,args)}),/公网|地址/);
   assert.equal(fs.existsSync(output('privatekey')),false);
-  await assert.rejects(remuxHls({...options,output:output('missing'),request:async(url,args) => url.includes('/part') ? Promise.reject(new Error('missing segment')) : request(url,args)}), /missing segment|分片|媒体/);
+  await assert.rejects(remuxHls({...options,output:output('missing'),request:async(url,args) => url.includes('/part') ? Promise.reject(new Error('missing segment')) : request(url,args)}), /missing segment|分片|媒体|phân đoạn|media/i);
   assert.equal(fs.existsSync(output('missing')), false);
   await assert.rejects(remuxHls({...options,output:output('truncated'),request:async(url,args) => url.includes('/part')
-    ? {status:200,headers:{'content-length':'999999'},data:Readable.from([Buffer.from('partial')]),url}:request(url,args)}), /不完整/);
+    ? {status:200,headers:{'content-length':'999999'},data:Readable.from([Buffer.from('partial')]),url}:request(url,args)}), /不完整|không hoàn chỉnh/i);
   assert.equal(fs.existsSync(output('truncated')),false);
   let allowed = true;
   await assert.rejects(remuxHls({...options,output:output('disabled'),checkAccess:()=>{if(!allowed)throw new Error('source disabled');},request:async(url,args)=>{const response=await request(url,args);if(url.includes('/part'))allowed=false;return response;}}),/disabled/);
@@ -53,7 +53,7 @@ assert.ok(ffmpeg && video, 'Set HONGGUO_FFMPEG and HONGGUO_VIDEO_FIXTURE');
     request: async (url, args) => url.endsWith('/cap.m3u8')
       ? { status: 200, headers: {}, data: Readable.from(['#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXTINF:2,\npart0.ts\n#EXT-X-ENDLIST\n']), url }
       : { status: 200, headers: { 'content-length': '1000' }, data: Readable.from([Buffer.alloc(1000)]), url } }),
-  /暂存空间不足/);
+  /暂存空间不足|Không đủ dung lượng/i);
   assert.equal(fs.existsSync(output('capacity')), false);
   assert.equal(fs.readdirSync(root).some(name => name.startsWith('.hongguo-hls-')), false, 'failed HLS stage must clean its temp directory');
 

@@ -220,7 +220,7 @@ const checks = [
     for (const payload of [null, {}, { code: 1 }, { code: 0, data: {} }, { code: 0, data: { video_data: [{ ...video(), content_type: 1, series_id: 7697209269287914521 }] } }]) {
       const bad = fixture(() => payload);
       const result = await bad.browse({});
-      assert.equal(result.success, false); assert.match(result.error, /官网/); assert.equal(bad.calls.length, 1);
+      assert.equal(result.success, false); assert.match(result.error, /(?:官网|trang web chính thức)/i); assert.equal(bad.calls.length, 1);
     }
   }],
   ['four-second deadline cancels transport without fallback or a second budget', async () => {
@@ -229,7 +229,7 @@ const checks = [
     assert.equal(h.calls[0].deadline, 5000);
     h.advance(4000);
     const result = await pending;
-    assert.equal(result.success, false); assert.match(result.error, /超时.*官网/);
+    assert.equal(result.success, false); assert.match(result.error, /(?:超时.*官网|(?:quá thời gian|hết thời gian).*trang web chính thức)/i);
     assert.equal(h.calls[0].signal.aborted, true); assert.equal(h.calls.length, 1); assert.equal(h.timers.size, 0);
   }],
   ['metadata signing has stable in-process identity and a narrow endpoint allowlist', async () => {

@@ -90,7 +90,7 @@ test('本机标识损坏时保留文件并报告配置问题，不静默重新�
     danmaku.setDeviceIdentityFile(file);
     const result = await danmaku.fetchDanmaku({ seriesId: SERIES, vid: VID, ...fixedOptions(async () => { calls++; }) });
     assert.equal(result.success, false);
-    assert.match(result.error, /本机配置/);
+    assert.match(result.error, /(?:本机配置|cấu hình máy)/i);
     assert.equal(calls, 0);
     assert.equal(fs.readFileSync(file, 'utf8'), '{broken');
   } finally { danmaku.setDeviceIdentityFile(null); fs.rmSync(folder, { recursive: true, force: true }); }
@@ -101,7 +101,7 @@ test('非红果编号直接拒绝，且不打网络', async () => {
   const result = await danmaku.fetchDanmaku({ seriesId: 'hema:123', vid: '1', ...fixedOptions(async () => { calls++; }) });
   assert.equal(result.success, false);
   assert.equal(calls, 0);
-  assert.match(result.error, /仅红果来源/);
+  assert.match(result.error, /(?:仅红果来源|Chỉ nguồn Hồng Quả)/i);
 });
 
 test('把毫秒偏移换算成秒，并按时间升序返回', async () => {
@@ -229,8 +229,8 @@ test('源不可用时给出人话说明，绝不改口成"本集暂无弹幕"', 
   assert.equal(result.success, false);
   assert.equal(result.items.length, 0);
   assert.match(result.notice, /HTTP 502/);
-  assert.match(result.notice, /已尝试官方签名请求/);
-  assert.doesNotMatch(result.notice, /暂无弹幕/);
+  assert.match(result.notice, /(?:已尝试官方签名请求|đã thử yêu cầu chữ ký chính thức)/i);
+  assert.doesNotMatch(result.notice, /(?:暂无弹幕|chưa có danmaku)/i);
 });
 
 test('失败结果命中缓存时，仍然如实报告失败（回归：曾被洗成"本集暂无弹幕"）', async () => {
@@ -242,7 +242,7 @@ test('失败结果命中缓存时，仍然如实报告失败（回归：曾被�
   assert.equal(calls, 1, '失败结果应命中短 TTL 缓存');
   assert.equal(second.success, false);
   assert.equal(second.notice, first.notice);
-  assert.doesNotMatch(second.notice, /暂无弹幕/);
+  assert.doesNotMatch(second.notice, /(?:暂无弹幕|chưa có danmaku)/i);
 });
 
 test('部分成功后中断：保留已获取的弹幕，并注明中断', async () => {
@@ -256,7 +256,7 @@ test('部分成功后中断：保留已获取的弹幕，并注明中断', async
   const result = await danmaku.fetchDanmaku({ seriesId: SERIES, vid: VID, ...fixedOptions(transport) });
   assert.equal(result.items.length, 1);
   assert.equal(result.partial, true);
-  assert.match(result.notice, /后续弹幕加载中断/);
+  assert.match(result.notice, /(?:后续弹幕加载中断|Tải danmaku tiếp theo bị gián đoạn)/i);
 });
 
 test('limit 只裁剪条数，不改变失败说明', async () => {
@@ -271,7 +271,7 @@ test('limit 只裁剪条数，不改变失败说明', async () => {
   const result = await danmaku.fetchDanmaku({ seriesId: SERIES, vid: VID, limit: 2, ...fixedOptions(transport) });
   assert.equal(result.items.length, 2);
   assert.equal(result.truncated, true);
-  assert.match(result.notice, /后续弹幕加载中断/);
+  assert.match(result.notice, /(?:后续弹幕加载中断|Tải danmaku tiếp theo bị gián đoạn)/i);
 });
 
 test('请求体与签名头符合接口契约', async () => {

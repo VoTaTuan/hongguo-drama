@@ -120,14 +120,14 @@ function createAnnouncementService({ store, version, request, now = Date.now, is
   }
 
   async function getCurrentAnnouncement() {
-    const unavailable = { announcement: null, error: '当前环境无法读取公告，请退出预览模式或修复代理设置后重试。' };
+    const unavailable = { announcement: null, error: 'Môi trường hiện tại không thể đọc thông báo, vui lòng thoát chế độ xem trước hoặc sửa cài đặt proxy rồi thử lại.' };
     if (!isEnabled()) return unavailable;
     if (!manualRequest) {
       manualRequest = Promise.all([fetchAnnouncement('emergency'), fetchAnnouncement('normal')])
         .then(([emergency, normal]) => {
           if (!isEnabled()) return unavailable;
           const announcement = emergency || normal;
-          if (!announcement) return { announcement: null, error: '当前暂无可查看的公告，或暂时无法读取，请稍后重试。' };
+          if (!announcement) return { announcement: null, error: 'Hiện tại chưa có thông báo nào có thể xem, hoặc tạm thời không thể đọc, vui lòng thử lại sau.' };
           if (announcement.urgent) receivedUrgentIds.add(announcement.id);
           return { announcement };
         }).finally(() => { manualRequest = null; });
@@ -137,7 +137,7 @@ function createAnnouncementService({ store, version, request, now = Date.now, is
 
   function acknowledgeAnnouncement(payload) {
     if (!validId(payload?.id) || !receivedUrgentIds.has(payload.id)) {
-      return { success: false, error: '公告无效或尚未展示。' };
+      return { success: false, error: 'Thông báo không hợp lệ hoặc chưa được hiển thị.' };
     }
     const seen = seenIds();
     // Keep the in-process read mark even if the atomic store write fails.
@@ -146,22 +146,22 @@ function createAnnouncementService({ store, version, request, now = Date.now, is
       store.saveAnnouncementState({ seenUrgentIds: [...seen] });
       return { success: true };
     } catch (_) {
-      return { success: false, error: '公告已在本次运行中记为已读，但未能保存；重启后可能再次显示。' };
+      return { success: false, error: 'Thông báo đã được ghi nhận là đã đọc trong phiên này, nhưng không thể lưu; sau khi khởi động lại có thể hiển thị lại.' };
     }
   }
 
   function dismissAnnouncement(payload) {
-    if (!['day', 'version'].includes(payload?.mode)) return { success: false, error: '公告免提醒方式无效。' };
+    if (!['day', 'version'].includes(payload?.mode)) return { success: false, error: 'Phương thức miễn nhắc thông báo không hợp lệ.' };
     try {
       store.saveAnnouncementState({ normalSuppression: { mode: payload.mode, version, day: localDay() } });
       return { success: true };
-    } catch (_) { return { success: false, error: '普通公告免提醒设置保存失败，请检查磁盘空间或目录权限后重试。' }; }
+    } catch (_) { return { success: false, error: 'Lưu cài đặt miễn nhắc thông báo thường thất bại, vui lòng kiểm tra dung lượng ổ đĩa hoặc quyền thư mục rồi thử lại.' }; }
   }
 
   function setAnnouncementPreferences(patch) {
     if (!patch || typeof patch !== 'object' || Array.isArray(patch)
       || Object.entries(patch).some(([key, value]) => !['normalEnabled', 'emergencyEnabled'].includes(key) || typeof value !== 'boolean')) {
-      return { success: false, error: '公告开关设置无效。' };
+      return { success: false, error: 'Cài đặt bật/tắt thông báo không hợp lệ.' };
     }
     try {
       const previous = getAnnouncementPreferences();
@@ -174,7 +174,7 @@ function createAnnouncementService({ store, version, request, now = Date.now, is
         latestEmergency = null;
       }
       return { success: true, preferences };
-    } catch (_) { return { success: false, error: '公告开关保存失败，请检查磁盘空间或目录权限后重试。' }; }
+    } catch (_) { return { success: false, error: 'Lưu bật/tắt thông báo thất bại, vui lòng kiểm tra dung lượng ổ đĩa hoặc quyền thư mục rồi thử lại.' }; }
   }
 
   return { checkAnnouncements, getCurrentAnnouncement, acknowledgeAnnouncement, dismissAnnouncement, getAnnouncementPreferences, setAnnouncementPreferences };

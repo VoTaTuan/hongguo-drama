@@ -3,6 +3,7 @@ import { Film, Play, RefreshCw } from './icons';
 import useMediaSources from './useMediaSources';
 import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { loadRandomPool, pickRandomDrama, playRecommendedDrama } from './randomDramaModel.mjs';
+import { translateGenre } from './genreMap';
 import './RandomDrama.css';
 
 export function DramaPoster({ item, className = '' }) {
@@ -117,7 +118,7 @@ export default function RandomDrama({ active, refreshKey = 0, onNavigate }) {
         <div className="random-drama-result-copy"><p className="drama-source-label">{sourceLabel(selected.source)} · Quay ngẫu nhiên</p>
           <h3>{selected.series_title}</h3>
           {selected.episode_count > 0 && <p>Tổng {selected.episode_count} tập</p>}
-          {selected.tags?.length > 0 && <p className="random-drama-tags">{selected.tags.join(' · ')}</p>}
+          {selected.tags?.length > 0 && <p className="random-drama-tags">{selected.tags.map(translateGenre).join(' · ')}</p>}
           <div className="random-drama-actions">
             <button className="btn btn-primary" disabled={resolving || shaking} onClick={play}><Play size={16} />{resolving ? 'Đang mở…' : 'Phát trong kho phim'}</button>
             <button className="btn btn-outline" disabled={resolving || shaking} onClick={draw}><RefreshCw size={15} />Quay lại</button>

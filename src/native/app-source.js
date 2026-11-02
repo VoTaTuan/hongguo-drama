@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Signing and Spade algorithms adapted from woshishiq1/drpys
-// commit 22261adfa31435e3b3ef5a730b8a2a75bcaf1715, spider/js/红果果[短].js,
+// commit 22261adfa31435e3b3ef5a730b8a2a75bcaf1715, spider/js/hongguoguo[duan].js,
 // via N3urda/hongguoTV eea73e6a45569a2cbbb9440f7cd5290c459b0b70.
 // Changes: registered in-memory playback identity; pure JS SM3;
 // bounded HTTPS transport; exact episode matching; supported codec selection.
@@ -28,7 +28,7 @@ const DEVICE = {
 function str(value, fallback = '') { return String(value == null ? fallback : value).trim(); }
 function cleanUrl(value) { return str(value).replace(/\\\//g, '/').replace(/\\u0026/g, '&').replace(/&amp;/g, '&'); }
 function jsonBody(value) { try { return JSON.parse(value); } catch { return null; } }
-// 签名对 query 字节级敏感：python urllib.parse.quote 的 ['!'*'()'] 兜底编码行为须保持一致
+// Chữ ký nhạy cảm theo từng byte của query: hành vi mã hóa dự phòng ['!'*'()'] của urllib.parse.quote trong python phải được giữ đồng nhất
 function pythonUrlEncode(values) {
     return Object.entries(values).map(([key, value]) => {
         const encode = (item) => encodeURIComponent(String(item == null ? '' : item))
@@ -148,10 +148,10 @@ function parseSearchInteger(value) {
 }
 function signedSearchRequest({ keyword, page = 1, cursor = null, identity } = {}) {
     const pg = parseSearchInteger(page);
-    if (pg === null || pg < 1 || pg > 50) throw Object.assign(new Error('App 搜索页码需为 1 至 50 的整数'), { code: 'APP_INPUT' });
+    if (pg === null || pg < 1 || pg > 50) throw Object.assign(new Error('Số trang tìm kiếm App phải là số nguyên từ 1 đến 50'), { code: 'APP_INPUT' });
     if (![identity?.device_id, identity?.iid].every(value => typeof value === 'string' && /^\d{1,30}$/.test(value) && /[1-9]/.test(value))
         || typeof identity?.cdid !== 'string' || !/^[a-f0-9-]{36}$/i.test(identity.cdid)) {
-        throw Object.assign(new Error('App 搜索设备身份无效'), { code: 'APP_INPUT' });
+        throw Object.assign(new Error('Danh tính thiết bị tìm kiếm App không hợp lệ'), { code: 'APP_INPUT' });
     }
     // Search uses the hongguoTV 7.2.2.32 profile and only hash branch 0.
     const device = { ...DEVICE, version_code: '72232', version_name: '7.2.2.32', manifest_version_code: '72232',
@@ -169,7 +169,7 @@ function signedSearchRequest({ keyword, page = 1, cursor = null, identity } = {}
         query = pythonUrlEncode({ ...base, ts: String(khronos), _rticket: String(requestTicket) });
         url = `${SEARCH_API}?${query}`;
         if (branchOf(url, null, khronos) === 0) break;
-        if (n === 127) throw new Error('无法生成搜索请求签名');
+        if (n === 127) throw new Error('Không thể tạo chữ ký yêu cầu tìm kiếm');
     }
     const random = Math.floor(Math.random() * 65536);
     const headers = {
@@ -188,7 +188,7 @@ const metadataDevice = { ...DEVICE, version_code: '73532', version_name: '7.3.5.
     update_version_code: '73532', pv_player: '73532', iid: localId(), device_id: localId() };
 function signedMetadataRequest(apiPath, values = {}, payload = null) {
     if (!['/reading/distribution/category/landpage/v/', '/reading/bookapi/bookmall/cell/change/v'].includes(apiPath)) {
-        throw new Error('不支持的 App 目录接口');
+        throw new Error('Giao diện danh mục App không được hỗ trợ');
     }
     const body = payload === null ? null : Buffer.from(JSON.stringify(payload));
     const khronos = Math.floor(Date.now() / 1000), ticketBase = Date.now();
@@ -198,7 +198,7 @@ function signedMetadataRequest(apiPath, values = {}, payload = null) {
         query = pythonUrlEncode({ ...values, ...metadataDevice, ts: String(khronos), _rticket: String(requestTicket) });
         url = `https://api5-normal-sinfonlineb.fqnovel.com${apiPath}?${query}`;
         if (branchOf(url, body, khronos) === 0) break;
-        if (n === 127) throw new Error('无法生成 App 目录请求签名');
+        if (n === 127) throw new Error('Không thể tạo chữ ký yêu cầu danh mục App');
     }
     const headers = {
         'User-Agent': VIDEO_UA.replace('71332', '73532'), Accept: 'application/json', 'Accept-Encoding': 'identity',
@@ -215,11 +215,11 @@ function signedMetadataRequest(apiPath, values = {}, payload = null) {
 // Account reads use the registered device identity plus the website login cookie.
 function signedAccountRequest(apiPath, values = {}, identity) {
     if (!['/reading/user/info/v1/', '/reading/bookapi/read_history/list/v1/', '/reading/bookapi/read_progress/list/v1/', '/reading/bookapi/multi-detail/v1/'].includes(apiPath)) {
-        throw new Error('不支持的账号接口');
+        throw new Error('Giao diện tài khoản không được hỗ trợ');
     }
     if (![identity?.device_id, identity?.iid].every(value => typeof value === 'string' && /^\d{1,30}$/.test(value) && /[1-9]/.test(value))
         || typeof identity?.cdid !== 'string' || !/^[a-f0-9-]{36}$/i.test(identity.cdid)) {
-        throw new Error('账号设备身份无效');
+        throw new Error('Danh tính thiết bị tài khoản không hợp lệ');
     }
     const device = { ...DEVICE, version_code: '72232', version_name: '7.2.2.32', manifest_version_code: '72232',
         update_version_code: '72232', pv_player: '72232', iid: identity.iid, device_id: identity.device_id, cdid: identity.cdid };
@@ -230,7 +230,7 @@ function signedAccountRequest(apiPath, values = {}, identity) {
         query = pythonUrlEncode({ ...values, ...device, ts: String(khronos), _rticket: String(requestTicket) });
         url = `https://api5-normal-sinfonlinea.fqnovel.com${apiPath}?${query}`;
         if (branchOf(url, null, khronos) === 0) break;
-        if (n === 127) throw new Error('无法生成账号请求签名');
+        if (n === 127) throw new Error('Không thể tạo chữ ký yêu cầu tài khoản');
     }
     const headers = {
         'User-Agent': SEARCH_UA, Accept: 'application/json; charset=utf-8,application/x-protobuf',
@@ -263,7 +263,7 @@ function deriveContentKey(value) {
         work[i] = (-21 - pop + (previous ^ old)) & 255;
     }
     const hex = work.subarray(1, 33).toString('ascii');
-    if (!/^[0-9a-f]{32}$/i.test(hex)) throw new Error('App 视频密钥格式无效');
+    if (!/^[0-9a-f]{32}$/i.test(hex)) throw new Error('Định dạng khóa video App không hợp lệ');
     return Buffer.from(hex, 'hex');
 }
 
@@ -289,10 +289,10 @@ function decryptSpadeUrl(value, seed) {
 
 function checkedUrl(value, domains) {
     let url;
-    try { url = new URL(value); } catch (_) { throw Object.assign(new Error('App 片源地址格式无效'), { code: 'INVALID_RESPONSE' }); }
+    try { url = new URL(value); } catch (_) { throw Object.assign(new Error('Định dạng địa chỉ nguồn phim App không hợp lệ'), { code: 'INVALID_RESPONSE' }); }
     if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443') ||
         !domains.some(domain => url.hostname === domain || url.hostname.endsWith(`.${domain}`))) {
-        throw Object.assign(new Error('App 片源返回了不受支持的服务地址'), { code: 'SECURITY_BLOCKED' });
+        throw Object.assign(new Error('Nguồn phim App trả về địa chỉ dịch vụ không được hỗ trợ'), { code: 'SECURITY_BLOCKED' });
     }
     return url.href;
 }
@@ -306,7 +306,7 @@ async function requestJson(url, options, deadline, signal) {
     for (let redirects = 0; redirects < 4; redirects++) {
         url = checkedUrl(url, ['fqnovel.com', 'snssdk.com']);
         const timeout = deadline - Date.now();
-        if (timeout <= 0) throw Object.assign(new Error('App 片源请求超时'), { code: 'ETIMEDOUT' });
+        if (timeout <= 0) throw Object.assign(new Error('Yêu cầu nguồn phim App quá thời gian'), { code: 'ETIMEDOUT' });
         let response;
         try {
             response = await axios({
@@ -319,18 +319,18 @@ async function requestJson(url, options, deadline, signal) {
             const code = signal.aborted ? 'ETIMEDOUT' : ['ECONNABORTED', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN',
                 'ECONNRESET', 'ECONNREFUSED', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE', 'ERR_CANCELED'].includes(error.code) ? error.code : 'ERR_NETWORK';
             throw Object.assign(new Error(['ECONNABORTED', 'ETIMEDOUT'].includes(code)
-                ? 'App 片源请求超时' : 'App 片源网络请求失败，请稍后重试'), { code });
+                ? 'Yêu cầu nguồn phim App quá thời gian' : 'Yêu cầu mạng nguồn phim App thất bại, vui lòng thử lại sau'), { code });
         }
         if ([301, 302, 303, 307, 308].includes(response.status)) {
             // Do not resend a signed body to a redirect destination.
-            if (requestOptions.method === 'POST' || !response.headers.location) throw Object.assign(new Error('App 接口发生不支持的跳转'), { code: 'SECURITY_BLOCKED' });
+            if (requestOptions.method === 'POST' || !response.headers.location) throw Object.assign(new Error('Giao diện App chuyển hướng không được hỗ trợ'), { code: 'SECURITY_BLOCKED' });
             url = checkedUrl(new URL(response.headers.location, url).href, ['fqnovel.com', 'snssdk.com']);
             continue;
         }
-        if (response.status !== 200) throw Object.assign(new Error(`App 片源请求失败（HTTP ${response.status}）`), { status: response.status });
+        if (response.status !== 200) throw Object.assign(new Error(`Yêu cầu nguồn phim App thất bại (HTTP ${response.status})`), { status: response.status });
         const raw = typeof response.data === 'string' ? response.data : '';
         if (!raw.trim()) {
-            throw Object.assign(new Error('App 接口返回空响应，可能是签名或设备鉴权问题'), {
+            throw Object.assign(new Error('Giao diện App trả về phản hồi trống, có thể do chữ ký hoặc xác thực thiết bị'), {
                 code: 'EMPTY_RESPONSE',
                 status: response.status,
                 logid: response.headers?.['x-tt-logid'] || '',
@@ -338,17 +338,17 @@ async function requestJson(url, options, deadline, signal) {
         }
         const normalized = preserveFields?.length ? preserveLargeJsonIntegers(raw, preserveFields) : raw;
         const parsed = typeof response.data === 'string' ? jsonBody(normalized) : response.data;
-        if (!parsed || typeof parsed !== 'object') throw Object.assign(new Error('App 接口未返回有效数据'), { code: 'INVALID_RESPONSE' });
+        if (!parsed || typeof parsed !== 'object') throw Object.assign(new Error('Giao diện App không trả về dữ liệu hợp lệ'), { code: 'INVALID_RESPONSE' });
         return parsed;
     }
-    throw Object.assign(new Error('App 片源跳转次数过多'), { code: 'SECURITY_BLOCKED' });
+    throw Object.assign(new Error('Số lần chuyển hướng nguồn phim App quá nhiều'), { code: 'SECURITY_BLOCKED' });
 }
 
 async function fetchAppPlayUrl(vid, options = {}) {
     const requestedQuality = normalizeDownloadQuality(options.quality);
     const allowLowerQuality = options.allowLowerQuality === true && requestedQuality !== 'auto';
     vid = String(vid || '');
-    if (!/^\d{1,30}$/.test(vid)) throw new Error('分集编号无效');
+    if (!/^\d{1,30}$/.test(vid)) throw new Error('Mã tập phim không hợp lệ');
     const deadline = Date.now() + 12000;
     const signal = AbortSignal.timeout(12000);
     const payload = JSON.stringify({
@@ -369,22 +369,22 @@ async function fetchAppPlayUrl(vid, options = {}) {
             identity = renewed;
         }
     }
-    if (Number(response.Code || response.code || 0) !== 0) throw Object.assign(new Error('App 接口暂未提供本集播放信息'), { code: 'BUSINESS_REJECTED' });
+    if (Number(response.Code || response.code || 0) !== 0) throw Object.assign(new Error('Giao diện App tạm thời chưa cung cấp thông tin phát tập này'), { code: 'BUSINESS_REJECTED' });
     const entry = response.data?.[vid];
     const model = typeof entry?.video_model === 'string' ? jsonBody(entry.video_model) : entry?.video_model;
-    if (!model) throw Object.assign(new Error('App 接口未返回所选分集，已停止取址'), { code: entry?.video_model ? 'INVALID_RESPONSE' : 'MISSING_MODEL' });
+    if (!model) throw Object.assign(new Error('Giao diện App không trả về tập đã chọn, đã dừng lấy địa chỉ'), { code: entry?.video_model ? 'INVALID_RESPONSE' : 'MISSING_MODEL' });
     const inline = Array.isArray(model.video_list) && model.video_list.length > 0;
     let info = model;
     if (!inline) {
         const fallback = parseFallback(model.fallback_api);
-        if (!fallback) throw Object.assign(new Error('App 接口未返回本集片源地址'), { code: 'MISSING_MODEL' });
+        if (!fallback) throw Object.assign(new Error('Giao diện App không trả về địa chỉ nguồn tập này'), { code: 'MISSING_MODEL' });
         const outer = await requestJson(fallback, { headers: { 'User-Agent': VIDEO_UA } }, deadline, signal);
         if ([outer, outer.video_info].some(value => Number(value?.Code || value?.code || 0) !== 0)) {
-            throw Object.assign(new Error('App 接口暂未提供本集播放信息'), { code: 'BUSINESS_REJECTED' });
+            throw Object.assign(new Error('Giao diện App tạm thời chưa cung cấp thông tin phát tập này'), { code: 'BUSINESS_REJECTED' });
         }
         info = outer?.video_info?.data;
     }
-    if (!info) throw Object.assign(new Error('App 接口未返回本集片源模型'), { code: 'MISSING_MODEL' });
+    if (!info) throw Object.assign(new Error('Giao diện App không trả về mô hình nguồn tập này'), { code: 'MISSING_MODEL' });
     const compatibleRows = Object.values(info?.video_list || {}).filter(item => item && (item.main_url || item.backup_url || Array.isArray(item.backup_url_list))).map(item => {
         const codec = str(item.codec_type || item.video_meta?.codec_type).toLowerCase();
         const codecRank = ['h264', 'avc', 'avc1'].includes(codec) ? 0 : ['hevc', 'h265', 'hvc1', 'hev1', 'bytevc1'].includes(codec) ? 1 : 2;
@@ -405,8 +405,8 @@ async function fetchAppPlayUrl(vid, options = {}) {
     if (!rows.length) {
         const strictQuality = compatibleRows.length > 0 && requestedQuality !== 'auto' && !allowLowerQuality;
         throw Object.assign(new Error(strictQuality
-            ? `本集暂无尺寸可确认且满足 ${requestedQuality} 的 H.264/HEVC 片源，未降级`
-            : '本集暂未提供兼容的 H.264/HEVC 片源'), {
+            ? `Tập này tạm thời không có nguồn H.264/HEVC xác nhận được kích thước và thỏa mãn ${requestedQuality}, chưa hạ cấp`
+            : 'Tập này tạm thời chưa cung cấp nguồn H.264/HEVC tương thích'), {
             code: strictQuality ? 'QUALITY_UNAVAILABLE' : 'NO_COMPATIBLE_SOURCE',
             ...(strictQuality ? { quality: requestedQuality } : {}),
         });
@@ -424,7 +424,7 @@ async function fetchAppPlayUrl(vid, options = {}) {
         try {
             const spade = selected.item.spade_a || selected.item.encrypt_info?.spade_a;
             if (inline && !spade && ![false, 0, '0', 'false'].includes(selected.item.encrypt_info?.encrypt)) {
-                throw Object.assign(new Error('本集片源缺少有效解密信息'), { code: 'INVALID_RESPONSE' });
+                throw Object.assign(new Error('Nguồn phim tập này thiếu thông tin giải mã hợp lệ'), { code: 'INVALID_RESPONSE' });
             }
             const key = spade ? deriveContentKey(spade) : null;
             for (const candidate of [selected.item.main_url, selected.item.backup_url, ...(Array.isArray(selected.item.backup_url_list) ? selected.item.backup_url_list : [])]) {
@@ -447,7 +447,7 @@ async function fetchAppPlayUrl(vid, options = {}) {
     }
     if (variants.length) return { ...variants[0], variants };
     throw lastError?.code === 'SECURITY_BLOCKED' ? lastError
-        : Object.assign(new Error('本集片源地址或密钥无法解析'), { code: 'INVALID_RESPONSE' });
+        : Object.assign(new Error('Không thể phân tích địa chỉ nguồn hoặc khóa của tập này'), { code: 'INVALID_RESPONSE' });
 }
 
 module.exports = { fetchAppPlayUrl, signedSearchRequest, signedMetadataRequest, signedAccountRequest, parseSearchInteger, preserveLargeJsonIntegers, requestJson, SEARCH_API, SEARCH_UA };

@@ -24,7 +24,7 @@ test('public metadata uses the matching source introduction and cover', () => {
   const metadata = parsePublicDetails(html, seriesId);
   assert.equal(metadata.description, '真实来源简介');
   assert.equal(metadata.cover, 'https://example.invalid/cover.jpg');
-  assert.throws(() => parsePublicDetails(html, '7691228619774905369'), /不匹配/);
+  assert.throws(() => parsePublicDetails(html, '7691228619774905369'), /(?:不匹配|không khớp)/);
 });
 
 test('NAS writes actual-format poster, readable introduction and escaped NFO; supplements missing files', async t => {
@@ -55,7 +55,7 @@ test('NAS copies with season/episode numbering, reuses identical files and prese
   assert.equal((await nas.inspectNasEpisode(destination, ep)).status, 'existing');
   assert.equal((await nas.copyNasEpisode(task, destination)).copied, false);
   fs.writeFileSync(result.path, Buffer.alloc(120000, 9));
-  await assert.rejects(() => nas.copyNasEpisode(task, destination), /同名|覆盖/);
+  await assert.rejects(() => nas.copyNasEpisode(task, destination), /(?:同名|覆盖|cùng tên|ghi đè)/);
   assert.equal(fs.readFileSync(result.path)[0], 9);
   fs.unlinkSync(source);
   assert.ok(fs.existsSync(result.path), 'NAS copy survives local deletion');
@@ -65,21 +65,29 @@ test('NAS copies with season/episode numbering, reuses identical files and prese
 
 test('NAS rejects detached roots, unsafe folder names, symlinks and fake posters', async t => {
   const root = temp(t);
-  await assert.rejects(() => nas.prepareNasExport({ root, folderName: '../outside', series }), /目录|路径/);
+  await assert.rejects(() => nas.prepareNasExport({ root, folderName: '../outside', series }), /(?:目录|路径|Thư mục|đường dẫn)/i);
   const other = temp(t); fs.writeFileSync(path.join(other, 'foreign.nfo'), 'foreign');
-  fs.symlinkSync(path.join(other, 'foreign.nfo'), path.join(root, 'tvshow.nfo'));
-  await assert.rejects(() => prepare(root), /目录|链接/);
-  fs.unlinkSync(path.join(root, 'tvshow.nfo'));
+  let symlinkCreated = false;
+  try {
+    fs.symlinkSync(path.join(other, 'foreign.nfo'), path.join(root, 'tvshow.nfo'));
+    symlinkCreated = true;
+  } catch (err) {
+    if (err.code !== 'EPERM') throw err;
+  }
+  if (symlinkCreated) {
+    await assert.rejects(() => prepare(root), /(?:目录|链接|Thư mục|liên kết)/i);
+    fs.unlinkSync(path.join(root, 'tvshow.nfo'));
+  }
   const { destination } = await prepare(root);
   fs.renameSync(root, `${root}-detached`); t.after(() => fs.rmSync(`${root}-detached`, { recursive: true, force: true }));
-  await assert.rejects(() => nas.inspectNasEpisode(destination, series.episodes[0]), /NAS|目录/);
+  await assert.rejects(() => nas.inspectNasEpisode(destination, series.episodes[0]), /(?:NAS|目录|Thư mục)/i);
   assert.equal(fs.existsSync(root), false, 'must not recreate an unmounted root');
   const blank = temp(t);
   const result = await nas.prepareNasExport({ root: blank, folderName: 'blank', series }, {
     metadataFetcher: async () => ({ success: false }), posterFetcher: async () => Buffer.from('<html>error</html>'),
   });
-  assert.ok(result.warnings.some(message => /简介/.test(message)));
-  assert.ok(result.warnings.some(message => /封面/.test(message)));
+  assert.ok(result.warnings.some(message => /(?:简介|tóm tắt)/i.test(message)));
+  assert.ok(result.warnings.some(message => /(?:封面|bìa|ảnh bìa)/i.test(message)));
   assert.equal(fs.existsSync(path.join(result.destination.directory, 'tvshow.nfo')), false);
 });
 
@@ -227,7 +235,7 @@ test('active downloads cannot be retargeted while their writer is still running'
     customDir: h.root, hongguoInfo: { ...series.episodes[0], series_id: seriesId } };
   h.run('downloadTasks = [activeTask];');
   const result = await h.handlers['download-series-to-nas']({}, seriesId, 'auto');
-  assert.equal(result.success, false); assert.match(result.error, /先暂停/);
+  assert.equal(result.success, false); assert.match(result.error, /(?:先暂停|tạm dừng.*trước)/i);
   assert.equal(h.run('downloadTasks[0].savePath'), source);
   assert.equal(h.run('downloadTasks[0].nasDestination'), undefined);
 });
@@ -238,7 +246,7 @@ test('an existing NAS video is adopted without another download and another seri
   const source = path.join(h.root, 'existing.mp4'); fs.writeFileSync(source, Buffer.alloc(120000, 8));
   const copied = await nas.copyNasEpisode({ savePath: source, hongguoInfo: { ...series.episodes[0], series_id: seriesId } }, result.destination);
   const input = { ...series, series_id: '7691228619774905370' };
-  await assert.rejects(() => nas.prepareNasExport({ root: h.target, folderName: 'other', series: input }, { metadataFetcher, posterFetcher }), /已有其他|归属/);
+  await assert.rejects(() => nas.prepareNasExport({ root: h.target, folderName: 'other', series: input }, { metadataFetcher, posterFetcher }), /(?:已有其他|归属|phim khác|nguồn gốc)/);
   assert.ok(fs.existsSync(copied.path));
   const response = await h.handlers['download-series-to-nas']({}, seriesId, 'auto');
   assert.equal(response.success, true); assert.equal(response.copied, 1); assert.equal(response.count, 1);

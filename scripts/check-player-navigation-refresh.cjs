@@ -68,7 +68,7 @@ const picker = ui => ui.find(n => n.props.className?.includes('series-picker-btn
     } });
     try {
       await ui.flush(); ui.metadata(); ui.media.currentTime = 31;
-      const pending = ui.find(n => n.props['aria-label'] === '第 1 集').props.onDoubleClick();
+      const pending = ui.find(n => n.props['aria-label'] === '第 1 集' || n.props['aria-label'] === 'Tập 1').props.onDoubleClick();
       ui.props.active = false; await ui.flush(); ui.props.active = true; await ui.flush();
       finish({ success: true, count: 1 }); await pending; await ui.flush();
       assert.equal(ui.button('取消等待'), undefined); assert.equal(ui.media.paused, true); assert.equal(ui.media.currentTime, 31);
@@ -127,7 +127,7 @@ const picker = ui => ui.find(n => n.props.className?.includes('series-picker-btn
     try {
       await ui.flush();
       ui.props.active = false; await ui.flush(); list = [{ series_id: 'A' }]; ui.props.active = true; await ui.flush();
-      assert.ok(ui.find(n => n.props['aria-label'] === '第 1 集'));
+      assert.ok(ui.find(n => n.props['aria-label'] === '第 1 集' || n.props['aria-label'] === 'Tập 1'));
       assert.equal(ui.find(n => n.type === 'video').props.src, undefined);
       assert.equal(ui.button('恢复已移除'), undefined);
     } finally { ui.unmount(); }

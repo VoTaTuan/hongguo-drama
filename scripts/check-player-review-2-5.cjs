@@ -13,7 +13,14 @@ vm.runInNewContext(`${settingsHarness}\nmodule.exports = { mount };`, { module: 
 const mountSettings = api => settingsModule.exports.mount(api, 'Settings');
 const text = node => typeof node === 'string' || typeof node === 'number' ? String(node) : node?.children?.map(text).join('') || '';
 const visible = (ui, value) => ui.find(node => text(node).includes(value));
-const setting = (ui, label) => ui.find(node => node.type === 'label' && text(node).startsWith(label))?.children.find(node => node?.type === 'input');
+const settingMap = {
+  '自动兼容模式': 'Chế độ tương thích tự động',
+  '看完自动删除': 'Tự động xóa sau khi xem xong',
+};
+const setting = (ui, label) => {
+  const vn = settingMap[label];
+  return ui.find(node => node.type === 'label' && (text(node).startsWith(label) || (vn && text(node).startsWith(vn))))?.children?.find(node => node?.type === 'input');
+};
 const defer = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
 
 (async () => {
@@ -60,7 +67,7 @@ const defer = () => { let resolve; const promise = new Promise(done => { resolve
         assert.equal(ui.find(node => node.type === 'fieldset').props.disabled, true);
         pending.resolve({ success: true }); await saving; await ui.flush();
         assert.equal(persisted[key], !initial); assert.equal(setting(ui, label).props.checked, !initial);
-        assert.ok(visible(ui, '已保存')); assert.ok(!visible(ui, '有未保存的修改'));
+        assert.ok(visible(ui, '已保存') || visible(ui, 'Đã lưu')); assert.ok(!visible(ui, '有未保存的修改') && !visible(ui, 'Có thay đổi chưa lưu'));
       } finally { pending.resolve({ success: false }); ui.unmount(); }
     });
     for (const rejected of [false, true]) await test(`${label} ${rejected ? 'rejection' : 'failure'} keeps state and explains failure`, async () => {
@@ -75,7 +82,7 @@ const defer = () => { let resolve; const promise = new Promise(done => { resolve
         assert.equal(persisted[key], initial, 'failed save must keep the persisted setting');
         assert.equal(setting(ui, label).props.checked, !initial, 'keep the unsaved draft available for retry');
         assert.ok(ui.find(node => node.props.role === 'alert' && text(node).includes('设置写入失败')));
-        assert.ok(visible(ui, '有未保存的修改')); assert.ok(!visible(ui, '已保存'));
+        assert.ok(visible(ui, '有未保存的修改') || visible(ui, 'Có thay đổi chưa lưu')); assert.ok(!visible(ui, '已保存') && !visible(ui, 'Đã lưu'));
         assert.equal(ui.find(node => node.type === 'fieldset').props.disabled, false);
         broken = false; await ui.button('保存当前设置').props.onClick(); await ui.flush();
         assert.equal(persisted[key], !initial); assert.ok(!visible(ui, '设置写入失败'));

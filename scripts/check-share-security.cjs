@@ -100,7 +100,7 @@ async function main() {
     // An explicitly configured local proxy remains supported; it serves only this offline fixture.
     axios.get = (url, options) => original(url, { ...options,
       proxy: { protocol: 'http', host: '127.0.0.1', port: server.address().port } });
-    await assert.rejects(resolveSeriesId('http://share.example/gzip'), /加载失败/);
+    await assert.rejects(resolveSeriesId('http://share.example/gzip'), /(?:加载失败|Tải liên kết chia sẻ thất bại)/);
     assert.equal(reachedServer, true, 'response limit must be tested against the local server');
   } finally {
     axios.get = original;

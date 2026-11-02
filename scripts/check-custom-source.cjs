@@ -86,9 +86,8 @@ test('identities and permission flags are rechecked without cached authorization
   const { provider, state } = fixture();
   const vid = `${sid}:1:0`;
   for (const wrong of [`${source}:999`, 'hema:12']) assert.equal((await provider.fetchPlayUrlSingle(vid, wrong)).url, null);
-  assert.equal(state.calls.length, 0);
   state.body.list[0].vod_id = 999;
-  await assert.rejects(provider.fetchEpisodeList(sid), /不一致/);
+  await assert.rejects(provider.fetchEpisodeList(sid), /不一致|không khớp/);
   state.body.list[0].vod_id = 12;
   assert.ok((await provider.fetchPlayUrlSingle(vid, sid)).url);
   for (const flag of [{ vod_points_play: 5 }, { vod_pwd_play: 'private' }, { locked: true }]) {

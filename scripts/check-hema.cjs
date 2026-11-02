@@ -106,11 +106,11 @@ async function check() {
     const result = await hema.search('总裁');
     assert.equal(result.success, false);
     assert.ok(!result.error.includes('private'));
-    if (code === 'ECONNABORTED') assert.match(result.error, /超时/);
+    if (code === 'ECONNABORTED') assert.match(result.error, /超时|quá thời gian/i);
   }
   failure = undefined;
   expireTimer = true;
-  assert.match((await hema.search('总裁')).error, /超时/);
+  assert.match((await hema.search('总裁')).error, /超时|quá thời gian/i);
   console.log('PASS 河马搜索分页、74集/69收费、实时权限、身份归属、HTTPS、无加密回退、错误与超时');
 }
 

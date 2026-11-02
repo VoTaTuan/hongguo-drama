@@ -11,10 +11,10 @@ const WEB_QUERY = {
   account_sdk_source: 'web', is_from_ttaccountsdk: '1', language: 'zh',
 };
 
-function safeMessage(error, fallback = '账号操作失败，请稍后重试') {
+function safeMessage(error, fallback = 'Thao tác tài khoản thất bại, vui lòng thử lại sau') {
   return String(error?.message || fallback)
-    .replace(/https?:\/\/\S+/gi, '[地址]')
-    .replace(/(?:sessionid|sid_tt|passport_csrf_token)=[^;\s]+/gi, '$1=[已隐藏]')
+    .replace(/https?:\/\/\S+/gi, '[địa chỉ]')
+    .replace(/(?:sessionid|sid_tt|passport_csrf_token)=[^;\s]+/gi, '$1=[đã ẩn]')
     .slice(0, 160);
 }
 
@@ -49,15 +49,15 @@ function cleanCover(value) {
 }
 
 function responseData(payload) {
-  if (!payload || typeof payload !== 'object') throw new Error('红果账号接口返回格式异常');
+  if (!payload || typeof payload !== 'object') throw new Error('Định dạng phản hồi giao diện tài khoản Hồng Quả bất thường');
   if (payload.message && String(payload.message).trim().toLowerCase() !== 'success') {
     const description = payload.data?.description || payload.message;
-    throw new Error(cleanText(description) || '红果账号操作未完成');
+    throw new Error(cleanText(description) || 'Thao tác tài khoản Hồng Quả chưa hoàn thành');
   }
   if (payload.code !== undefined && Number(payload.code) !== 0) {
-    throw new Error(cleanText(payload.message || payload.msg) || `红果账号接口返回错误（${payload.code}）`);
+    throw new Error(cleanText(payload.message || payload.msg) || `Giao diện tài khoản Hồng Quả trả về lỗi (${payload.code})`);
   }
-  if (!payload.data || typeof payload.data !== 'object') throw new Error('红果账号接口返回内容为空');
+  if (!payload.data || typeof payload.data !== 'object') throw new Error('Nội dung trả về của giao diện tài khoản Hồng Quả trống');
   return payload.data;
 }
 
@@ -65,7 +65,7 @@ function parseQr(payload) {
   const data = responseData(payload);
   const token = String(data.token || '').trim();
   const source = String(data.qrcode || '').trim();
-  if (!token || !source) throw new Error('红果登录二维码格式已变化');
+  if (!token || !source) throw new Error('Định dạng mã QR đăng nhập Hồng Quả đã thay đổi');
   const image = /^data:image\//i.test(source) ? source : `data:image/png;base64,${source.split('base64,').pop()}`;
   const rawExpiry = Number(data.expire_time);
   const expiresIn = rawExpiry > 1_000_000_000
@@ -77,21 +77,21 @@ function parseQr(payload) {
 function parsePassportProfile(payload) {
   const data = responseData(payload);
   const id = String(data.user_id_str || data.user_id || '').trim();
-  if (!id) throw new Error('登录态未通过红果账号验证，请重新扫码');
-  if (!/^\d{1,30}$/.test(id) || !/[1-9]/.test(id)) throw new Error('红果账号编号无效，请重新扫码');
-  return { id, nickname: cleanText(data.name || data.screen_name || data.username) || '红果用户' };
+  if (!id) throw new Error('Trạng thái đăng nhập không qua xác minh tài khoản Hồng Quả, vui lòng quét mã lại');
+  if (!/^\d{1,30}$/.test(id) || !/[1-9]/.test(id)) throw new Error('Mã tài khoản Hồng Quả không hợp lệ, vui lòng quét mã lại');
+  return { id, nickname: cleanText(data.name || data.screen_name || data.username) || 'Người dùng Hồng Quả' };
 }
 
 function parseStoredProfile(value) {
   const id = String(value?.id || '').trim();
   if (!/^\d{1,30}$/.test(id) || !/[1-9]/.test(id)) return null;
-  return { id, nickname: cleanText(value?.nickname) || '红果用户' };
+  return { id, nickname: cleanText(value?.nickname) || 'Người dùng Hồng Quả' };
 }
 
 function parseHistory(payload) {
   const data = responseData(payload);
   const rows = data.data_list;
-  if (!Array.isArray(rows)) throw new Error('APP 观看记录格式已变化');
+  if (!Array.isArray(rows)) throw new Error('Định dạng lịch sử xem của APP đã thay đổi');
   return rows.map(row => {
     if (row?.is_delete) return null;
     const seriesId = String(row?.book_id_str || row?.book_id || row?.series_id || '').trim();
@@ -155,18 +155,18 @@ async function defaultWebRequest(url, options) {
 }
 
 function checkedWebResponse(response) {
-  if (!response || response.status !== 200) throw new Error(`红果网页登录请求失败（HTTP ${response?.status || '未知'}）`);
+  if (!response || response.status !== 200) throw new Error(`Yêu cầu đăng nhập web Hồng Quả thất bại (HTTP ${response?.status || 'Không rõ'})`);
   const raw = typeof response.data === 'string' ? response.data : JSON.stringify(response.data || {});
-  if (!raw.trim() || raw.length > 2 * 1024 * 1024) throw new Error('红果网页登录响应异常');
+  if (!raw.trim() || raw.length > 2 * 1024 * 1024) throw new Error('Phản hồi đăng nhập web Hồng Quả bất thường');
   let payload;
-  try { payload = JSON.parse(raw); } catch { throw new Error('红果网页登录响应格式异常'); }
+  try { payload = JSON.parse(raw); } catch { throw new Error('Định dạng phản hồi đăng nhập web Hồng Quả bất thường'); }
   return payload;
 }
 
 function secureSessionStore({ filePath, safeStorage }) {
   return {
     save(credentials) {
-      if (!safeStorage?.isEncryptionAvailable?.()) throw new Error('系统安全存储不可用，本次登录只保留到应用退出');
+      if (!safeStorage?.isEncryptionAvailable?.()) throw new Error('Lưu trữ an toàn của hệ thống không khả dụng, phiên đăng nhập này chỉ giữ đến khi thoát ứng dụng');
       const encrypted = safeStorage.encryptString(JSON.stringify(credentials));
       const temporary = `${filePath}.tmp`;
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -178,10 +178,10 @@ function secureSessionStore({ filePath, safeStorage }) {
     },
     load() {
       if (!fs.existsSync(filePath)) return null;
-      if (!safeStorage?.isEncryptionAvailable?.()) throw new Error('系统安全存储不可用，无法读取上次登录');
+      if (!safeStorage?.isEncryptionAvailable?.()) throw new Error('Lưu trữ an toàn của hệ thống không khả dụng, không thể đọc phiên đăng nhập lần trước');
       const text = safeStorage.decryptString(fs.readFileSync(filePath));
       const value = JSON.parse(text);
-      if (!value || typeof value.cookie !== 'string' || !value.cookie.trim()) throw new Error('登录态文件无效，请重新扫码');
+      if (!value || typeof value.cookie !== 'string' || !value.cookie.trim()) throw new Error('Tệp trạng thái đăng nhập không hợp lệ, vui lòng quét mã lại');
       return value;
     },
     clear() {
@@ -231,14 +231,14 @@ function createAccountService({
       if (cachedProfile) {
         credentials = saved;
         profile = cachedProfile;
-        withTimeout(verify(saved), 12000, '登录态验证超时').then(nextProfile => {
+        withTimeout(verify(saved), 12000, 'Xác minh trạng thái đăng nhập quá thời gian').then(nextProfile => {
           if (token !== generation) return;
           profile = nextProfile;
           try { sessionStore.save({ ...saved, profile: nextProfile }); } catch {}
         }).catch(error => {
           if (token !== generation) return;
           const message = safeMessage(error);
-          if (!/会话过期|登录态未通过|账号编号无效|HTTP\s*(?:401|403)/i.test(message)) return;
+          if (!/(?:会话过期|登录态未通过|账号编号无效|phiên hết hạn|trạng thái đăng nhập không qua|mã tài khoản không hợp lệ|HTTP\s*(?:401|403))/i.test(message)) return;
           credentials = null;
           profile = null;
           restorePromise = Promise.resolve(publicAccount());
@@ -247,14 +247,14 @@ function createAccountService({
         });
         return publicAccount();
       }
-      const nextProfile = await withTimeout(verify(saved), 12000, '登录态验证超时，请稍后重试');
+      const nextProfile = await withTimeout(verify(saved), 12000, 'Xác minh trạng thái đăng nhập quá thời gian, vui lòng thử lại sau');
       if (token !== generation) return publicAccount();
       credentials = saved;
       profile = nextProfile;
       try { sessionStore.save({ ...saved, profile: nextProfile }); } catch {}
       return publicAccount();
     } catch (error) {
-      return { success: true, signedIn: false, account: null, error: safeMessage(error, '上次登录暂时无法恢复') };
+      return { success: true, signedIn: false, account: null, error: safeMessage(error, 'Tạm thời không thể khôi phục lần đăng nhập trước') };
     }
   }
 
@@ -281,7 +281,7 @@ function createAccountService({
     let url = new URL(value, WEB_BASE);
     for (let count = 0; count < 5; count++) {
       if (url.protocol !== 'https:' || !(url.hostname === 'hongguoduanju.com' || url.hostname.endsWith('.hongguoduanju.com'))) {
-        throw new Error('登录确认跳转到了不支持的站点');
+        throw new Error('Chuyển hướng xác nhận đăng nhập đến trang web không được hỗ trợ');
       }
       const response = await webRequest(url.href, {
         method: 'GET', headers: { 'User-Agent': WEB_UA, Referer: `${WEB_BASE}/`, Cookie: jar.header() },
@@ -291,10 +291,10 @@ function createAccountService({
         url = new URL(response.headers.location, url);
         continue;
       }
-      if (response.status !== 200) throw new Error(`登录确认失败（HTTP ${response.status}）`);
+      if (response.status !== 200) throw new Error(`Xác nhận đăng nhập thất bại (HTTP ${response.status})`);
       return;
     }
-    throw new Error('登录确认跳转次数过多');
+    throw new Error('Số lần chuyển hướng xác nhận đăng nhập quá nhiều');
   }
 
   return {
@@ -312,7 +312,7 @@ function createAccountService({
     },
 
     async pollLogin(loginId) {
-      if (!login || login.id !== loginId) throw new Error('扫码会话已失效，请重新获取二维码');
+      if (!login || login.id !== loginId) throw new Error('Phiên quét mã đã hết hạn, vui lòng lấy mã QR mới');
       if (now() >= login.expiresAt) {
         login = null;
         return { success: true, status: 'expired' };
@@ -333,8 +333,8 @@ function createAccountService({
       const cookie = login.jar.header();
       console.log('[Account] Device identity and profile verify: start');
       const [identity, nextProfile] = await Promise.all([
-        withTimeout(identityRequest(accountRequest), 10000, '账号设备初始化超时，请重试'),
-        withTimeout(verify({ cookie }), 15000, '账号资料验证超时，请重试'),
+        withTimeout(identityRequest(accountRequest), 10000, 'Khởi tạo thiết bị tài khoản quá thời gian, vui lòng thử lại'),
+        withTimeout(verify({ cookie }), 15000, 'Xác minh thông tin tài khoản quá thời gian, vui lòng thử lại'),
       ]);
       console.log('[Account] Device identity and profile verify: done');
       const nextCredentials = {
@@ -383,7 +383,7 @@ function createAccountService({
       if (token !== generation) return { success: true, signedIn: false, account: null, results: [] };
       history = rows.map(row => ({
         ...row,
-        series_title: row.series_title || `剧集 ${row.series_id}`,
+        series_title: row.series_title || `Phim ${row.series_id}`,
       }));
       historyLoaded = true;
       return publicAccount({ results: history.map(row => ({ ...row })) });

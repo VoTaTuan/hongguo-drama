@@ -77,9 +77,9 @@ test('an error code with an empty list stays an error and is not cached as an em
   clearSearchCache();
   let calls = 0;
   const request = async () => { calls++; return { code: 'upstream_unavailable', message: 'Search is temporarily unavailable.', searchList: [] }; };
-  await assert.rejects(searchHongguo('错误码空列表', { request, cache: true, retries: 1 }), /暂不可用/);
+  await assert.rejects(searchHongguo('错误码空列表', { request, cache: true, retries: 1 }), /暂不可用|không khả dụng/i);
   assert.equal(calls, 2, 'service errors are retryable');
-  await assert.rejects(searchHongguo('错误码空列表', { request, cache: true, retries: 0 }), /暂不可用/);
+  await assert.rejects(searchHongguo('错误码空列表', { request, cache: true, retries: 0 }), /暂不可用|không khả dụng/i);
   assert.equal(calls, 3, 'the error must not be served from cache');
 });
 
@@ -98,7 +98,7 @@ test('request errors are classified for retry and fallback decisions', () => {
   const changed = classifyRequestError({ response: { status: 404 } });
   assert.equal(changed.kind, 'format');
   assert.equal(changed.fallback, true);
-  assert.match(classifyRequestError({ response: { status: 403 } }).message, /接口已变化/);
+  assert.match(classifyRequestError({ response: { status: 403 } }).message, /接口已变化|đã thay đổi/i);
 });
 
 test('a transient failure is retried once and then succeeds', async () => {
@@ -117,8 +117,8 @@ test('a transient failure is retried once and then succeeds', async () => {
 test('format errors are not retried because another attempt cannot fix the shape', async () => {
   clearSearchCache();
   let calls = 0;
-  const request = async () => { calls++; throw new HongguoSearchError('接口已变化', 'format', { fallback: true }); };
-  await assert.rejects(searchHongguo('甲剧', { request, retries: 2, cache: false }), /接口已变化/);
+  const request = async () => { calls++; throw new HongguoSearchError('Giao diện tìm kiếm đã thay đổi', 'format', { fallback: true }); };
+  await assert.rejects(searchHongguo('甲剧', { request, retries: 2, cache: false }), /接口已变化|đã thay đổi/i);
   assert.equal(calls, 1);
 });
 
@@ -134,12 +134,12 @@ test('successful lookups are cached briefly', async () => {
 
 test('an expired total deadline rejects without starting another request', async () => {
   let calls = 0;
-  await assert.rejects(searchHongguo('超时测试', { deadline: Date.now() - 1, request: async () => { calls++; return payload; } }), /搜索超时/);
+  await assert.rejects(searchHongguo('超时测试', { deadline: Date.now() - 1, request: async () => { calls++; return payload; } }), /搜索超时|quá thời gian/i);
   assert.equal(calls, 0);
 });
 
 test('empty keywords are rejected without a request', async () => {
   let calls = 0;
-  await assert.rejects(searchHongguo('   ', { request: async () => { calls++; } }), /搜索词/);
+  await assert.rejects(searchHongguo('   ', { request: async () => { calls++; } }), /搜索词|từ khóa/i);
   assert.equal(calls, 0);
 });

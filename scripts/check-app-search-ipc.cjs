@@ -196,7 +196,7 @@ function load({ appEnabled = true, appSearch = unexpectedSearch, webSearch = une
       const result = await fixture.handlers['search-series']({}, '当天新剧', { source: 'hongguo' });
       assert.equal(result.success, false, 'an incomplete new-release scan must not look like a confirmed empty result');
       assert.equal(result.partial, true);
-      assert.match(result.error, /部分分类/);
+      assert.match(result.error, /部分分类|một phần thể loại/i);
     } finally { fixture.cleanup(); }
   }
 

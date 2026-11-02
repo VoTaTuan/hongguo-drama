@@ -53,7 +53,7 @@ function createUpdateInstaller({ updater, currentVersion, isEnabled, installBloc
     operation = (async () => {
       try {
         const result = await updater.checkForUpdates();
-        if (request !== generation || !isEnabled()) { result?.cancellationToken?.cancel(); return fail('更新已取消。'); }
+        if (request !== generation || !isEnabled()) { result?.cancellationToken?.cancel(); return fail('Cập nhật đã bị hủy.'); }
         const release = availableRelease({ tag_name: result?.updateInfo?.version }, currentVersion);
         if (!release || release.version !== expectedVersion) {
           update({ status: 'error', error: 'Thông tin bản mới đã thay đổi, vui lòng kiểm tra lại cập nhật.' });
@@ -62,12 +62,12 @@ function createUpdateInstaller({ updater, currentVersion, isEnabled, installBloc
         cancellationToken = result.cancellationToken;
         update({ status: 'downloading' });
         await updater.downloadUpdate(cancellationToken);
-        if (request !== generation || !isEnabled()) return fail('更新已取消。');
+        if (request !== generation || !isEnabled()) return fail('Cập nhật đã bị hủy.');
         // Only this operation's verified completion can make the update installable.
         update({ status: 'downloaded', percent: 100, error: '', downloaded: true });
         return { success: true, state: getState() };
       } catch (_) {
-        if (request !== generation || !isEnabled()) return fail('更新已取消。');
+        if (request !== generation || !isEnabled()) return fail('Cập nhật đã bị hủy.');
         update({ status: 'error', error: 'Tải xuống hoặc xác thực bản cập nhật thất bại, vui lòng kiểm tra mạng rồi thử lại.' });
         return fail(state.error);
       }

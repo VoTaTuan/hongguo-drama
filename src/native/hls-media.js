@@ -43,9 +43,9 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
   const deadline = setTimeout(() => fail(new Error('Chuẩn bị HLS quá thời gian, vui lòng thử lại')), 10 * 60 * 1000);
   const stage = async (remote, playlist = false, ancestors = new Set()) => {
     check(); webMediaRequestOptions(remote);
-    if (ancestors.has(remote)) throw new Error('HLS 清单循环引用');
+    if (ancestors.has(remote)) throw new Error('Tham chiếu vòng trong danh sách HLS');
     if (files.has(remote)) return files.get(remote);
-    if (files.size >= 10000) throw new Error('HLS 清单过大');
+    if (files.size >= 10000) throw new Error('Danh sách HLS quá lớn');
     const extension = playlist ? 'm3u8' : /\.(ts|m4s|mp4|aac|m4a|vtt)$/i.exec(new URL(remote).pathname)?.[1] || 'ts';
     const local = path.join(temporary, `${files.size}.${extension}`);
     files.set(remote,local);
@@ -53,21 +53,21 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
     try {
       upstream = await request(remote, { signal:controller.signal, headers:{...headers,'Accept-Encoding':'identity'} });
       check();
-      if (upstream.status !== 200) throw new Error('HLS 媒体请求失败或内容不完整');
+      if (upstream.status !== 200) throw new Error('Yêu cầu media HLS thất bại hoặc nội dung không đầy đủ');
       const type = String(upstream.headers['content-type'] || '');
       if (playlist || /mpegurl/i.test(type)) {
         const parts = [];
         let bytes = 0;
         for await (const chunk of upstream.data) {
           check(); bytes += chunk.length;
-          if (bytes > 2 * 1024 * 1024) throw new Error('HLS 清单过大');
+          if (bytes > 2 * 1024 * 1024) throw new Error('Danh sách HLS quá lớn');
           // Decode only after the whole manifest is buffered: UTF-8 characters may span chunks.
           parts.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
         }
-        if (Number(upstream.headers['content-length']) && bytes !== Number(upstream.headers['content-length'])) throw new Error('HLS 清单下载不完整');
+        if (Number(upstream.headers['content-length']) && bytes !== Number(upstream.headers['content-length'])) throw new Error('Tải danh sách HLS không hoàn chỉnh');
         const text = Buffer.concat(parts).toString('utf8');
-        if (!text.trimStart().startsWith('#EXTM3U')) throw new Error('无效 HLS 清单');
-        if (/#EXTINF:/.test(text) && !/#EXT-X-ENDLIST/.test(text)) throw new Error('暂不支持未结束的直播清单');
+        if (!text.trimStart().startsWith('#EXTM3U')) throw new Error('Danh sách HLS không hợp lệ');
+        if (/#EXTINF:/.test(text) && !/#EXT-X-ENDLIST/.test(text)) throw new Error('Tạm thời không hỗ trợ danh sách phát trực tiếp chưa kết thúc');
         const base = upstream.request?.res?.responseUrl || upstream.url || remote;
         webMediaRequestOptions(base);
         const chain = new Set([...ancestors,remote]);
@@ -87,13 +87,13 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
             rewritten.push(await stage(new URL(value,base).href,variant,chain)); variant = false; continue;
           }
           variant = value.startsWith('#EXT-X-STREAM-INF:');
-          if (value.startsWith('#EXT-X-DEFINE:')) throw new Error('不支持含动态地址变量的 HLS 清单');
-          if (/^#EXT-X-(?:SESSION-)?KEY:/.test(value) && !/METHOD=(?:AES-128|NONE)(?:,|$)/.test(value)) throw new Error('不支持该 HLS 加密方式');
+          if (value.startsWith('#EXT-X-DEFINE:')) throw new Error('Không hỗ trợ danh sách HLS chứa biến địa chỉ động');
+          if (/^#EXT-X-(?:SESSION-)?KEY:/.test(value) && !/METHOD=(?:AES-128|NONE)(?:,|$)/.test(value)) throw new Error('Không hỗ trợ phương thức mã hóa HLS này');
           let result = line, matches = [...line.matchAll(/\bURI="([^"]*)"/g)];
-          if ((line.match(/\bURI\s*=/g) || []).length !== matches.length) throw new Error('HLS 地址格式无效');
+          if ((line.match(/\bURI\s*=/g) || []).length !== matches.length) throw new Error('Định dạng địa chỉ HLS không hợp lệ');
           for (const match of matches) {
             const file = await stage(new URL(match[1],base).href,/^#EXT-X-(?:MEDIA|I-FRAME-STREAM-INF):/.test(value),chain);
-            if (/^#EXT-X-(?:SESSION-)?KEY:/.test(value) && fs.statSync(file).size !== 16) throw new Error('HLS 密钥长度无效');
+            if (/^#EXT-X-(?:SESSION-)?KEY:/.test(value) && fs.statSync(file).size !== 16) throw new Error('Độ dài khóa HLS không hợp lệ');
             result = result.replace(match[0],`URI="${file}"`);
           }
           rewritten.push(result);
@@ -103,7 +103,7 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
         await fsp.writeFile(local,manifest,{mode:0o600});
         committedBytes = stagedBytes;
       } else {
-        if (/text\/html|application\/json/i.test(type)) throw new Error('HLS 分片返回了错误页面');
+        if (/text\/html|application\/json/i.test(type)) throw new Error('Phân đoạn HLS trả về trang lỗi');
         let bytes = 0;
         upstream.data.on('data',chunk => {
           try { ensureCapacity(chunk.length); }
@@ -114,7 +114,7 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
         writer = fs.createWriteStream(local,{mode:0o600});
         await pipeline(upstream.data,writer,{signal:controller.signal});
         committedBytes = stagedBytes; writer = null;
-        if (!bytes || (Number(upstream.headers['content-length']) && bytes !== Number(upstream.headers['content-length']))) throw new Error('HLS 分片下载不完整');
+        if (!bytes || (Number(upstream.headers['content-length']) && bytes !== Number(upstream.headers['content-length']))) throw new Error('Tải phân đoạn HLS không hoàn chỉnh');
         onProgress?.(received);
       }
       check(); return local;
@@ -134,7 +134,7 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
       return pending + extra + Math.max(0, Math.ceil((stagedBytes + extra) * 1.1) + 1024 * 1024 - outputBytes);
     } };
     diskJobs.add(diskJob);
-    if (!(capacityBytes > 0)) throw new Error('HLS 暂存空间不足');
+    if (!(capacityBytes > 0)) throw new Error('Không đủ dung lượng lưu tạm HLS');
     ensureCapacity(0);
     const input = await stage(url,true);
     check(); ensureCapacity(0);
@@ -145,12 +145,12 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
         '-i',input,'-map','0:v:0','-map','0:a?','-c','copy','-movflags','+faststart','-f','mp4',output],
       {windowsHide:true,stdio:['ignore','ignore','pipe']});
       child.stderr.on('data',() => {});
-      child.once('error',() => reject(new Error('无法启动 FFmpeg')));
-      child.once('close',code => { clearTimeout(killTimer); failure ? reject(failure) : code === 0 ? resolve() : reject(new Error('HLS 媒体转换失败')); });
+      child.once('error',() => reject(new Error('Không thể khởi động FFmpeg')));
+      child.once('close',code => { clearTimeout(killTimer); failure ? reject(failure) : code === 0 ? resolve() : reject(new Error('Chuyển đổi media HLS thất bại')); });
       if (controller.signal.aborted) stopChild();
     });
     check();
-    if (!fs.existsSync(output) || !fs.statSync(output).size) throw new Error('HLS 没有生成有效视频');
+    if (!fs.existsSync(output) || !fs.statSync(output).size) throw new Error('HLS không tạo ra video hợp lệ');
   } catch (error) {
     try { fs.unlinkSync(output); } catch (_) {}
     throw failure || error;

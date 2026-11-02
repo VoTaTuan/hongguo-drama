@@ -123,12 +123,30 @@ function mount({ local = false, localIndexes = [], localQuality, saved = null, t
     historyUpdated: payload => [...historyListeners].forEach(listener => listener(payload)),
     flushBatched: async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); render(); },
     transcodeProgress: payload => transcodeProgress?.(payload),
-    button: label => find(n => n.type === 'button' && text(n).includes(label)),
+    button: label => {
+      const map = {
+        '取消等待': 'Hủy chờ', '重试本集': 'Thử lại tập này', '重新连接片源': 'Kết nối lại nguồn phim',
+        '转码后播放': 'chuyển mã', '清空转码缓存': 'Xóa bộ nhớ đệm chuyển mã', '播放本集': 'Phát tập này',
+        '清空播放缓存': 'Xóa bộ nhớ đệm phát', '取消转码': 'Hủy chuyển mã', '合并导出全集': 'Ghép & xuất',
+        '高质量分辨率合并': 'Ghép độ phân giải chất lượng cao', '兼容合并（H.264）': 'Ghép tương thích (H.264)',
+        '快速合并': 'Ghép nhanh', '取消': 'Hủy', '提交中...': 'Đang gửi...',
+        '切换剧集': 'Đổi phim', '删除全部已下载': 'Xóa toàn bộ đã tải', '全部删除': 'Xóa toàn bộ', '删除文件': 'Xóa tệp',
+        '下载未完成集': 'Tải các tập chưa hoàn thành', '下载管理': 'Quản lý tải về', '缓存后续 2 集': 'Lưu đệm 2 tập',
+        '兼容模式': 'Chế độ tương thích', '自动兼容模式': 'Chế độ tương thích', '看完自动删': 'Tự xóa khi xem xong',
+        '看完自动删除': 'Tự xóa khi xem xong', '开启自动删除': 'Bật tự động xóa', '连播': 'Phát liên tục',
+        '重试': 'Thử lại', '下载本集': 'Tải tập này', '全部暂停': 'Tạm dừng tất cả', '继续全部': 'Tiếp tục tất cả',
+        '恢复全部': 'Khôi phục tất cả', '永久移除': 'Xóa vĩnh viễn', '下载后5集': 'Tải 5 tập tiếp theo',
+        '下载后10集': 'Tải 10 tập tiếp theo', '重试加载': 'Thử tải lại'
+      };
+      const vn = map[label];
+      return find(n => n.type === 'button' && (text(n).trim() === label || (vn && text(n).trim() === vn)))
+        || find(n => n.type === 'button' && (text(n).includes(label) || (vn && text(n).includes(vn))));
+    },
     enterFloatingPlayer: () => { floating = true; stage.ownerDocument = popupDocument; document.pictureInPictureElement = media; render(); },
     exitFloatingPlayer: () => document.exitPictureInPicture(),
     isFloating: () => floating,
     pictureInPictureExits: () => pipExits,
-    episode: n => find(x => x.props['aria-label'] === `第 ${n} 集`).props.onClick(),
+    episode: n => find(x => x.props['aria-label'] === `第 ${n} 集` || x.props['aria-label'] === `Tập ${n}`).props.onClick(),
     error: code => find(n => n.type === 'video').props.onError({ currentTarget: Object.assign(media, { error: { code } }) }),
     unmount: () => cleanups.forEach(fn => fn?.()) };
 }
@@ -403,10 +421,10 @@ if (require.main === module) (async () => {
     });
     await ui.flush();
     ui.button('合并导出全集').props.onClick(); ui.render();
-    assert.match(ui.text(), /逐集检查实际文件，全部达到1080P才能开始/);
-    assert.match(ui.text(), /优先无损拼接，保留每段原分辨率/);
-    assert.match(ui.text(), /必要时转为H\.264\/AAC，仍保留每段原分辨率/);
-    assert.match(ui.text(), /三种方式都保留原文件，只合并已下载分集/);
+    assert.match(ui.text(), /逐集检查实际文件，全部达到1080P才能开始|Kiểm tra từng tệp thực tế/i);
+    assert.match(ui.text(), /优先无损拼接，保留每段原分辨率|Ưu tiên nối không nén/i);
+    assert.match(ui.text(), /必要时转为H\.264\/AAC，仍保留每段原分辨率|Chuyển sang H\.264\/AAC khi cần/i);
+    assert.match(ui.text(), /三种方式都保留原文件，只合并已下载分集|Cả ba cách đều giữ nguyên tệp gốc/i);
     const high = ui.button('高质量分辨率合并');
     const quick = ui.button('快速合并');
     assert.ok(high);

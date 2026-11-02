@@ -8,7 +8,10 @@ const { transformSync } = require('esbuild');
 const { mount: mountPlayer } = require('./check-player-resume.cjs');
 const appSource = transformSync(fs.readFileSync(path.join(__dirname, '../src/App.jsx'), 'utf8'), { loader: 'jsx', format: 'cjs' }).code;
 const mainSource = fs.readFileSync(path.join(__dirname, '../main.js'), 'utf8');
-const playHandler = mainSource.slice(mainSource.indexOf('function navigateToPlayer'), mainSource.indexOf('// ===== 在线播放 ====='));
+const playEnd = mainSource.indexOf('// ===== 在线播放 =====') !== -1
+  ? mainSource.indexOf('// ===== 在线播放 =====')
+  : mainSource.indexOf('// ===== Phát trực tuyến =====');
+const playHandler = mainSource.slice(mainSource.indexOf('function navigateToPlayer'), playEnd);
 assert.match(playHandler, /function navigateToPlayer[\s\S]*ipcMain\.handle\('play-series'/, 'real playback IPC must be found');
 
 function fixture({ exists = true, dismissed = false, saveError = '', resolveError = '', playError = '', missingMessage = '', resolveGate } = {}) {
@@ -58,10 +61,14 @@ function fixture({ exists = true, dismissed = false, saveError = '', resolveErro
   };
   const flush = async () => { for (let i = 0; i < 8; i++) { await Promise.resolve(); render(); } };
   render();
-  find(node => node.type === 'button' && node.children.some(child => child?.children?.includes('收藏与上新'))).props.onClick();
+  find(node => node.type === 'button' && node.children.some(child => child?.children?.includes('收藏与上新') || child?.children?.includes('Yêu thích & Cập nhật'))).props.onClick();
   render();
   return { registry, requests, resolutions, find, flush,
-    go: label => find(node => node.type === 'button' && node.children.some(child => child?.children?.includes(label))).props.onClick(),
+    go: label => {
+      const map = { '发现': 'Khám phá', '发现短剧': 'Khám phá phim', '我的剧库': 'Kho phim của tôi', '收藏与上新': 'Yêu thích & Cập nhật', '下载管理': 'Quản lý tải xuống', '设置': 'Cài đặt' };
+      const target = map[label] || label;
+      return find(node => node.type === 'button' && node.children.some(child => child?.children?.includes(label) || child?.children?.includes(target))).props.onClick();
+    },
     play: async () => { await find(node => node.type === './components/ReleaseCalendar').props.onPlay({ seriesId: 'A' }); await flush(); },
     directPlay: payload => handler({}, payload),
     target: () => find(node => node.type === './components/Player')?.props.target,
@@ -142,17 +149,17 @@ for (const all of [false, true]) for (const failure of ['success', 'partial', 'i
     player.button('切换剧集').props.onClick(); await player.flush();
     const beforeDetail = detailReads, beforeStorage = storageReads;
     const downloadText = () => player.find(node => node.props.className === 'series-row-sub')?.children.join('');
-    assert.match(downloadText(), /已下载.*3.*3/);
-    const button = all ? player.button('删除全部已下载') : player.find(node => node.type === 'button' && node.props.title?.startsWith('删除本地文件'));
+    assert.match(downloadText(), /(?:已下载|Đã tải).*3.*3/);
+    const button = all ? player.button('删除全部已下载') : player.find(node => node.type === 'button' && (node.props.title?.startsWith('删除本地文件') || node.props.title?.startsWith('Xóa tệp cục bộ')));
     button.props.onClick({ stopPropagation() {} }); await player.flush();
     await player.button(all ? '全部删除' : '删除文件').props.onClick(); await player.flush();
     assert.ok(detailReads > beforeDetail, 'partial deletion must reload episode paths');
     assert.ok(storageReads > beforeStorage, 'partial deletion must reload remaining storage');
     const toast = player.find(node => node.props.className === 'dm-toast dm-toast-success')?.children.join('');
-    if (failure === 'partial') { assert.match(toast, /已删除 1 个/); assert.match(toast, /2 个.*失败/); }
+    if (failure === 'partial') { assert.match(toast, /(?:已删除 1 个|Đã xóa 1 tệp)/); assert.match(toast, /(?:2 个.*失败|2 tệp xóa thất bại)/); }
     else if (failure === 'ipc') assert.match(toast, /IPC disconnected/);
-    else assert.match(toast, /已删除 1 个/);
-    assert.match(downloadText(), /已下载.*2.*3/, 'download count must reflect remaining episodes after any deletion outcome');
+    else assert.match(toast, /(?:已删除 1 个|Đã xóa 1 tệp)/);
+    assert.match(downloadText(), /(?:已下载|Đã tải).*2.*3/, 'download count must reflect remaining episodes after any deletion outcome');
     assert.ok(player.find(node => node.props.className === 'series-picker-usage')?.children.includes(2));
   } finally { player.unmount(); }
 });

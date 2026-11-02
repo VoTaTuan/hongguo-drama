@@ -8,6 +8,47 @@ const PURCHASE_URL = 'https://vipai.pro/';
 const FEEDBACK_URL = 'https://github.com/jackotom/hongguo-drama/issues';
 const FEEDBACK_EMAIL = 'jaoktom@outlook.com';
 
+const ANNOUNCEMENT_TRANSLATIONS = [
+  [/红果短剧\s*([0-9.]+)\s*已更新/g, 'Phim Ngắn Hồng Quả $1 đã cập nhật'],
+  [/红果短剧\s*已更新/g, 'Phim Ngắn Hồng Quả đã cập nhật'],
+  [/红果短剧/g, 'Phim Ngắn Hồng Quả'],
+  [/已更新/g, 'đã cập nhật'],
+  [/紧急公告/g, 'Thông báo khẩn cấp'],
+  [/播放提示/g, 'Nhắc nhở phát lại'],
+  [/功能建议/g, 'Góp ý tính năng'],
+  [/欢迎反馈。?/g, 'Hoan nghênh mọi phản hồi.'],
+  [/平台接口、设备校验或网络可能影响播放。?/g, 'Giao diện nền tảng, xác thực thiết bị hoặc mạng có thể ảnh hưởng đến việc phát.'],
+  [/恢复播放取源请求签名，改善播放与下载失败。?/g, 'Khôi phục chữ ký yêu cầu lấy nguồn phát, cải thiện sự cố phát và tải về thất bại. '],
+  [/增加官网登录备用入口、按剧清理播放缓存、观看记录分组与 DLNA 单集投屏。?/g, 'Bổ sung lối vào đăng nhập dự phòng từ trang web chính thức, dọn dẹp bộ nhớ đệm phát theo từng bộ phim, phân nhóm lịch sử xem và truyền phát DLNA từng tập lên TV. '],
+  [/官网提供的登录方式、电视格式支持以实际设备为准；?/g, 'Phương thức đăng nhập và hỗ trợ định dạng TV do trang web cung cấp tùy thuộc vào thiết bị thực tế; '],
+  [/上游间歇获取源失败仍可重试本集。?/g, 'khi nguồn upstream chập chờn lấy nguồn thất bại vẫn có thể thử lại tập này.'],
+  [/说明和三端下载[：:]/g, 'Thuyết minh và tải về cho cả 3 nền tảng: '],
+  [/说明和三端下载/g, 'Thuyết minh và tải về cho cả 3 nền tảng'],
+  [/具体产品、价格及开通方式，以网站页面说明为准。?/g, 'Sản phẩm cụ thể, giá cả và phương thức kích hoạt căn cứ theo hướng dẫn trên trang web.'],
+  [/邮箱[：:]/g, 'Email: '],
+  [/发布/g, 'Phát hành'],
+  [/更新/g, 'Cập nhật'],
+  [/修复/g, 'Sửa lỗi'],
+];
+
+function translateAnnouncementText(text) {
+  if (!text || typeof text !== 'string') return text;
+  let s = text;
+  for (const [regex, rep] of ANNOUNCEMENT_TRANSLATIONS) {
+    s = s.replace(regex, rep);
+  }
+  return s;
+}
+
+function translateNotice(item) {
+  if (!item) return item;
+  return {
+    ...item,
+    title: translateAnnouncementText(item.title),
+    body: translateAnnouncementText(item.body),
+  };
+}
+
 export default function AnnouncementNotice() {
   const [notice, setNotice] = useState(null);
   const [error, setError] = useState('');
@@ -40,7 +81,8 @@ export default function AnnouncementNotice() {
       shown.current.add(key);
       queued = null;
       setError('');
-      setNotice(current => current?.urgent && !item.urgent && !item.manual ? current : item);
+      const translated = translateNotice(item);
+      setNotice(current => current?.urgent && !translated.urgent && !translated.manual ? current : translated);
     };
     const check = async urgentOnly => {
       if (!active || !preferences || !preferences.normalEnabled && !preferences.emergencyEnabled) return;
@@ -152,6 +194,8 @@ export default function AnnouncementNotice() {
           ? <a className="announcement-link announcement-purchase-link" href={PURCHASE_URL} title="Mở vipai.pro trong trình duyệt" onClick={event => openLink(event, PURCHASE_URL)}>{paragraph}</a>
           : paragraph.split(/(\r?\n)/).map((line, part) => {
             if (line.includes(FEEDBACK_URL)) return <a className="announcement-link" href={FEEDBACK_URL} key={part} onClick={event => openLink(event, FEEDBACK_URL)}>{line}</a>;
+            const releaseMatch = line.match(/https:\/\/github\.com\/jackotom\/hongguo-drama\/releases[^\s]*/);
+            if (releaseMatch) return <a className="announcement-link" href={releaseMatch[0]} key={part} onClick={event => openLink(event, releaseMatch[0])}>{line}</a>;
             return line.includes(FEEDBACK_EMAIL) ? <button type="button" className="announcement-link" key={part} onClick={copyEmail}>{line}</button> : line;
           })}</p>
       )}</div>

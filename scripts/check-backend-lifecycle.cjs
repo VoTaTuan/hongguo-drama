@@ -67,12 +67,12 @@ const checks = [
     const input = path.join(h.root, 'ep.mp4'); fs.writeFileSync(input, 'original');
     h.context.collectSeriesEpisodeFiles = () => ({ dir: h.root, ordered: [{ path: input, vid_index: 1 }] });
     h.context.resolveFfmpeg = () => '/fixture/ffmpeg';
-    fs.writeFileSync(path.join(h.root, '未命名短剧_合集.mp4'), 'first');
-    fs.writeFileSync(path.join(h.root, '未命名短剧_合集 (2).mp4'), 'second');
+    fs.writeFileSync(path.join(h.root, 'Phim ngắn chưa đặt tên_GopTap.mp4'), 'first');
+    fs.writeFileSync(path.join(h.root, 'Phim ngắn chưa đặt tên_GopTap (2).mp4'), 'second');
     const result = await h.handlers['merge-series']({}, '1');
     assert.equal(result.success, true, result.error);
-    assert.equal(result.outputName, '未命名短剧_合集 (3).mp4');
-    assert.equal(fs.readFileSync(path.join(h.root, '未命名短剧_合集.mp4'), 'utf8'), 'first');
+    assert.equal(result.outputName, 'Phim ngắn chưa đặt tên_GopTap (3).mp4');
+    assert.equal(fs.readFileSync(path.join(h.root, 'Phim ngắn chưa đặt tên_GopTap.mp4'), 'utf8'), 'first');
     await flush();
   }],
   ['startup cleans abandoned merge work only in recorded output directories', async () => {
@@ -109,7 +109,7 @@ const checks = [
       for (const channel of ['transcode-for-playback', 'cancel-transcode-for-playback']) {
         const result = await h.handlers[channel]({}, { seriesId: '1', vidIndex: index });
         assert.equal(result.success, false, `${channel}: ${String(index)}`);
-        assert.match(result.error || '', /集数/);
+        assert.match(result.error || '', /集数|Số tập/);
       }
     }
     assert.equal(h.context.compatPathFor('1', 2), h.context.compatPathFor('1', '2'));
@@ -152,7 +152,7 @@ const checks = [
     fs.rmdirSync(file + '.tmp'); store.saveSettings({ keep: true });
     assert.equal(events.at(-1), null, 'write failure remains latched after successful save');
     fs.writeFileSync(file, '{bad'); store.init(file);
-    assert.throws(() => store.saveSettings({ lost: true }), /读取本地数据/);
+    assert.throws(() => store.saveSettings({ lost: true }), /(?:读取本地数据|Đọc dữ liệu cục bộ)/);
     assert.equal(fs.readFileSync(file, 'utf8'), '{bad'); assert.ok(events.at(-1)?.error);
   }],
   ['non-App providers never gain a Hongguo Referer on 403', async () => {
@@ -240,10 +240,10 @@ const checks = [
     await flush(); assert.ok(output);
     try {
       h.app.emit('before-quit', { preventDefault() {} });
-      assert.match((await h.handlers['compat-cache-status']({})).error, /正在退出/);
+      assert.match((await h.handlers['compat-cache-status']({})).error, /正在退出|Đang thoát/);
       await clock.expire();
       assert.equal(h.state.errors.length, 1, 'stalled cleanup must cancel quit and tell the user');
-      assert.match(h.state.errors[0].message, /取消.*退出/);
+      assert.match(h.state.errors[0].message, /取消.*退出|hủy.*thoát/i);
       assert.equal(h.state.quits, 0); assert.deepEqual(signals, ['SIGTERM', 'SIGKILL']);
       assert.equal((await h.handlers['compat-cache-status']({})).success, true, 'IPC stays locked after timeout');
       assert.equal(h.run('storageError'), null, 'quit timeout must not create an update storage blocker');
@@ -254,7 +254,7 @@ const checks = [
       h.app.emit('before-quit', { preventDefault() {} });
       child.emit('close', 143); await pending; await flush();
       assert.equal(h.state.quits, 0, 'old timeout callback quit during a new cleanup');
-      assert.match((await h.handlers['compat-cache-status']({})).error, /正在退出/);
+      assert.match((await h.handlers['compat-cache-status']({})).error, /(?:正在退出|Đang thoát)/);
       h.run("compatPreparing.delete('other')"); releaseOther(); await flush();
       assert.equal(h.state.quits, 1); assert.equal(clock.pending.size, 0);
       assert.equal(fs.existsSync(output), false); assert.equal(fs.readFileSync(input, 'utf8'), 'original');

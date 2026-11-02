@@ -82,7 +82,7 @@ async function check(name, run) {
         assert.equal(result.via, new URL(expected).toString());
       } else {
         assert.equal(h.requests[0].options.proxy, false);
-        assert.equal(result.via, '(直连)');
+        assert.ok(result.via === '(直连)' || result.via === '(kết nối trực tiếp)');
       }
     }
   });
@@ -139,7 +139,7 @@ async function check(name, run) {
       }
       h.proxyCalls.push(config);
     };
-    await assert.rejects(h.context.applyProxyWithTimeout(custom, 5), /超时/);
+    await assert.rejects(h.context.applyProxyWithTimeout(custom, 5), /(?:超时|quá thời gian)/i);
     await h.context.applyProxySettings({ proxy_enabled: false });
     release();
     for (let i = 0; i < 40; i++) await Promise.resolve();
@@ -168,7 +168,7 @@ async function check(name, run) {
       const result = await Promise.race([h.handlers['save-settings']({}, custom),
         new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('proxy save left the queue blocked')), 150); })]);
       assert.equal(result.success, false);
-      assert.match(result.error, /超时/);
+      assert.match(result.error, /(?:超时|quá thời gian)/i);
       assert.equal(h.saved().proxy_enabled, false);
       assert.equal((await h.handlers['save-settings']({}, { auto_delete_watched: false })).success, true);
     } finally { clearTimeout(timer); }

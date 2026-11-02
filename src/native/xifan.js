@@ -81,7 +81,7 @@ async function browseList(options = {}) {
     const pg = Math.max(1, Number.parseInt(page, 10) || 1);
     const items = await genres(forceRefresh);
     const selected = genre ? items.find(item => item.slug === genre) : items.find(item => item.label === '都市') || items[0];
-    if (!selected) throw new Error('西饭题材无效，请重新选择');
+    if (!selected) throw new Error('Thể loại XiFan không hợp lệ, vui lòng chọn lại');
     const result = await request('/xifan/drama/portalPage', { reqType: 'aggregationPage', offset: (pg - 1) * 30,
       categoryId: selected.categoryId, categoryNames: selected.label, categoryVersion: selected.version });
     return normalizeList(result, pg, items);
@@ -91,7 +91,7 @@ async function browseList(options = {}) {
 async function search(keyword, page = 1, options = {}) {
   try {
     const kw = String(keyword || '').trim();
-    if (!kw) throw new Error('请输入搜索关键词');
+    if (!kw) throw new Error('Vui lòng nhập từ khóa tìm kiếm');
     const pg = Math.max(1, Number.parseInt(page, 10) || 1);
     return normalizeList(await request('/xifan/search/getSearchList', { keyword: kw, pageIndex: pg }, options), pg);
   } catch (error) { return { success: false, error: error.message }; }
@@ -101,7 +101,7 @@ async function detail(seriesId) {
   const { source, duanjuId } = parseId(seriesId);
   const result = await request('/xifan/drama/getDuanjuInfo', { source, duanjuId });
   if (result.source !== source || String(result.duanjuId) !== duanjuId || !Array.isArray(result.episodeList)) {
-    throw new Error('西饭返回的剧集与请求不一致');
+    throw new Error('Phim XiFan trả về không khớp với yêu cầu');
   }
   return result;
 }
@@ -119,29 +119,29 @@ function episodeDisplayTitle(seriesId, seriesTitle, title) {
 
 async function fetchEpisodeList(seriesId) {
   const result = await detail(seriesId);
-  const series_title = plainText(result.title) || '未命名短剧';
+  const series_title = plainText(result.title) || 'Phim ngắn chưa đặt tên';
   const cover = httpsUrl(result.coverImageUrl);
   const episodes = result.episodeList.filter(episode => ID.test(String(episode.episodeId || ''))).map(episode => ({
     vid: `${seriesId}:${episode.episodeId}`, vid_index: Number(episode.index) || 0,
     title: episodeDisplayTitle(seriesId, series_title, plainText(episode.title)), series_id: seriesId, series_title, cover,
     locked: episode.unlock !== true, source: 'xifan',
   })).sort((a, b) => a.vid_index - b.vid_index);
-  if (!episodes.length) throw new Error('西饭分集列表为空');
+  if (!episodes.length) throw new Error('Danh sách tập phim XiFan rỗng');
   return { series_id: seriesId, series_title, cover, total: episodes.length, episodes, source: 'xifan' };
 }
 
 async function fetchPlayUrlSingle(vid, sid) {
   try {
     const id = parseId(vid, true);
-    if (sid && String(sid) !== id.seriesId) throw new Error('西饭分集不属于当前剧集');
+    if (sid && String(sid) !== id.seriesId) throw new Error('Tập phim XiFan không thuộc về bộ phim hiện tại');
     // Always re-read access state, even when an earlier address or episode list was cached.
     const result = await detail(id.seriesId);
     const episode = result.episodeList.find(item => String(item.episodeId) === id.episodeId);
-    if (!episode) throw new Error('西饭未找到该分集');
+    if (!episode) throw new Error('XiFan không tìm thấy tập phim này');
     if (episode.unlock !== true) return { url: null, spadeA: null, codec: null, source: 'xifan', locked: true,
-      error: `第 ${Number(episode.index) || ''} 集当前锁定，请在西饭官方 App 确认可看范围` };
+      error: `Tập ${Number(episode.index) || ''} hiện đang bị khóa, vui lòng kiểm tra phạm vi xem trên App chính thức XiFan` };
     const url = httpsUrl(episode.playUrl);
-    if (!url) throw new Error('西饭未提供有效 HTTPS 播放地址');
+    if (!url) throw new Error('XiFan chưa cung cấp địa chỉ phát HTTPS hợp lệ');
     return { url, spadeA: null, codec: '', source: 'xifan' };
   } catch (error) { return { url: null, spadeA: null, codec: null, source: 'xifan', error: error.message }; }
 }

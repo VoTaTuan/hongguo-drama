@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
 const { mount } = require('./check-player-resume.cjs');
 const poll = async ui => { await [...ui.timers.values()].find(t => t.delay === 2000).fn(); await ui.flush(); };
-const select = ui => ui.find(n => n.type === 'select' && n.props['aria-label'] === '在线播放清晰度');
+const select = ui => ui.find(n => n.type === 'select' && (n.props['aria-label'] === '在线播放清晰度' || n.props['aria-label'] === 'Độ phân giải phát trực tuyến'));
 const alert = ui => ui.find(n => n.props.role === 'alert');
 const text = n => typeof n === 'string' ? n : n?.children?.map(text).join('') || '';
 let failures = 0;

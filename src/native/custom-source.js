@@ -26,7 +26,7 @@ function validateSource(draft) {
 function sourceId(value) {
   const parts = String(value || '').split(':');
   const id = parts[0] === 'custom' ? parts[1] : parts[0];
-  if (!UUID.test(id || '')) throw new Error('自定义源编号无效');
+  if (!UUID.test(id || '')) throw new Error('Mã nguồn tùy chỉnh không hợp lệ');
   return id.toLowerCase();
 }
 
@@ -90,7 +90,7 @@ async function request(source, params, draft = false) {
     return data;
   } catch (error) {
     // Never forward remote messages or Axios diagnostics containing signed URLs.
-    if (/^(自定义源|该自定义源|来源配置)/.test(error.message)) throw error;
+    if (/^(自定义源|该自定义源|来源配置|Cấu hình nguồn|Nguồn tùy chỉnh|Mã nguồn)/.test(error.message)) throw error;
     throw new Error(controller.signal.aborted || ['ECONNABORTED', 'ETIMEDOUT'].includes(error.code)
       ? 'Yêu cầu nguồn tùy chỉnh đã bị hủy hoặc quá thời gian, vui lòng thử lại' : 'Yêu cầu nguồn tùy chỉnh thất bại, vui lòng kiểm tra API công khai và mạng');
   } finally {

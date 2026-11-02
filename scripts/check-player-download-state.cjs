@@ -30,7 +30,7 @@ const start = async (f, props = {}) => {
   const ui = mount({ props: { target: { seriesId: 'A', vidIndex: 1, ts: 1 }, ...props }, apiOverrides: f.apiOverrides });
   ui.changed = f.changed; await ui.flush(); ui.metadata(); return ui;
 };
-const download = (ui, index = 1) => ui.find(n => n.props['aria-label'] === `第 ${index} 集`).props.onDoubleClick();
+const download = (ui, index = 1) => ui.find(n => n.props['aria-label'] === `第 ${index} 集` || n.props['aria-label'] === `Tập ${index}`).props.onDoubleClick();
 const poll = async ui => { ui.changed(); await [...ui.timers.values()].find(t => t.delay === 2000).fn(); await ui.flush(); };
 const source = ui => ui.find(n => n.type === 'video').props.src;
 

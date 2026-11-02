@@ -82,7 +82,7 @@
   padding-top: 18px;
 }
 
-/* ===== 网络代理：设置页状态行 ===== */
+/* ===== Proxy mạng: dòng trạng thái trang cài đặt ===== */
 .proxy-status-row {
   display: flex;
   align-items: center;
@@ -133,7 +133,7 @@
   flex-shrink: 0;
 }
 
-/* ===== 网络代理：配置弹窗 ===== */
+/* ===== Proxy mạng: cửa sổ cấu hình ===== */
 .proxy-modal-mask {
   position: fixed;
   inset: 0;

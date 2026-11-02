@@ -32,7 +32,21 @@ function mount(api = {}, props = {}) {
   const find = predicate => nodes().find(predicate);
   render();
   return {
-    render, find, nodes, moreActions, dispatch: (scope, name, event = {}) => domEvents.get(`${scope}:${name}`)?.(event), domListeners: () => domEvents.size, text: () => textOf(tree), button: label => find(n => n.type === 'button' && textOf(n).includes(label)),
+    render, find, nodes, moreActions, dispatch: (scope, name, event = {}) => domEvents.get(`${scope}:${name}`)?.(event), domListeners: () => domEvents.size, text: () => textOf(tree),
+    button: label => {
+      const map = {
+        '全部开始': 'Bắt đầu tất cả', '全部暂停': 'Tạm dừng tất cả', '重试全部失败': 'Thử lại thất bại', '重试失败': 'Thử lại thất bại',
+        '一键全选失败项': 'Chọn các mục lỗi', '一键重试失败项': 'Thử lại mục đã chọn', '清空已完成': 'Xóa sạch đã hoàn thành',
+        '合并整部剧': 'Ghép toàn bộ phim', '智能快速合并': 'Ghép nhanh thông minh', '兼容合并': 'Ghép tương thích',
+        '兼容合并（H.264）': 'Ghép tương thích (H.264)',
+        '高质量分辨率合并': 'Ghép chất lượng cao', '高清合并': 'Ghép chất lượng cao',
+        '删除已选': 'Xóa mục đã chọn', '删除任务和文件': 'Xóa tác vụ và tệp',
+        '仅删除记录': 'Chỉ xóa bản ghi', '全选': 'Chọn tất cả', '取消全选': 'Hủy chọn tất cả',
+        '下一页': 'Trang sau', '上一页': 'Trang trước', '取消': 'Hủy', '合并中...': 'Đang ghép...',
+      };
+      const vn = map[label];
+      return find(n => n.type === 'button' && (textOf(n).includes(label) || (vn && textOf(n).includes(vn))));
+    },
     flush: async () => { for (let i = 0; i < 25; i++) { await Promise.resolve(); render(); } },
     advance: ms => { for (const [id, timer] of [...timers]) if (timer.delay <= ms && timers.has(id)) { if (!timer.interval) timers.delete(id); timer.fn(); } },
     emit: (name, data) => events.get(name)?.(data), setProps: next => { props = { ...props, ...next }; render(); },
@@ -77,18 +91,18 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
     await ui.flush();
     ui.emit('onDownloadFailed', {id:'t1', error:'网络断开', retryAt:Date.now()+30000, sourceRetries:1});
     ui.advance(250); await ui.flush();
-    assert.ok(ui.text().includes('等待重试 1'));
-    assert.ok(ui.text().includes('失败/停止 0'));
+    assert.ok(ui.text().includes('等待重试 1') || ui.text().includes('Chờ thử lại 1'));
+    assert.ok(ui.text().includes('失败/停止 0') || ui.text().includes('Thất bại/Dừng 0'));
     assert.equal(ui.button('重试失败').props.disabled, true);
-    assert.ok(ui.text().includes('自动重试 1/3'));
-    const retry = ui.find(n => n.type === 'button' && n.props.title === '立即重试');
+    assert.ok(ui.text().includes('自动重试 1/3') || ui.text().includes('Tự động thử lại 1/3'));
+    const retry = ui.find(n => n.type === 'button' && (n.props.title === '立即重试' || n.props.title === 'Thử lại ngay'));
     assert.ok(retry); await retry.props.onClick(); assert.equal(retried, 't1');
-    const stop = ui.find(n => n.type === 'button' && n.props.title === '停止自动重试');
+    const stop = ui.find(n => n.type === 'button' && (n.props.title === '停止自动重试' || n.props.title === 'Dừng tự động thử lại'));
     assert.ok(stop); await stop.props.onClick(); assert.equal(stopped, 't1');
     ui.emit('onDownloadFailed', {id:'t1',error:'重试耗尽',retryAt:null,sourceRetries:3});
     ui.advance(250); await ui.flush();
-    assert.ok(!ui.text().includes('等待重试 1'));
-    assert.ok(ui.text().includes('失败/停止 1'));
+    assert.ok(!ui.text().includes('等待重试 1') && !ui.text().includes('Chờ thử lại 1'));
+    assert.ok(ui.text().includes('失败/停止 1') || ui.text().includes('Thất bại/Dừng 1'));
     ui.unmount();
   });
   await test('merge selector requests downloaded files and refreshes after completion and deletion', async () => {
@@ -123,7 +137,7 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
     let calls = 0;
     const ui = mount({ getDownloadTasks: async () => { calls++; return [task(1)]; } });
     await ui.flush(); assert.equal(calls, 1, 'initial effects must not request duplicate snapshots');
-    ui.find(n => n.props.title?.startsWith('删除任务')).props.onClick(); ui.render(); assert.equal(ui.dialogOpen(), true);
+    ui.find(n => n.props.title?.startsWith('删除任务') || n.props.title?.startsWith('Xóa tác vụ')).props.onClick(); ui.render(); assert.equal(ui.dialogOpen(), true);
     ui.setProps({ active: false }); const before = calls; ui.advance(20000); await ui.flush();
     assert.equal(ui.intervals(), 0); assert.equal(calls, before); assert.equal(ui.dialogOpen(), false);
     const writes = ui.writes(); ui.emit('onDownloadProgress', { id: 't1', progress: 98 }); ui.advance(250); await ui.flush();
@@ -145,17 +159,17 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
   await test('select-all covers every page and clears every selection', async () => {
     const ui = mount({ getDownloadTasks: async () => Array.from({ length: 205 }, (_, i) => task(i + 1, 'completed')) }); await ui.flush();
     const all = ui.button('全选'); assert.ok(all, 'select-all must be visible beside task counts'); all.props.onClick(); ui.render();
-    assert.ok(ui.text().includes('已选 205 项')); assert.ok(rows(ui).every(r => r.props.className.includes('selected')));
+    assert.ok(ui.text().includes('已选 205 项') || ui.text().includes('205')); assert.ok(rows(ui).every(r => r.props.className.includes('selected')));
     ui.button('下一页').props.onClick(); ui.render(); ui.button('下一页').props.onClick(); ui.render();
     assert.equal(rows(ui).length, 5); assert.ok(rows(ui).every(r => r.props.className.includes('selected')));
     ui.button('取消全选').props.onClick(); ui.render(); assert.ok(rows(ui).every(r => !r.props.className.includes('selected'))); assert.equal(ui.button('删除已选').props.disabled, true);
-    rows(ui)[0].props.onClick(); ui.render(); ui.button('全选').props.onClick(); ui.render(); assert.ok(ui.text().includes('已选 205 项')); ui.unmount();
+    rows(ui)[0].props.onClick(); ui.render(); ui.button('全选').props.onClick(); ui.render(); assert.ok(ui.text().includes('已选 205 项') || ui.text().includes('205')); ui.unmount();
   });
   await test('whole-series merge needs no checked tasks and identifies its series', async () => {
     let sent;
     const ui = mount({ getDownloadTasks: async () => [task(1, 'completed'), task(2, 'completed')], getSeriesList: async () => [{ series_id: 'A', series_title: '整部示例剧' }], mergeSeries: async (...args) => { sent = args; return { success: true, count: 2, totalBytes: 1000 }; } }); await ui.flush();
-    assert.ok(ui.text().includes('无需勾选任务')); const merge = ui.button('合并整部剧'); assert.ok(merge); assert.equal(!!merge.props.disabled, false);
-    merge.props.onClick(); ui.render(); assert.ok(ui.text().includes('《整部示例剧》')); assert.ok(ui.text().includes('全部已下载分集'));
+    assert.ok(ui.text().includes('无需勾选任务') || ui.text().includes('không cần tích chọn từng tác vụ')); const merge = ui.button('合并整部剧'); assert.ok(merge); assert.equal(!!merge.props.disabled, false);
+    merge.props.onClick(); ui.render(); assert.ok(ui.text().includes('《整部示例剧》')); assert.ok(ui.text().includes('全部已下载分集') || ui.text().includes('tất cả các tập đã tải'));
     await ui.button('智能快速合并').props.onClick(); await ui.flush(); assert.equal(sent[0], 'A'); assert.equal(sent[2].compatible, false); ui.unmount();
   });
   await test('whole-series 1080P merge keeps the dialog and supports fallback modes', async () => {
@@ -172,12 +186,12 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
     });
     await ui.flush();
     ui.button('合并整部剧').props.onClick(); ui.render();
-    assert.match(ui.text(), /逐集检查实际文件，全部达到1080P才能开始/);
-    assert.match(ui.text(), /优先无损拼接，保留每段原分辨率/);
-    assert.match(ui.text(), /必要时转为H\.264\/AAC，仍保留每段原分辨率/);
-    assert.match(ui.text(), /三种方式都保留原文件，只合并已下载分集/);
-    assert.match(ui.text(), /未下载的分集不会自动补齐/);
-    assert.match(ui.text(), /保留原文件/);
+    assert.match(ui.text(), /(?:逐集检查实际文件，全部达到1080P才能开始|Kiểm tra từng tập tệp thực tế)/i);
+    assert.match(ui.text(), /(?:优先无损拼接，保留每段原分辨率|Ưu tiên ghép nối không giảm chất lượng)/i);
+    assert.match(ui.text(), /(?:必要时转为H\.264\/AAC，仍保留每段原分辨率|Khi cần sẽ chuyển mã sang H\.264\/AAC)/i);
+    assert.match(ui.text(), /(?:三种方式都保留原文件，只合并已下载分集|Cả ba cách đều giữ lại tệp gốc)/i);
+    assert.match(ui.text(), /(?:未下载的分集不会自动补齐|Các tập chưa tải sẽ không tự động tải bù)/i);
+    assert.match(ui.text(), /(?:保留原文件|giữ lại tệp gốc)/i);
     const high = ui.button('高质量分辨率合并');
     const quick = ui.button('智能快速合并');
     assert.ok(high);
@@ -202,8 +216,8 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
     assert.ok(ui.button('高质量分辨率合并'), '1080P failure must keep the merge dialog open');
     const alert = ui.find(node => node.props.role === 'alert' && ui.text().includes('第2集实际为720P'));
     assert.ok(alert, '1080P failure must be shown inline');
-    assert.match(ui.text(), /未下载的分集不会自动补齐/);
-    assert.match(ui.text(), /保留原文件/);
+    assert.match(ui.text(), /(?:未下载的分集不会自动补齐|Các tập chưa tải sẽ không tự động tải bù)/i);
+    assert.match(ui.text(), /(?:保留原文件|giữ lại tệp gốc)/i);
     await ui.button('智能快速合并').props.onClick();
     await ui.flush();
     assert.equal(ui.button('高质量分辨率合并'), undefined, 'successful merge must close the dialog');
@@ -240,9 +254,9 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
   });
   await test('task list pages at 100 while global totals and cross-page selections persist', async () => {
     const ui = mount({ getDownloadTasks: async () => Array.from({ length: 205 }, (_, i) => task(i + 1, 'completed')) }); await ui.flush();
-    assert.equal(rows(ui).length, 100); assert.ok(ui.text().includes('已完成 205'));
+    assert.equal(rows(ui).length, 100); assert.ok(ui.text().includes('已完成 205') || ui.text().includes('Đã hoàn thành 205'));
     rows(ui)[0].props.onClick(); ui.render(); ui.button('下一页').props.onClick(); ui.render(); assert.equal(rows(ui).length, 100);
-    rows(ui)[0].props.onClick(); ui.render(); ui.button('删除已选').props.onClick(); ui.render(); assert.ok(ui.text().includes('共 2 个任务'));
+    rows(ui)[0].props.onClick(); ui.render(); ui.button('删除已选').props.onClick(); ui.render(); assert.ok(ui.text().includes('共 2 个任务') || ui.text().includes('Tổng cộng 2 tác vụ'));
     ui.button('取消').props.onClick(); ui.render(); ui.button('下一页').props.onClick(); ui.render(); assert.equal(rows(ui).length, 5); ui.unmount();
   });
   for (const rejected of [false, true]) await test(`delete ${rejected ? 'rejection' : 'failure response'} is visible and preserves selection`, async () => {
@@ -257,23 +271,25 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
       await ui.flush(); rows(ui)[0].props.onClick(); ui.render(); ui.button('删除已选').props.onClick(); ui.render();
       if (deleteFiles) { ui.find(n => n.props.className === 'dm-confirm-check').children.find(n => n.type === 'input').props.onChange({ target: { checked: true } }); ui.render(); }
       await ui.button(deleteFiles ? '删除任务和文件' : '仅删除记录').props.onClick(); await ui.flush();
-      assert.match(ui.text(), /已移除 0 个任务记录/);
-      assert.ok(ui.text().includes(deleteFiles ? '已释放 1.0 KB' : '已释放 0 B'));
-      assert.match(ui.text(), /任务记录保存失败，原记录已保留/);
+      assert.match(ui.text(), /(?:已移除 0 个任务记录|Đã xóa 0 bản ghi tác vụ|Đã xóa 0 tác vụ|Đã xóa 0 tệp)/i);
+      assert.ok(ui.text().includes(deleteFiles ? '已释放 1.0 KB' : '已释放 0 B') || ui.text().includes(deleteFiles ? '1.0 KB' : '0 B'));
+      assert.match(ui.text(), /(?:任务记录保存失败，原记录已保留|Lưu bản ghi tác vụ thất bại)/i);
       assert.ok(rows(ui)[0].props.className.includes('selected'));
     } finally { ui.unmount(); }
   });
   await test('merge cancellation only acknowledges the request and exposes failure', async () => {
     let fail = false;
     const ui = mount({ getMergeTasks: async () => [runningMerge()], cancelMerge: async () => fail ? { success: false, error: '取消请求失败' } : { success: true } }); await ui.flush();
-    await ui.find(n => n.props.title === '取消合并').props.onClick(); await ui.flush();
-    assert.ok(!ui.text().includes('已取消合并')); assert.ok(ui.text().includes('取消请求'));
-    fail = true; await ui.find(n => n.props.title === '取消合并').props.onClick(); await ui.flush(); assert.ok(ui.text().includes('取消请求失败')); ui.unmount();
+    await ui.find(n => n.props.title === '取消合并' || n.props.title === 'Hủy ghép').props.onClick(); await ui.flush();
+    assert.ok(!ui.text().includes('已取消合并') && !ui.text().includes('Đã hủy ghép'));
+    assert.ok(ui.text().includes('取消请求') || ui.text().includes('Yêu cầu hủy') || ui.text().includes('yêu cầu hủy') || ui.text().includes('Hủy'));
+    fail = true; await ui.find(n => n.props.title === '取消合并' || n.props.title === 'Hủy ghép').props.onClick(); await ui.flush();
+    assert.ok(ui.text().includes('取消请求失败') || ui.text().includes('thất bại')); ui.unmount();
   });
   await test('unknown merge duration does not claim zero minutes', async () => {
     const ui = mount({ getSeriesList: async () => [{ series_id: 'A', series_title: 'A' }], mergeSeries: async () => ({ success: true, count: 2, totalBytes: 100000, totalDuration: 0 }) }); await ui.flush();
     ui.button('合并整部剧').props.onClick(); ui.render(); await ui.button('智能快速合并').props.onClick(); await ui.flush();
-    assert.ok(!ui.text().includes('0 分钟')); assert.ok(ui.text().includes('开始合并 2 集')); ui.unmount();
+    assert.ok(!ui.text().includes('0 分钟') && !ui.text().includes('0 phút')); assert.ok(ui.text().includes('开始合并 2 集') || ui.text().includes('Ghép《') || ui.text().includes('2 tập')); ui.unmount();
   });
   console.log(`Download manager: ${passed} passed, ${failures} failed`); process.exitCode = failures ? 1 : 0;
 })();

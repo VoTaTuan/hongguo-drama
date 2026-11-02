@@ -20,7 +20,7 @@ const playerPage = (detail, data = {}, before = {}, route = 'player_(series_id)/
     assert.deepEqual(seriesPage.episodes.map(item => item.web_available), [true, false]);
     for (const detail of [{ vid_list: ['31'] }, { series_id: '999', vid_list: ['31'] }]) {
       axios.get = async () => ({ data: playerPage(detail, {}, {}, seriesRoute) });
-      await assert.rejects(fetchEpisodeListFromWeb('123458'), /剧集/);
+      await assert.rejects(fetchEpisodeListFromWeb('123458'), /(?:剧集|Phim)/i);
     }
 
     for (const html of [
@@ -31,7 +31,7 @@ const playerPage = (detail, data = {}, before = {}, route = 'player_(series_id)/
       '<script>window._ROUTER_DATA={"recommendation":{"series_id":"123456","vid_list":["21"]}}</script>',
     ]) {
       axios.get = async () => ({ data: html });
-      await assert.rejects(fetchEpisodeListFromWeb('123456'), /剧集|分集/, 'unverified current-player identity must fail closed');
+      await assert.rejects(fetchEpisodeListFromWeb('123456'), /(?:剧集|分集|Phim|tập)/i, 'unverified current-player identity must fail closed');
     }
 
     axios.get = async () => ({ data: playerPage({ series_id: '123456', series_name: '本剧"原名"',
@@ -47,13 +47,13 @@ const playerPage = (detail, data = {}, before = {}, route = 'player_(series_id)/
 
     axios.get = async () => ({ data: '<script>{"series_id":"999","series_name":"另一部","vid_list":["1","2"]}</script>' });
     axios.post = async () => ({ status: 200, headers: {}, data: Buffer.from(JSON.stringify({ code: 0, data: {} })) });
-    await assert.rejects(fetchEpisodeList('123456'), /不一致/);
+    await assert.rejects(fetchEpisodeList('123456'), /(?:不一致|không khớp)/i);
 
     axios.get = async () => { throw new Error('web unavailable'); };
     axios.post = async () => ({ status: 200, headers: {}, data: Buffer.from(JSON.stringify({
       code: 0, data: { '999999': { video_data: { series_title: '另一部', series_id: '999999', video_list: [{ vid: '1', vid_index: 1, series_id: '999999' }] } } },
     })) });
-    await assert.rejects(fetchEpisodeList('123459'), /不一致/);
+    await assert.rejects(fetchEpisodeList('123459'), /(?:不一致|không khớp)/i);
 
     axios.get = async () => ({ data: playerPage({ series_id: '123456', series_name: '本剧', vid_list: ['11', '12'] }) });
     const web = await fetchEpisodeList('123456');

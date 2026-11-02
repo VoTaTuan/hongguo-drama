@@ -96,7 +96,7 @@ test('update support treats portable marker and fallback modes as manual updates
     vm.runInContext('portableConfig = fixtureConfig', h.context);
     const support = h.context.appUpdateSupport();
     assert.equal(support.supported, false);
-    assert.match(support.reason, /便携/);
+    assert.match(support.reason, /(?:便携|di động)/i);
   }
   h.context.fixtureConfig = { mode: 'default', portableDir: '' };
   vm.runInContext('portableConfig = fixtureConfig', h.context);
@@ -134,7 +134,7 @@ test('startup initialization failure reports its stage and exits without exposin
   await assert.doesNotReject(h.ready[0]());
   const error = h.events.find(event => event[0] === 'error');
   assert.ok(error, 'failed startup must produce a visible native error');
-  assert.match(error[2], /读取本地数据/);
+  assert.match(error[2], /(?:读取本地数据|Đọc dữ liệu cục bộ)/);
   assert.ok(!error[2].includes('fixture private path'));
   assert.equal(h.events.at(-1)[0], 'quit');
   assert.equal(h.events.filter(event => event[0] === 'window').length, 0);
@@ -200,5 +200,5 @@ test('a rejected Electron proxy configuration falls back to direct and still ope
   assert.equal(h.events.filter(event => event[0] === 'queue').length, 0, 'fallback startup must not auto-resume downloads');
   assert.equal(vm.runInContext('proxyStartupFallback', h.context), true);
   await assert.rejects(h.context.applyProxySettings({ proxy_enabled: false }),
-    error => error.message === '设置网络代理失败，请重试。');
+    error => error.message === '设置网络代理失败，请重试。' || error.message === 'Thiết lập proxy mạng thất bại, vui lòng thử lại.');
 });

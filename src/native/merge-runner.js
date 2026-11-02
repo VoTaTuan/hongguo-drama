@@ -66,7 +66,7 @@ async function runMerge({ task, ordered, outDir, ffmpegPath, ffprobePath, probe,
     child.once('error', error => { spawnError = error; });
     child.once('close', code => {
       task.children.delete(child);
-      if (task.cancelled) reject(new Error('已取消'));
+      if (task.cancelled) reject(new Error('Đã hủy'));
       else if (spawnError) reject(new Error('Không thể khởi động FFmpeg: ' + spawnError.message));
       else if (code !== 0) reject(new Error(`Mã thoát FFmpeg ${code}: ${errors.trim() || 'Không có chi tiết lỗi'}`));
       else resolve();

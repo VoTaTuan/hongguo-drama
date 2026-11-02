@@ -113,7 +113,7 @@ function mount({ notice = null, fullscreen = null, hidden = false, openExternal 
       assert.deepEqual(ui.copied, ['jaoktom@outlook.com']);
       assert.equal(statuses(ui).length, 0, 'pending copy must not claim success');
       complete(); await copying; await ui.flush();
-      assert.equal(textOf(statuses(ui)[0]), '邮箱已复制');
+      assert.ok(['邮箱已复制', 'Đã sao chép email'].includes(textOf(statuses(ui)[0])));
       assert.deepEqual(ui.opened, ['https://github.com/jackotom/hongguo-drama/issues', 'https://vipai.pro/']);
       assert.deepEqual([...ui.timers.keys()], originalTimers, 'copying must not restart the announcement timer');
     } finally { ui.unmount(); }
@@ -125,13 +125,13 @@ function mount({ notice = null, fullscreen = null, hidden = false, openExternal 
       await ui.flush();
       assert.ok(emailButton(ui), 'email must be a semantic button');
       await emailButton(ui).props.onClick(); await ui.flush();
-      assert.equal(textOf(statuses(ui)[0]), '邮箱已复制');
+      assert.ok(['邮箱已复制', 'Đã sao chép email'].includes(textOf(statuses(ui)[0])));
       denied = true;
       await emailButton(ui).props.onClick(); await ui.flush();
       assert.equal(statuses(ui).length, 0, 'failed copy must clear prior success');
       const alert = nodes(ui.tree.node).find(node => node.props?.role === 'alert');
-      assert.match(textOf(alert), /复制失败/);
-      assert.match(textOf(alert), /手动选择复制/);
+      assert.match(textOf(alert), /(?:复制失败|Sao chép thất bại)/i);
+      assert.match(textOf(alert), /(?:手动选择复制|sao chép.*thủ công)/i);
       assert.match(textOf(alert), /jaoktom@outlook\.com/);
       assert.equal(ui.opened.length, 0);
       const css = fs.readFileSync(path.join(__dirname, '../src/components/AnnouncementNotice.css'), 'utf8');
@@ -146,7 +146,7 @@ function mount({ notice = null, fullscreen = null, hidden = false, openExternal 
       assert.ok(emailButton(ui), 'email must remain available without clipboard support');
       await emailButton(ui).props.onClick(); await ui.flush();
       assert.equal(statuses(ui).length, 0);
-      assert.ok(nodes(ui.tree.node).some(node => node.props?.role === 'alert' && /手动选择复制.*jaoktom@outlook\.com/.test(textOf(node))));
+      assert.ok(nodes(ui.tree.node).some(node => node.props?.role === 'alert' && /(?:手动选择复制.*jaoktom@outlook\.com|sao chép.*thủ công.*jaoktom@outlook\.com)/.test(textOf(node))));
       assert.deepEqual(ui.opened, []);
     } finally { ui.unmount(); }
   });
@@ -157,12 +157,12 @@ function mount({ notice = null, fullscreen = null, hidden = false, openExternal 
       await ui.flush();
       assert.ok(emailButton(ui), 'email must be a semantic button');
       await emailButton(ui).props.onClick(); await ui.flush();
-      assert.equal(textOf(statuses(ui)[0]), '邮箱已复制');
-      nodes(ui.tree.node).find(node => node.props?.['aria-label'] === '关闭公告').props.onClick(); await ui.flush();
+      assert.ok(['邮箱已复制', 'Đã sao chép email'].includes(textOf(statuses(ui)[0])));
+      nodes(ui.tree.node).find(node => ['关闭公告', 'Đóng thông báo'].includes(node.props?.['aria-label'])).props.onClick(); await ui.flush();
       assert.equal(ui.tree, null);
       ui.showManual(feedbackNotice); await ui.flush(); assert.equal(statuses(ui).length, 0);
       await emailButton(ui).props.onClick(); await ui.flush();
-      assert.equal(textOf(statuses(ui)[0]), '邮箱已复制');
+      assert.ok(['邮箱已复制', 'Đã sao chép email'].includes(textOf(statuses(ui)[0])));
       ui.showManual({ ...feedbackNotice, id: 'feedback-2' }); await ui.flush(); assert.equal(statuses(ui).length, 0);
       pending = true;
       const copying = emailButton(ui).props.onClick();

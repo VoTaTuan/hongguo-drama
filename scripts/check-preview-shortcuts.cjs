@@ -20,15 +20,15 @@ const path = require('node:path');
   }
   for (const key of ['Escape', 'Tab', 'Enter', 'Backspace', 'F5', 'Meta']) assert.equal(shortcutKey({ key }), null);
   assert.equal(shortcutKey({ key: ' ', code: 'Space', shiftKey: true }), null);
-  assert.match(validateShortcuts({ ...DEFAULT_SHORTCUTS, play: 'a' }), /冲突/);
-  assert.match(validateShortcuts({ ...DEFAULT_SHORTCUTS, play: 'ctrl+p' }), /不可用/);
+  assert.match(validateShortcuts({ ...DEFAULT_SHORTCUTS, play: 'a' }), /(?:冲突|Bị trùng)/);
+  assert.match(validateShortcuts({ ...DEFAULT_SHORTCUTS, play: 'ctrl+p' }), /(?:不可用|không hợp lệ|không khả dụng)/);
   let observed;
   const stop = subscribeShortcuts(value => { observed = value; });
   const custom = { ...DEFAULT_SHORTCUTS, play: 'shift+j' };
   saveShortcuts(custom);
   assert.deepEqual(readShortcuts(), custom);
   assert.deepEqual(observed, custom, 'same-window changes notify the mounted player');
-  assert.throws(() => saveShortcuts({ ...custom, next: 'shift+j' }), /冲突/);
+  assert.throws(() => saveShortcuts({ ...custom, next: 'shift+j' }), /(?:冲突|Bị trùng)/);
   assert.deepEqual(readShortcuts(), custom, 'rejected binding must not replace saved preferences');
   saveShortcuts({ ...DEFAULT_SHORTCUTS });
   assert.deepEqual(observed, DEFAULT_SHORTCUTS);

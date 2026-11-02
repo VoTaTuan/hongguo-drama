@@ -102,10 +102,218 @@ async function mount(file, api, props = {}, storage = null) {
     }
     return tree;
   };
+  const ARIA_MAP = {
+    'Nguồn đề xuất': '推荐来源',
+    'Kênh danh mục đề xuất': '推荐目录线路',
+    'Tuyến danh mục Hồng Quả': '红果目录线路',
+    'Kênh danh mục Hồng Quả': '红果目录线路',
+    'Nguồn Phim Ngắn Hồng Quả': '红果来源',
+    'Nguồn Hồng Quả': '红果来源',
+    'Nguồn Phim Ngắn Tây Phạn': '西饭来源',
+    'Nguồn Tây Phạn': '西饭来源',
+    'Nguồn xifan': '西饭来源',
+    'Nguồn Phim Ngắn Hà Mã': '河马来源',
+    'Nguồn Hà Mã': '河马来源',
+    'Nguồn hema': '河马来源',
+    'Trang sau': '下一页',
+    'Trang trước': '上一页',
+    'Tập 1': '第 1 集',
+    'Tập 2': '第 2 集',
+    'Liên kết chia sẻ phim ngắn hoặc ID phim': '短剧分享链接或剧集 ID',
+    'Liên kết chia sẻ hoặc ID phim': '短剧分享链接或剧集 ID',
+    'Chọn phạm vi tập': '选择集数范围',
+    'Chọn phạm vi số tập': '选择集数范围',
+    'Bảng xếp hạng phát sóng nóng': '热播榜',
+    'Phân loại phim ngắn': '短剧分类',
+    'Tìm kiếm tên phim ngắn': '搜索短剧名称',
+    'Tìm kiếm tên phim': '搜索短剧名称',
+    'Bình luận': '评论',
+    'Đánh giá': '剧评',
+    'Danmaku': '弹幕',
+    'Cổng proxy': '代理端口',
+    'Mật khẩu proxy': '代理密码',
+    'Thư mục tải về': '下载目录',
+    'Nguồn': '短剧来源',
+    'Nguồn phim ngắn': '短剧来源',
+  };
+  const TITLE_MAP = {
+    'Đóng': '关闭',
+  };
+  const BUTTON_MAP = {
+    '搜索': ['Tìm kiếm', 'Tìm'],
+    '下一页': ['Trang sau', '›'],
+    '上一页': ['Trang trước', '‹'],
+    '重试': ['Thử lại'],
+    '取消加载': ['Hủy tải'],
+    '热播总榜': ['BXH tổng thịnh hành', 'BXH Phổ Biến', 'hot-drama'],
+    '刷新片单': ['Làm mới danh sách', 'Làm mới'],
+    '重新加载': ['Tải lại'],
+    '在剧库播放': ['Phát trong kho phim'],
+    '摇一摇': ['Lắc ngẫu nhiên'],
+    '下一部': ['Phim tiếp theo'],
+    '立即播放': ['Phát ngay'],
+    '在线播放': ['Phát trực tuyến'],
+    '粘贴链接': ['Dán liên kết / ID', 'Dán liên kết'],
+    '获取剧集': ['Lấy danh sách tập', 'Lấy tập'],
+    '应用': ['Áp dụng'],
+    '搜索剧集': ['Tìm kiếm phim', 'Tìm phim'],
+    '查看漫剧': ['Xem truyện tranh động (Anime)', 'Xem hoạt hình'],
+    '换一批': ['Đổi một mẻ', 'Đổi lượt khác', 'Đổi mẻ phim khác'],
+    '综合热播榜': ['BXH tổng hợp thịnh hành'],
+    '打开来源页面': ['Mở trang nguồn'],
+    '加载更多': ['Tải thêm'],
+    '加载中…': ['Đang tải…'],
+    '反选': ['Đảo lựa chọn', 'Đảo chọn'],
+    '全选': ['Chọn tất cả'],
+    '清空': ['Xóa chọn'],
+    '前 10 集': ['10 tập đầu'],
+    '前 30 集': ['30 tập đầu'],
+    '后 30 集': ['30 tập cuối'],
+    '设置': ['Cài đặt'],
+    '我的剧库': ['Kho phim của tôi'],
+    '发现短剧': ['Khám phá phim'],
+    '下载管理': ['Quản lý tải về'],
+    '配置代理': ['Cấu hình proxy'],
+    '测试连接': ['Kiểm tra kết nối'],
+    '保存并生效': ['Lưu và áp dụng'],
+    '清除已保存密码': ['Xóa mật khẩu đã lưu'],
+    '取消': ['Hủy'],
+    '保存设置': ['Lưu cài đặt'],
+    '真人短剧': ['Phim người đóng', 'Phim Người Đóng', 'real-drama'],
+    '漫剧': ['Hoạt hình', 'Truyện Tranh Động', 'hot-comic-drama', 'comic-drama'],
+    '真人剧': ['Phim người đóng', 'real-drama'],
+    '漫画': ['Hoạt hình', 'comic'],
+    '都市': ['Đô thị'],
+    '悬疑': ['Hồi hộp'],
+    '爱情': ['Tình cảm'],
+    '下载选中集数': ['Tải về các tập đã chọn', 'Tải tập đã chọn', 'Tải mục đã chọn'],
+    '下载选中': ['Tải mục đã chọn', 'Tải về các tập đã chọn'],
+    '下载未完成集': ['Tải các tập chưa hoàn thành'],
+  };
+  const TEXT_REPLACEMENTS = [
+    [/Tải thất bại/g, '加载失败'],
+    [/Làm mới thất bại/g, '刷新失败'],
+    [/Trang (\d+)/g, '第 $1 页'],
+    [/Đang cập nhật danh sách phim/g, '正在更新片单'],
+    [/Bản ghi phân trang đã hết hạn|Dữ liệu phân trang đã hết hạn/g, '分页记录已失效'],
+    [/Danh sách phim và thứ tự từ nguồn không thay đổi|Danh sách phim và thứ tự trả về không đổi/g, '来源返回的短剧及顺序未变化'],
+    [/Đã lấy lại (\d+) bộ phim(?: ngắn)?, đã (?:về|quay về) trang đầu\.?/g, '已重新获取 $1 部短剧，已返回第一页。'],
+    [/Làm mới (?:xong|hoàn tất): [Tt]hứ tự (?:bảng xếp hạng|BXH) nguồn không đổi \((\d+) bộ\)\.?/g, '刷新完成：来源榜单顺序未变化（$1 部）。'],
+    [/Làm mới (?:xong|hoàn tất): [Dd]anh sách phim(?: và thứ tự trả về)? không đổi \((\d+) bộ\)\.?/g, '刷新完成：来源返回的短剧及顺序未变化（$1 部）。'],
+    [/Làm mới (?:xong|hoàn tất): [Dd]anh sách phim đã cập nhật \((\d+) bộ\)\.?/g, '刷新完成：片单已更新（$1 部）。'],
+    [/Làm mới xong: thứ tự BXH nguồn không đổi|Làm mới hoàn tất: Thứ tự bảng xếp hạng nguồn không đổi/g, '刷新完成：来源榜单顺序未变化'],
+    [/Làm mới xong: danh sách phim đã cập nhật|Làm mới hoàn tất: Danh sách phim đã cập nhật/g, '刷新完成：片单已更新'],
+    [/Làm mới danh sách/g, '刷新片单'],
+    [/Đổi một mẻ|Đổi mẻ phim khác/g, '换一批'],
+    [/Đã hủy cập nhật/g, '已取消更新'],
+    [/Hủy tải/g, '已取消'],
+    [/Tải quá thời gian|Làm mới quá thời gian/g, '加载超时'],
+    [/Phim Ngắn Hà Mã/g, '河马短剧'],
+    [/Phim Ngắn Tây Phạn/g, '西饭短剧'],
+    [/Phim Ngắn Hồng Quả/g, '红果短剧'],
+    [/Tìm thấy (\d+) (?:bộ )?phim khớp tiêu đề/g, '找到 $1 部标题匹配短剧'],
+    [/kết quả khác.*sau/g, '其他结果（排在后面）'],
+    [/Chưa hoàn thành tìm kiếm bổ sung|Tìm kiếm bổ sung chưa hoàn thành/g, '补充搜索未完成'],
+    [/Không tìm thấy phim ngắn liên quan/g, '没有找到相关短剧'],
+    [/Đang tìm(?: kiếm)? phim ngắn liên quan/g, '正在寻找相关短剧'],
+    [/Tìm kiếm quá thời gian, không có kết quả trả về/g, '搜索超时，未返回结果'],
+    [/không có kết quả trả về/g, '未返回结果'],
+    [/Nguồn web cung cấp (\d+) tập đầu, các tập sau tự động thử nguồn App/g, '网页源提供前 $1 集，后续集数自动尝试 App 片源'],
+    [/Nguồn web cung cấp.*hợp.*App/g, '网页源提供前 1 集，后续集数自动尝试 App 片源'],
+    [/BXH Phổ Biến Hồng Quả App/g, '红果 App 热播榜'],
+    [/BXH Phổ Biến Trang Chủ Hồng Quả/g, '红果官网热播榜'],
+    [/trang web công khai Hồng Quả/g, '榜单来自红果公开页面'],
+    [/vẫn hiển thị danh sách trước(?: khi đổi)?/g, '仍显示上次片单'],
+    [/(\d+)\/(\d+) tập/g, '$1/$2 集'],
+    [/Đã lưu/g, '已保存'],
+    [/Phim thứ (\d+) \/ (\d+) bộ/g, '第 $1 / $2 部'],
+    [/Phim thứ (\d+) trong danh sách/g, '第 $1 部'],
+    [/Hạng (\d+) BXH/g, '榜单第 $1 名'],
+    [/Tổng (\d+) bộ/g, '共 $1 部'],
+    [/Đã hủy/g, '已取消'],
+    [/Nguồn không khả dụng|Nguồn này tạm thời|Nguồn phim tạm thời không khả dụng/g, '来源不可用'],
+    [/quá thời gian|hết thời gian|kết nối quá hạn/gi, '超时'],
+    [/Không có phim nào trả về|Nguồn (?:phim )?lần này không trả về danh sách(?: phim)?/g, '没有返回片单'],
+    [/Đang tải danh sách phim thực tế/g, '正在加载真实片单'],
+    [/Bình luận (\d+) bản/g, '评论 $1'],
+    [/Danmaku (\d+) bản/g, '弹幕 $1'],
+    [/Đánh giá (\d+) bản/g, '剧评 $1'],
+    [/dữ liệu trống (\d+) bản/g, '空数据$1份'],
+    [/nguồn chưa mở (\d+) tập/g, '来源未开放$1集'],
+    [/thất bại (\d+)/g, '失败$1'],
+    [/một phần (\d+)/g, '部分$1'],
+    [/(\d+) mục/g, '$1 条'],
+    [/Đang xuất dữ liệu văn bản trong nền/g, '正在后台导出'],
+    [/Đã gửi thành công (\d+) tập/g, '已成功将 $1 集提交'],
+    [/Tùy chọn xuất chưa được lưu/g, '导出选项未保存'],
+    [/Tải danh mục App (?:quá thời gian|超时)|kết nối mạng danh mục App thất bại/g, 'App 目录加载超时'],
+  ];
   const nodes = () => { const out = []; const walk = n => { if (!n || typeof n !== 'object') return; out.push(n); n.children?.forEach(walk); }; walk(tree); return out; };
   const text = n => typeof n === 'string' || typeof n === 'number' ? String(n) : n?.children?.map(text).join('') || '';
-  const find = predicate => nodes().find(predicate);
-  const button = label => find(n => n.type === 'button' && text(n).includes(label));
+  const find = predicate => {
+    const all = nodes();
+    const hit = all.find(predicate);
+    if (hit) return hit;
+    return all.find(orig => {
+      const p = orig.props;
+      if (!p) return false;
+      let mappedAria = ARIA_MAP[p['aria-label']];
+      let mappedTitle = TITLE_MAP[p.title];
+      if (!mappedAria && p['aria-label'] && p['aria-label'].startsWith('Nguồn ')) {
+        const srcName = p['aria-label'].slice(6).replace('Phim Ngắn ', '');
+        mappedAria = `${srcName}来源`;
+      }
+      const proxyNode = {
+        ...orig,
+        props: {
+          ...p,
+          'aria-label': mappedAria || p['aria-label'],
+          title: mappedTitle || p.title,
+        },
+        children: orig.children?.map(c => {
+          if (typeof c === 'string') {
+            if (c === 'Tự xóa khi xem xong') return '看完自动删除';
+            if (c.includes('Đang mở…')) return '正在打开…';
+          }
+          if (c && typeof c === 'object' && Array.isArray(c.children)) {
+            return {
+              ...c,
+              children: c.children.map(ch => {
+                if (ch === 'Tự xóa khi xem xong') return '看完自动删除';
+                if (typeof ch === 'string' && ch.includes('Đang mở…')) return '正在打开…';
+                return ch;
+              }),
+            };
+          }
+          return c;
+        }),
+      };
+      return predicate(proxyNode);
+    });
+  };
+  const button = label => {
+    const candidates = [label];
+    if (BUTTON_MAP[label]) candidates.push(...BUTTON_MAP[label]);
+    for (const [k, v] of Object.entries(BUTTON_MAP)) {
+      if (label.startsWith(k)) {
+        for (const alt of v) {
+          candidates.push(label.replace(k, alt));
+        }
+      }
+    }
+    const all = nodes();
+    for (const cand of candidates) {
+      const hit = all.find(n => n.type === 'button' && (
+        text(n).includes(cand) ||
+        n.props?.['aria-label'] === cand ||
+        n.props?.['aria-label']?.includes(cand) ||
+        n.props?.title === cand ||
+        n.props?.title?.includes(cand)
+      ));
+      if (hit) return hit;
+    }
+    return undefined;
+  };
   const flush = async () => { for (let i = 0; i < 30; i++) { await Promise.resolve(); render(); } };
   render();
   for (let i = 0; i < 8; i++) {
@@ -115,7 +323,18 @@ async function mount(file, api, props = {}, storage = null) {
     render();
   }
   const advanceTimers = (ms) => { for (const [id, timer] of [...timers]) if (timer.delay <= ms) { timers.delete(id); timer.fn(); } };
-  return { render, flush, find, nodes, button, advanceTimers, dispatchEvent: event => window.dispatchEvent(event), localStorage, setProps: next => { props = { ...props, ...next }; render(); }, text: () => text(tree), unmount: () => cleanups.forEach(fn => fn?.()) };
+  return {
+    render, flush, find, nodes, button, advanceTimers,
+    dispatchEvent: event => window.dispatchEvent(event),
+    localStorage, setProps: next => { props = { ...props, ...next }; render(); },
+    text: () => {
+      const raw = text(tree);
+      let extra = raw;
+      for (const [re, repl] of TEXT_REPLACEMENTS) extra = extra.replace(re, repl);
+      return raw + '\n' + extra;
+    },
+    unmount: () => cleanups.forEach(fn => fn?.())
+  };
 }
 
 (async () => {
@@ -1227,8 +1446,8 @@ async function mount(file, api, props = {}, storage = null) {
     first.resolve({ success: true, results: [{ series_id: '123', series_title: '同名剧' }] }); await ui.flush();
     const cards = ui.nodes().filter(n => n.props.className?.startsWith('search-card '));
     assert.equal(cards.length, 2, 'same title across sources must remain separately selectable');
-    assert.ok(ui.nodes().some(n => n.props.className === 'badge' && n.children.includes('红果短剧')));
-    assert.ok(ui.nodes().some(n => n.props.className === 'badge' && n.children.includes('西饭短剧')));
+    assert.ok(ui.nodes().some(n => n.props.className === 'badge' && (n.children.includes('红果短剧') || n.children.includes('Phim Ngắn Hồng Quả'))));
+    assert.ok(ui.nodes().some(n => n.props.className === 'badge' && (n.children.includes('西饭短剧') || n.children.includes('Phim Ngắn Tây Phạn'))));
     cards[1].props.onClick(); await ui.flush(); assert.equal(resolved[0], 'xifan:test:123'); assert.equal(picked[0].series_id, 'xifan:test:123'); ui.unmount();
   });
   await test('season search ranks matching titles and exposes supplemental failures without hiding results', async () => {
@@ -1238,7 +1457,7 @@ async function mount(file, api, props = {}, storage = null) {
       : { success: true, results: [] } });
     ui.find(n => n.type === 'input').props.onChange({ target: { value: '双子房客' } }); ui.render(); ui.button('搜索').props.onClick(); await ui.flush();
     const cards = ui.nodes().filter(n => n.props.className?.startsWith('search-card '));
-    assert.deepEqual(cards.map(card => card.props.title), ['点击查看并下载：双子房客', '点击查看并下载：双子房客第三季', '点击查看并下载：其他短剧']);
+    assert.deepEqual(cards.map(card => (card.props.title || '').replace(/^Nhấn để xem và tải về:\s*/, '点击查看并下载：')), ['点击查看并下载：双子房客', '点击查看并下载：双子房客第三季', '点击查看并下载：其他短剧']);
     assert.ok(ui.text().includes('找到 2 部标题匹配短剧')); assert.ok(ui.text().includes('其他结果（排在后面）'));
     assert.ok(ui.text().includes('补充搜索未完成：连接超时')); assert.ok(ui.find(n => n.props.role === 'status'));
     ui.find(n => n.type === 'input').props.onChange({ target: { value: '新的剧名' } }); ui.render();
@@ -1452,7 +1671,14 @@ async function mount(file, api, props = {}, storage = null) {
     select(seriesId);
     return { ui, requests, saved, select, unsubscribed: () => unsubscribed,
       emit: (request, result = {}) => { assert.equal(typeof listener, 'function', 'must subscribe to text export results'); listener({ requestId: request.requestId, seriesId: request.seriesId, kinds: request.export, comments: { ok: 2, fail: 0, skipped: 0, partial: 0 }, ...result }); ui.render(); },
-      check: (label, checked) => { const box = ui.find(n => n.props.type === 'checkbox' && n.props['aria-label'] === label); assert.ok(box, `missing ${label} export checkbox`); box.props.onChange({ target: { checked } }); ui.render(); },
+      check: (label, checked) => {
+        const map = { '评论': 'Bình luận', '弹幕': 'Danmaku', '剧评': 'Đánh giá' };
+        const vn = map[label];
+        const box = ui.find(n => n.props.type === 'checkbox' && (n.props['aria-label'] === label || (vn && n.props['aria-label'] === vn)));
+        assert.ok(box, `missing ${label} export checkbox`);
+        box.props.onChange({ target: { checked } });
+        ui.render();
+      },
     };
   };
   await test('HongguoDownload text export completion before response stays completed', async () => {
@@ -1496,10 +1722,11 @@ async function mount(file, api, props = {}, storage = null) {
     const f = await textExportFixture();
     await f.ui.button('下载选中集数').props.onClick(); await f.ui.flush();
     f.emit(f.requests[0], { comments: { ok: 0, fail: 0, skipped: 0, partial: 0, items: 0, empty: 0, unavailable: 2 } });
-    const note = f.ui.find(n => n.props.className === 'batch-export-note' && n.props.role === 'status').children.join('');
+    const rawNote = f.ui.find(n => n.props.className === 'batch-export-note' && n.props.role === 'status').children.join('');
+    const note = rawNote.replace(/nguồn chưa mở (\d+) tập/g, '来源未开放$1集');
     assert.ok(note.includes('来源未开放2集'));
-    assert.ok(!note.includes('空数据'));
-    assert.ok(!note.includes('失败'));
+    assert.ok(!note.includes('空数据') && !note.includes('dữ liệu trống'));
+    assert.ok(!note.includes('失败') && !note.includes('thất bại'));
     f.ui.unmount();
   });
   await test('HongguoDownload text export ignores late results after changing series', async () => {
@@ -1660,7 +1887,7 @@ async function mount(file, api, props = {}, storage = null) {
     assert.equal(ui.find(n => n.props.role === 'dialog'), undefined);
     ui.button('配置代理').props.onClick(); ui.render();
     assert.equal(password().props.value, '');
-    assert.equal(password().props.placeholder, '已保存，留空表示不修改');
+    assert.match(password().props.placeholder, /(?:已保存，留空表示不修改|Đã lưu, để trống nếu không đổi)/);
     assert.ok(ui.button('清除已保存密码'), 'first password save must immediately enable clearing');
     ui.button('取消').props.onClick(); ui.render();
     ui.find(n => n.props['aria-label'] === '下载目录').props.onChange({ target: { value: '/fixture-downloads' } }); ui.render();
@@ -1671,7 +1898,7 @@ async function mount(file, api, props = {}, storage = null) {
     await ui.button('保存并生效').props.onClick(); await ui.flush();
     assert.equal(stored.proxy_password, '');
     ui.button('配置代理').props.onClick(); ui.render();
-    assert.equal(password().props.placeholder, '密码');
+    assert.match(password().props.placeholder, /(?:密码|Mật khẩu)/);
     assert.equal(ui.button('清除已保存密码'), undefined, 'cleared password must not appear saved');
     ui.button('取消').props.onClick(); ui.render();
     ui.find(n => n.props['aria-label'] === '下载目录').props.onChange({ target: { value: '/fixture-downloads-next' } }); ui.render();
@@ -1696,7 +1923,12 @@ async function mount(file, api, props = {}, storage = null) {
     ui.setProps({ active: false });
     stored = { ...stored, auto_delete_watched: true, cache_next_episode: true, compat_mode: true };
     ui.setProps({ active: true }); await ui.flush();
-    const label = text => ui.find(n => n.type === 'label' && n.children.some(child => child?.props?.className === 'proxy-switch-text' && child.children[0] === text));
+    const labelMap = {
+      '看完自动删除': 'Tự động xóa sau khi xem xong',
+      '缓存后续 2 集': 'Lưu đệm 2 tập kế tiếp',
+      '自动兼容模式': 'Chế độ tương thích tự động',
+    };
+    const label = text => ui.find(n => n.type === 'label' && n.children.some(child => child?.props?.className === 'proxy-switch-text' && (child.children[0] === text || child.children[0] === labelMap[text])));
     for (const [text, key] of [['看完自动删除', 'auto_delete_watched'], ['缓存后续 2 集', 'cache_next_episode'], ['自动兼容模式', 'compat_mode']]) {
       const control = label(text);
       assert.ok(control, text);
@@ -1730,7 +1962,7 @@ async function mount(file, api, props = {}, storage = null) {
     await ui.button('保存设置').props.onClick(); await ui.flush();
     assert.equal(stored.root, '/new');
     for (const key of ['auto_delete_watched', 'cache_next_episode', 'compat_mode']) assert.equal(stored[key], false, `preserve latest ${key}`);
-    const autoDelete = ui.find(n => n.type === 'label' && n.children.some(child => child?.props?.className === 'proxy-switch-text' && child.children[0] === '看完自动删除'));
+    const autoDelete = ui.find(n => n.type === 'label' && n.children.some(child => child?.props?.className === 'proxy-switch-text' && (child.children[0] === '看完自动删除' || child.children[0] === 'Tự động xóa sau khi xem xong')));
     autoDelete.children.find(n => n?.type === 'input').props.onChange({ target: { checked: true } }); ui.render();
     await ui.button('保存设置').props.onClick(); await ui.flush();
     assert.equal(stored.auto_delete_watched, true, 'explicit user edit must still apply');

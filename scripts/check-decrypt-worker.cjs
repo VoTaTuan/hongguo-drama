@@ -19,11 +19,11 @@ const os = require('node:os');
     assert.deepEqual(await fs.readFile(srcPath), bytes, 'source must remain unchanged');
     await assert.rejects(decryptInWorker({ buffer: Buffer.from('invalid'), key }), /moov|bounds|offset|MP4/i);
     const controller = new AbortController(); controller.abort();
-    await assert.rejects(decryptInWorker({ buffer: bytes, key }, {signal:controller.signal}), /取消/);
+    await assert.rejects(decryptInWorker({ buffer: bytes, key }, {signal:controller.signal}), /(?:取消|Đã hủy)/);
     const mid = new AbortController();
     const pending = decryptInWorker({srcPath, dstPath:path.join(dir,'cancelled.mp4'),key}, {signal:mid.signal});
     mid.abort();
-    await assert.rejects(pending, /取消/);
+    await assert.rejects(pending, /(?:取消|Đã hủy)/);
     assert.equal(await fs.stat(path.join(dir,'cancelled.mp4')).then(() => true, () => false), false);
     console.log('PASS decrypt worker: parity, event-loop yield, file integrity, error and cancellation');
   } finally { await fs.rm(dir,{recursive:true,force:true}); }

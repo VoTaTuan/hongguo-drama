@@ -21,21 +21,21 @@ async function main() {
   await ui.flush();
   const visibleDelete = () => {
     const summary = ui.find(node => node.props.className === 'dm-selection-summary');
-    return descendants(summary).find(node => node?.type === 'button' && text(node).startsWith('删除已选'));
+    return descendants(summary).find(node => node?.type === 'button' && (text(node).startsWith('删除已选') || text(node).startsWith('Xóa mục đã chọn')));
   };
   assert.ok(visibleDelete(), '批量删除必须常显在全选旁，不能藏在更多操作');
-  assert.equal(text(visibleDelete()), '删除已选（0项）');
+  assert.ok(text(visibleDelete()) === '删除已选（0项）' || text(visibleDelete()) === 'Xóa mục đã chọn (0 mục)');
   assert.equal(visibleDelete().props.disabled, true);
   ui.button('全选').props.onClick(); ui.render();
-  assert.equal(text(visibleDelete()), '删除已选（205项）');
+  assert.ok(text(visibleDelete()) === '删除已选（205项）' || text(visibleDelete()) === 'Xóa mục đã chọn (205 mục)');
   assert.equal(visibleDelete().props.disabled, false);
   ui.button('下一页').props.onClick(); ui.render();
   ui.button('下一页').props.onClick(); ui.render();
   assert.equal(rows(ui).length, 5);
-  assert.equal(text(visibleDelete()), '删除已选（205项）', '跨页数量包含所有选中任务');
+  assert.ok(text(visibleDelete()) === '删除已选（205项）' || text(visibleDelete()) === 'Xóa mục đã chọn (205 mục)', '跨页数量包含所有选中任务');
   await visibleDelete().props.onClick(); ui.render();
   assert.equal(deleted.length, 0, '点击入口只能弹确认，不得立即删除');
-  assert.ok(ui.text().includes('共 205 个任务'));
+  assert.ok(ui.text().includes('共 205 个任务') || ui.text().includes('Tổng cộng 205 tác vụ'));
   const dialog = ui.find(node => node.props.role === 'dialog');
   const checkbox = descendants(dialog).find(node => node.type === 'input' && node.props.type === 'checkbox');
   assert.equal(checkbox.props.checked, false, '保留现有默认：仅删任务记录');
@@ -43,14 +43,14 @@ async function main() {
   checkbox.props.onChange({ target: { checked: true } }); ui.render();
   assert.ok(ui.button('删除任务和文件'));
   descendants(ui.find(node => node.props.role === 'dialog'))
-    .find(node => node.type === 'button' && text(node) === '取消').props.onClick(); ui.render();
+    .find(node => node.type === 'button' && (text(node) === '取消' || text(node) === 'Hủy')).props.onClick(); ui.render();
   assert.equal(deleted.length, 0);
   await visibleDelete().props.onClick(); ui.render();
   await ui.button('仅删除记录').props.onClick(); await ui.flush();
   assert.equal(deleted.length, 1);
   assert.equal(deleted[0].ids.length, 205);
   assert.equal(deleted[0].files, false);
-  assert.equal(text(visibleDelete()), '删除已选（205项）', '删除失败保留选择');
+  assert.ok(text(visibleDelete()) === '删除已选（205项）' || text(visibleDelete()) === 'Xóa mục đã chọn (205 mục)', '删除失败保留选择');
   ui.unmount();
   console.log('PASS download selection delete: visible beside select-all, zero disabled, cross-page count, existing safe confirmation and failure preservation');
 }

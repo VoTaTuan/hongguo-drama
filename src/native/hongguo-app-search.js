@@ -29,7 +29,7 @@ async function defaultRequest(signed, deadline) {
     return await requestJson(signed.url, { method: 'GET', headers: signed.headers }, deadline, AbortSignal.timeout(remaining));
   } catch (error) {
     const code = error.code === 'ETIMEDOUT' || error.name === 'AbortError' || error.name === 'TimeoutError' ? 'APP_TIMEOUT'
-      : /未返回有效数据|空响应/i.test(error.message) ? 'APP_EMPTY'
+      : /未返回有效数据|空响应|không trả về dữ liệu|phản hồi rỗng/i.test(error.message) ? 'APP_EMPTY'
       : error.code || 'APP_NETWORK';
     throw appError(code === 'APP_TIMEOUT' ? 'Tìm kiếm trên App quá thời gian' : 'Tìm kiếm trên App tạm thời không khả dụng', code);
   }
@@ -86,7 +86,7 @@ async function searchApp(keyword, { page = 1, cursor = null, deadline = 0, reque
   const kw = cleanTitle(keyword);
   if (!kw || kw.length > 80) throw appError('Từ khóa tìm kiếm App không hợp lệ', 'APP_INPUT');
   const pg = parseSearchInteger(page);
-  if (pg === null || pg < 1 || pg > 50) throw appError('App 搜索页码需为 1 至 50 的整数', 'APP_INPUT');
+  if (pg === null || pg < 1 || pg > 50) throw appError('Số trang tìm kiếm App phải là số nguyên từ 1 đến 50', 'APP_INPUT');
   if (pg > 1 && !cursor?.search_id && !cursor?.passback && parseSearchInteger(cursor?.next_offset) === null) {
     throw appError('Con trỏ tìm kiếm App đã hết hạn, vui lòng tìm kiếm lại', 'APP_CURSOR');
   }

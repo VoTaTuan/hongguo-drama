@@ -127,7 +127,7 @@ const checks = [
     assert.equal(result.contentKey, keyHex);
     await assert.rejects(appRows({ broken: { main_url: mediaUrl('broken'), codec_type: 'h264', quality_desc: '1080P', spade_a: 'bad' },
       lower: { main_url: mediaUrl('lower'), codec_type: 'h264', quality_desc: '720P', spade_a: encodedKey() } }),
-    /片源地址或密钥无法解析/);
+    /(?:片源地址或密钥无法解析|Không thể phân tích địa chỉ nguồn hoặc khóa của tập này)/i);
     await assert.rejects(appRows({ one: { main_url: 'https://127.0.0.1/private', backup_url: 'file:///private', codec_type: 'h264' } }));
   }],
   ['legacy parser prefers H264 and keeps a usable backup', async () => {

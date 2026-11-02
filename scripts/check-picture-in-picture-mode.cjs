@@ -12,7 +12,7 @@ vm.runInNewContext(main.slice(main.indexOf('const SETTINGS_KEYS'), main.indexOf(
 for (const mode of ['native', 'custom']) {
   assert.equal(moduleFixture.exports({ floating_player_size: { width: 320, height: 500 } }, { picture_in_picture_mode: mode }).picture_in_picture_mode, mode);
 }
-assert.throws(() => moduleFixture.exports({}, { picture_in_picture_mode: 'invalid' }), /画中画/);
+assert.throws(() => moduleFixture.exports({}, { picture_in_picture_mode: 'invalid' }), /(?:画中画|PiP|thu nhỏ)/i);
 
 (async () => {
   let mode = 'native', nativeRequests = 0;

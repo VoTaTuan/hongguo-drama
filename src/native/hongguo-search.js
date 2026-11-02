@@ -1,10 +1,10 @@
 /**
- * 红果官网搜索接口。
+ * Giao diện tìm kiếm trang web chính thức Hồng Quả.
  *
- * 搜索页本身是前端空壳，结果由页面脚本请求
- * `https://hongguoduanju.com/api/search/result` 后渲染；直接调用该接口
- * 比在隐藏窗口里嗅探 DOM 更快，也不会因为一次页面加载失败就等到超时。
- * 接口未公开，字段或可用性可能变化：调用方应保留页面嗅探作为兜底。
+ * Bản thân trang tìm kiếm là khung vỏ frontend, kết quả được kịch bản trang yêu cầu
+ * sau đó render từ `https://hongguoduanju.com/api/search/result`; gọi trực tiếp API này
+ * nhanh hơn lắng nghe DOM trong cửa sổ ẩn, cũng không bị chờ đợi quá thời gian do một lần tải trang thất bại.
+ * API không công khai, trường dữ liệu hoặc tính khả dụng có thể thay đổi: bên gọi nên giữ lại lắng nghe trang làm dự phòng.
  */
 const axios = require('axios');
 
@@ -77,7 +77,7 @@ function tagsOf(video) {
   return tags;
 }
 
-/** 把接口返回的 searchList 转成应用内统一的搜索结果结构。 */
+/** Chuyển đổi searchList do API trả về thành cấu trúc kết quả tìm kiếm thống nhất trong ứng dụng. */
 function parseSearchResponse(payload) {
   if (payload == null || payload === '') {
     throw new HongguoSearchError('Phản hồi tìm kiếm rỗng', 'upstream');
@@ -99,7 +99,7 @@ function parseSearchResponse(payload) {
   for (const item of payload.searchList) {
     const videoData = item?.video_data;
     const video = videoData && typeof videoData === 'object' && Object.keys(videoData).length ? videoData : item;
-    // 有些结果把剧集编号放在 item.keyword（video_data 为空）；不能因此当成解析失败。
+    // Một số kết quả đặt mã phim trong item.keyword (video_data rỗng); không thể vì thế mà coi là phân tích thất bại.
     const seriesId = String(video?.series_id || item?.series_id || item?.keyword || '').trim();
     const title = cleanText(video?.series_name || video?.series_title || item?.name || video?.title || '');
     if (!/^\d{6,}$/.test(seriesId) || !title || seen.has(seriesId)) continue;
@@ -114,7 +114,7 @@ function parseSearchResponse(payload) {
       url: `${SITE_ORIGIN}/detail?series_id=${seriesId}`,
     });
   }
-  // 有数据但一条都认不出，通常是字段改名；这是解析失败，不是“没有结果”。
+  // Có dữ liệu nhưng không nhận dạng được mục nào, thường là do đổi tên trường; đây là phân tích thất bại, không phải "không có kết quả".
   if (!results.length && payload.searchList.length > 0) {
     throw new HongguoSearchError('Mục trả về từ tìm kiếm không nhận dạng được', 'format', { fallback: true });
   }
@@ -185,9 +185,9 @@ function delay(ms) {
 }
 
 /**
- * 搜索红果官网。
- * 失败抛 HongguoSearchError；fallback 为 true 表示接口结构/地址可能变化，
- * 调用方可以退回隐藏窗口嗅探。
+ * Tìm kiếm trên trang web chính thức Hồng Quả.
+ * Thất bại sẽ ném ra HongguoSearchError; fallback là true biểu thị cấu trúc/địa chỉ API có thể thay đổi,
+ * bên gọi có thể lùi về lắng nghe qua cửa sổ ẩn.
  */
 async function searchHongguo(keyword, options = {}) {
   const kw = normalizeKeyword(keyword);

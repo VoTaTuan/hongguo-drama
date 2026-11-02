@@ -13,8 +13,8 @@ assert.deepEqual(listHistory(series,map).map(s=>s.series_id),['1000002']);
 map['1000001']=recordPlayback(null,series[0],2,0,200);
 assert.deepEqual(listHistory(series,map).map(s=>s.series_id),['1000001','1000002']);
 assert.equal(listHistory(series,map)[0].vid_index,2);
-assert.throws(()=>recordPlayback(null,series[0],2,Infinity),/进度/);
-assert.throws(()=>recordPlayback(null,series[0],0,12),/进度/);
+assert.throws(()=>recordPlayback(null,series[0],2,Infinity),/(?:进度|Tiến độ)/i);
+assert.throws(()=>recordPlayback(null,series[0],0,12),/(?:进度|Tiến độ)/i);
 let updated=applyEpisodeUpdate(map['1000001'],series[0],{...series[0],total:14,episodes:Array.from({length:14},(_,i)=>({vid_index:i+1}))},300);
 assert.equal(updated.unreadEpisodes,2);
 updated=recordPlayback(updated, {...series[0],total:14},2,34,400);
@@ -114,7 +114,7 @@ test('local sequel starts from the first playable episode without network or sav
  assert.deepEqual(ui.calls, [['play', { seriesId: 'B', vidIndex: 1 }]]);
  assert.deepEqual(ui.acknowledgements, [['A', { total: 9, sequelIds: ['B'] }]]);
  assert.equal(ui.error(), undefined);
- assert.equal(ui.find(node => node.props['aria-label'] === '有更新'), undefined);
+ assert.equal(ui.find(node => ['有更新', 'Có cập nhật'].includes(node.props['aria-label'])), undefined);
 });
 
 test('missing sequel archive resolves once and starts the first unlocked episode', async () => {
@@ -127,29 +127,29 @@ test('sequel playback failure without the missing-archive code never resolves or
  const ui = mountHistory({ playError: '未找到短剧档案，请重新打开详情' }); await ui.open();
  assert.deepEqual(ui.calls, [['play', { seriesId: 'B', vidIndex: 1 }]]);
  assert.equal(ui.acknowledgements.length, 0); assert.ok(ui.error());
- assert.ok(ui.find(node => node.props['aria-label'] === '有更新'));
+ assert.ok(ui.find(node => ['有更新', 'Có cập nhật'].includes(node.props['aria-label'])));
 });
 
 for (const options of [{ missing: true, resolveError: 'offline' }, { missing: true, locked: true }, { acknowledgeError: '保存失败' }]) test(`sequel failure retains unread updates: ${JSON.stringify(options)}`, async () => {
  const ui = mountHistory(options); await ui.open();
- assert.ok(ui.error()); assert.ok(ui.find(node => node.props['aria-label'] === '有更新'));
+ assert.ok(ui.error()); assert.ok(ui.find(node => ['有更新', 'Có cập nhật'].includes(node.props['aria-label'])));
  if (!options.acknowledgeError) assert.equal(ui.acknowledgements.length, 0);
 });
 
 test('single-row detection calls the dedicated bridge and refreshes the row', async () => {
  const ui = mountHistory(); await ui.flush();
- const button = ui.find(node => node.props['aria-label'] === '检测《原剧》的更新');
+ const button = ui.find(node => ['检测《原剧》的更新', 'Kiểm tra cập nhật cho《原剧》', 'Kiểm tra cập nhật của 《原剧》'].includes(node.props['aria-label']));
  assert.ok(button);
  await button.props.onClick(); await ui.flush();
  assert.deepEqual(ui.itemChecks, ['A']);
- assert.match(ui.find(node => node.props.role === 'status')?.children?.join('') || '', /已检测完成/);
+ assert.match(ui.find(node => node.props.role === 'status')?.children?.join('') || '', /(?:已检测完成|đã kiểm tra xong)/);
 });
 
 test('batch detection forwards the selected scope', async () => {
  const ui = mountHistory(); await ui.flush();
  const select = ui.find(node => node.type === 'select');
  select.props.onChange({ target: { value: 'latest' } }); ui.render();
- const button = ui.find(node => node.type === 'button' && node.children.includes('检查更新'));
+ const button = ui.find(node => node.type === 'button' && (node.children.includes('检查更新') || node.children.includes('Kiểm tra cập nhật')));
  await button.props.onClick(); await ui.flush();
  assert.deepEqual(ui.refreshCalls, [{ scope: 'latest' }]);
 });

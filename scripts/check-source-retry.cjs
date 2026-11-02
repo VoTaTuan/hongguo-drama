@@ -87,7 +87,7 @@ const checks = [
         assert.equal(h.live().length, 1, `${code}: must schedule recovery`);
         assert.equal(h.live()[0].ms, seconds * 1000);
         assert.equal(h.task().sourceRetries, index + 1);
-        assert.match(h.task().error, new RegExp(`${seconds} 秒后自动重试`));
+        assert.match(h.task().error, new RegExp(`${seconds} 秒后自动重试|tự động thử lại sau ${seconds} giây`, 'i'));
         assert.equal(fs.existsSync(h.task().savePath), false, 'never publish partial media');
         h.fire();
       }
@@ -141,7 +141,7 @@ const checks = [
       await h.download();
       assert.equal(h.task().status, 'failed');
       assert.equal(h.task().sourceRetries, index + 1);
-      assert.match(h.task().error, new RegExp(`${minutes} 分钟后自动重试（${index + 1}/3）`));
+      assert.match(h.task().error, new RegExp(`${minutes} 分钟后自动重试（${index + 1}/3）|tự động thử lại sau ${minutes} phút \\(${index + 1}/3\\)`, 'i'));
       assert.equal(h.live().length, 1);
       assert.equal(h.live()[0].ms, minutes * 60000);
       assert.equal(h.saved()[0].retryAt, h.task().retryAt, 'schedule persists across restarts');
@@ -152,7 +152,7 @@ const checks = [
     await h.download();
     assert.equal(h.task().status, 'failed');
     assert.equal(h.task().retryAt, undefined, 'stops after the retry budget');
-    assert.doesNotMatch(h.task().error, /自动重试/);
+    assert.doesNotMatch(h.task().error, /自动重试|tự động thử lại/i);
     assert.equal(h.live().length, 0);
   }],
   ['App refusal, security and third-party failures are not deferred', async () => {

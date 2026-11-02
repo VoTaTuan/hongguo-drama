@@ -31,7 +31,7 @@ function fixture(t) {
       return data;
     } };
 }
-const oversized = error => error.code === 'MEDIA_TOO_LARGE' && /本集过大，请下载后播放/.test(error.message);
+const oversized = error => error.code === 'MEDIA_TOO_LARGE' && /(?:本集过大，请下载后播放|Tập này quá lớn)/i.test(error.message);
 
 test('whole-file buffer reads reject declared and undeclared oversize even when a caller passes Infinity', async t => {
   const h = fixture(t), info = { url: 'https://fixture.invalid/media' };
@@ -58,7 +58,7 @@ test('online preparation returns actionable oversized error without caching byte
   const result = await h.handlers['prepare-online-play']({}, { vid: '11', seriesId: '1', prefetch: true });
   assert.equal(result.success, false);
   assert.equal(result.code, 'MEDIA_TOO_LARGE');
-  assert.match(result.error, /本集过大，请下载后播放/);
+  assert.match(result.error, /(?:本集过大，请下载后播放|Tập này quá lớn)/i);
   assert.equal(h.run('onlineCache.size'), 0);
 });
 
@@ -73,7 +73,7 @@ test('a streaming source switching to oversized encrypted media notifies its mat
   const result = await h.protocols['hongguo-stream'](new Request(prepared.url));
   assert.equal(result.status, 502);
   assert.ok(events.some(event => event.channel === 'online-play-progress' && event.payload.requestId === 'playing'
-    && event.payload.code === 'MEDIA_TOO_LARGE' && /本集过大，请下载后播放/.test(event.payload.error)));
+    && event.payload.code === 'MEDIA_TOO_LARGE' && /(?:本集过大，请下载后播放|Tập này quá lớn)/i.test(event.payload.error)));
 });
 
 test('ordinary disk download can exceed the buffer budget and task changes notify playback', async t => {
@@ -109,7 +109,7 @@ test('idle player avoids repeated directory scans while download events and page
       assert.equal(calls, ++before, name);
     }
     episodeCount = 2; listeners.get('onWatchHistoryUpdated')?.(); await poll();
-    assert.ok(ui.find(node => node.props['aria-label'] === '第 2 集'), 'newly published episode must appear without reopening playback');
+    assert.ok(ui.find(node => node.props['aria-label'] === '第 2 集' || node.props['aria-label'] === 'Tập 2'), 'newly published episode must appear without reopening playback');
     status = 'pending'; listeners.get('onDownloadTaskAdded')?.(); await poll(); before = calls;
     await poll(); assert.equal(calls, before, 'pending download waits for events without scanning');
     status = 'failed'; retryAt = Date.now() + 60000; listeners.get('onDownloadFailed')?.(); await poll(); before = calls;

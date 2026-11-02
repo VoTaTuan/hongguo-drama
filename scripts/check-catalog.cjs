@@ -71,7 +71,8 @@ async function checkBrowseBudget() {
     await handler({}, { catalogChannel: 'web', allowTrustedDns: true });
     assert.equal(lastOptions.allowTrustedDns, false, 'renderer options must not bypass the selected proxy');
   }
-  const warmup = main.slice(main.indexOf('// Warm the official-host'), main.indexOf("startupStage = '创建主窗口'"));
+  const warmupEnd = main.indexOf("startupStage = '创建主窗口'") !== -1 ? main.indexOf("startupStage = '创建主窗口'") : main.indexOf("startupStage = 'Tạo cửa sổ chính'");
+  const warmup = main.slice(main.indexOf('// Warm the official-host'), warmupEnd);
   for (const [route, fallback, expected] of [['direct', false, 1], ['system', false, 0], ['custom', false, 0], ['direct', true, 0]]) {
     let warmed = 0;
     vm.runInNewContext(warmup, { proxyStartupFallback: fallback, getCurrentSettings: () => ({}),
@@ -148,10 +149,10 @@ async function checkBrowserTransport() {
   respond = async () => { throw new Error('net::ERR_CONNECTION_RESET'); };
   const reset = await browseList({ forceRefresh: true });
   assert.equal(reset.success, false);
-  assert.match(reset.error, /切换来源/);
+  assert.match(reset.error, /(?:切换来源|đổi nguồn)/i);
   respond = async () => new Response(new ReadableStream({ start() {} }));
   const timeout = await browseList({ forceRefresh: true });
-  assert.match(timeout.error, /超时/);
+  assert.match(timeout.error, /(?:超时|quá thời gian|hết thời gian)/i);
   assert.equal(calls.at(-1).request.aborted, true);
   console.log('PASS catalog Chromium transport: reset isolation, category/ranking, HTTP errors, bounded response and timeout');
 }
@@ -198,7 +199,7 @@ async function main() {
   const comicResult = await slowComic;
   assert.equal(comicResult.results.length, 0, '图片漫画不能转换为视频卡片');
   assert.equal(comicResult.unsupported, true);
-  assert.match(comicResult.emptyMessage, /图文|图片/);
+  assert.match(comicResult.emptyMessage, /(?:图文|图片|tranh chữ)/i);
   await browseList({});
   assert.equal(calls.length, 2, '再次访问应使用短缓存');
   await browseList({ forceRefresh: true });
@@ -214,7 +215,7 @@ async function main() {
   response = () => new Promise(() => {});
   const timeout = await browseList({ category: 'ai-drama' });
   assert.equal(timeout.success, false);
-  assert.match(timeout.error, /超时/);
+  assert.match(timeout.error, /(?:超时|quá thời gian|hết thời gian)/i);
   assert.equal(calls.at(-1).options.signal.aborted, true);
   response = async () => ({ data: html('comic-drama') });
   const animation = await browseList({ category: 'comic-drama' });

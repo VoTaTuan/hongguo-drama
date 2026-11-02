@@ -70,12 +70,12 @@ test('search x deletes a term without selecting it or starting a search', async 
   search.saveSearchTerm('甲'); search.saveSearchTerm('乙');
   const media = { sources: [{ id: 'hongguo', label: '红果' }], revision: 0, loading: false };
   const ui = h.mount('components/SearchPanel.jsx', { '../searchHistory': search, './useMediaSources': { default: () => media, __esModule: true } });
-  const remove = ui.find(n => n.props['aria-label'] === '删除搜索历史：甲');
+  const remove = ui.find(n => n.props['aria-label'] === '删除搜索历史：甲' || n.props['aria-label'] === 'Xóa lịch sử tìm kiếm: 甲');
   assert.ok(remove);
   remove.props.onClick(); await ui.flush();
   assert.equal(JSON.stringify(search.readSearchHistory()), '["乙"]');
   assert.equal(ui.find(n => n.type === 'input').props.value, '');
-  assert.ok(!ui.find(n => n.props['aria-label'] === '删除搜索历史：甲'));
+  assert.ok(!ui.find(n => n.props['aria-label'] === '删除搜索历史：甲' || n.props['aria-label'] === 'Xóa lịch sử tìm kiếm: 甲'));
 });
 
 test('watch row removal calls only the removal API and retains row on error', async () => {
@@ -85,7 +85,7 @@ test('watch row removal calls only the removal API and retains row on error', as
     removeWatchHistory: async id => { assert.equal(id, 'a'); calls++; if (!fail) removed = true; return fail ? { success: false, error: 'fixture failure' } : { success: true }; },
   };
   const ui = h.mount('components/WatchHistory.jsx'); await ui.flush();
-  const remove = () => ui.find(n => n.props['aria-label'] === '移除观看记录《甲》');
+  const remove = () => ui.find(n => n.props['aria-label'] === '移除观看记录《甲》' || n.props['aria-label'] === 'Xóa lịch sử xem《甲》');
   assert.ok(remove());
   await remove().props.onClick(); await ui.flush();
   assert.ok(remove(), 'failed persistence must retain the row');
@@ -111,27 +111,27 @@ test('watch filters require completion evidence and retain resume, removal, coun
   const ui = h.mount('components/WatchHistory.jsx'); await ui.flush();
   const filter = label => ui.find(n => n.type === 'button' && n.children.join('') === label);
   const visible = () => ui.nodes().filter(n => n.props.className === 'history-name').map(n => n.children.filter(c => typeof c === 'string').join(''));
-  assert.ok(filter('全部 3'), 'all filter and its total must be visible');
-  assert.equal(filter('全部 3').props['aria-pressed'], true);
-  filter('未看完 2').props.onClick(); await ui.flush();
+  assert.ok(filter('全部 3') || filter('Tất cả 3'), 'all filter and its total must be visible');
+  assert.equal((filter('全部 3') || filter('Tất cả 3')).props['aria-pressed'], true);
+  (filter('未看完 2') || filter('Chưa xong 2')).props.onClick(); await ui.flush();
   assert.deepEqual(visible(), ['末集未完', '旧记录']);
-  filter('已看完 1').props.onClick(); await ui.flush();
+  (filter('已看完 1') || filter('Đã xong 1')).props.onClick(); await ui.flush();
   assert.deepEqual(visible(), ['已到片尾']);
   await ui.find(n => n.props.className === 'history-resume').props.onClick(); await ui.flush();
   assert.equal(JSON.stringify(played), JSON.stringify({ seriesId: 'done', vidIndex: 2, resume: true }));
   rows = rows.map(row => row.series_id === 'done' ? { ...row, total: 3, completed: false } : row);
   updated(); await ui.flush();
-  assert.ok(filter('已看完 0'));
+  assert.ok(filter('已看完 0') || filter('Đã xong 0'));
   assert.deepEqual(visible(), []);
-  assert.ok(ui.find(n => n.type === 'h2' && n.children.includes('还没有已看完的短剧')));
-  filter('查看全部').props.onClick(); await ui.flush();
+  assert.ok(ui.find(n => n.type === 'h2' && (n.children.includes('还没有已看完的短剧') || n.children.includes('Chưa có phim ngắn nào đã xem xong'))));
+  (filter('查看全部') || filter('Xem tất cả')).props.onClick(); await ui.flush();
   assert.equal(visible().length, 3);
-  filter('未看完 3').props.onClick(); await ui.flush();
-  await ui.find(n => n.props['aria-label'] === '移除观看记录《旧记录》').props.onClick(); await ui.flush();
+  (filter('未看完 3') || filter('Chưa xong 3')).props.onClick(); await ui.flush();
+  await ui.find(n => n.props['aria-label'] === '移除观看记录《旧记录》' || n.props['aria-label'] === 'Xóa lịch sử xem《旧记录》').props.onClick(); await ui.flush();
   assert.equal(removed, 'legacy');
-  assert.ok(filter('全部 2')); assert.ok(filter('未看完 2'));
+  assert.ok(filter('全部 2') || filter('Tất cả 2')); assert.ok(filter('未看完 2') || filter('Chưa xong 2'));
   rows = rows.map(row => ({ ...row, completed: true })); updated(); await ui.flush();
-  assert.ok(ui.find(n => n.type === 'h2' && n.children.includes('没有未看完的短剧')));
+  assert.ok(ui.find(n => n.type === 'h2' && (n.children.includes('没有未看完的短剧') || n.children.includes('Không có phim ngắn nào chưa xem xong'))));
 });
 
 test('calendar displays saved poster and removes only the selected entry', () => {
@@ -140,7 +140,7 @@ test('calendar displays saved poster and removes only the selected entry', () =>
   library.saveLocalSeries({ id: 'b', title: '乙', favorite: false });
   const ui = h.mount('components/ReleaseCalendar.jsx', { '../localLibrary': library });
   assert.equal(ui.find(n => n.type === 'img')?.props.src, 'https://fixture.invalid/poster.jpg');
-  const remove = ui.find(n => n.props['aria-label'] === '移除《甲》');
+  const remove = ui.find(n => n.props['aria-label'] === '移除《甲》' || n.props['aria-label'] === 'Xóa "甲"');
   assert.ok(remove); remove.props.onClick(); ui.render();
   assert.equal(JSON.stringify(library.readLocalLibrary().items.map(item => item.id)), '["b"]');
 });
@@ -154,7 +154,7 @@ test('legacy calendar uses local catalog posters without restoring removed rows'
   assert.equal(typeof resolve, 'function');
   resolve([{ series_id: 'a', cover: 'https://fixture.invalid/old.jpg' }]); await ui.flush();
   assert.equal(ui.find(n => n.type === 'img')?.props.src, 'https://fixture.invalid/old.jpg');
-  ui.find(n => n.props['aria-label'] === '移除《甲》').props.onClick(); await ui.flush();
+  ui.find(n => n.props['aria-label'] === '移除《甲》' || n.props['aria-label'] === 'Xóa "甲"').props.onClick(); await ui.flush();
   assert.equal(library.readLocalLibrary().items.length, 0);
   assert.ok(!ui.find(n => n.type === 'img'));
 });

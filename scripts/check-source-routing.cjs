@@ -33,7 +33,7 @@ const checks = [
     assert.equal(context.compatRequests.size, 2);
     for (const result of await Promise.all([first, shared])) {
       assert.equal(result.success, false, 'locked episode must not reuse the in-flight/cache result');
-      assert.match(result.error, /锁定/);
+      assert.match(result.error, /锁定|bị khóa/i);
     }
     assert.equal(cacheReads, 0, 'access must be checked before reading the existing cache');
   }],
@@ -58,7 +58,7 @@ const checks = [
     const context = { getCurrentSettings: () => ({}), normalizeDownloadQuality: () => 'auto',
       hongguo: { fetchEpisodeList: async () => ({ episodes: [{ vid: 'xifan:huabo:a:2', vid_index: 2, locked: true }] }) } };
     vm.runInNewContext(extract('enqueueEpisodes'), context);
-    await assert.rejects(async () => context.enqueueEpisodes({ seriesId: 'xifan:huabo:a', seriesTitle: 'test', episodes: [{ vid: 'xifan:huabo:a:2', vid_index: 2, locked: false }] }), /锁定/);
+    await assert.rejects(async () => context.enqueueEpisodes({ seriesId: 'xifan:huabo:a', seriesTitle: 'test', episodes: [{ vid: 'xifan:huabo:a:2', vid_index: 2, locked: false }] }), /锁定|bị khóa/i);
   }],
 ];
 (async () => {

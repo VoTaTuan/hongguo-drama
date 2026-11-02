@@ -3,31 +3,31 @@
 'use strict';
 
 /**
- * 红果官方弹幕抓取（带视频时间轴的真弹幕）。
+ * Thu thập danmaku chính thức của Hồng Quả (danmaku thực sự có trục thời gian video).
  *
- * ## 与「本集评论」的区别
+ * ## Khác biệt với "Bình luận tập"
  *
- * `episode-comments.js` 抓的是官网**匿名**页面上那 15 条剧评，与视频时间无关，
- * 严格说不是弹幕。本模块抓的是官方客户端使用的分时弹幕接口：
+ * `episode-comments.js` lấy 15 bình luận trên trang web chính thức **ẩn danh**, không liên quan đến thời gian video,
+ * nghiêm ngặt mà nói không phải là danmaku. Module này thu thập giao diện danmaku phân đoạn thời gian mà client chính thức sử dụng:
  *
  *     POST https://api5-normal-sinfonlineb.fqnovel.com/novel/commentapi/comment/list/{vid}/v1/
  *
- * 每条弹幕都带 `offset_time`（毫秒），转换为秒后即可按播放进度投放。
+ * Mỗi danmaku đều có `offset_time` (mili-giây), sau khi đổi sang giây có thể phát theo tiến độ video.
  *
- * ## 不可控依赖（务必知情）
+ * ## Phụ thuộc không thể kiểm soát (bắt buộc phải biết)
  *
- * 这个接口不是公开接口，需要伪造官方客户端的签名头（X-Gorgon / X-Argus /
- * X-Ladon）。上游随时可能改算法、改参数或封禁，**本模块无法保证长期可用**。
- * 因此：
- *   - 任何失败都返回 `success: false` 加一句人话说明，绝不抛异常；
- *   - 调用方必须准备降级路径（见 `CommentDanmaku.jsx` 的源切换）；
- *   - 界面上不得把"拿不到"说成"本集没有弹幕"。
+ * Giao diện này không phải là giao diện công khai, cần giả mạo header chữ ký của client chính thức (X-Gorgon / X-Argus /
+ * X-Ladon). Phía thượng nguồn có thể đổi thuật toán, đổi tham số hoặc chặn bất cứ lúc nào, **module này không thể đảm bảo khả dụng lâu dài**.
+ * Do đó:
+ *   - Bất kỳ thất bại nào cũng trả về `success: false` kèm một lời giải thích dễ hiểu, tuyệt đối không ném ngoại lệ;
+ *   - Phía gọi bắt buộc phải chuẩn bị phương án hạ cấp (xem chuyển đổi nguồn trong `CommentDanmaku.jsx`);
+ *   - Trên giao diện không được biến việc "không lấy được" thành "tập này không có danmaku".
  *
- * ## 与参考实现的关系
+ * ## Quan hệ với bản tham chiếu
  *
- * 分页与解析逻辑移植自 `nas-backend/danmaku.py`（后者是 guoapp Go 版的移植）。
- * 其中分页信号的两个来源、连续空页提前停止等细节都是参考实现实测踩出来的，
- * 注释里保留了原因，不要凭直觉"简化"。
+ * Logic phân trang và phân tích được chuyển đổi từ `nas-backend/danmaku.py` (vốn là bản chuyển đổi từ bản Go của guoapp).
+ * Trong đó hai nguồn tín hiệu phân trang, dừng sớm khi gặp trang trống liên tiếp v.v. đều là các chi tiết đúc kết từ thực nghiệm,
+ * lý do được lưu giữ trong chú thích, đừng "đơn giản hóa" theo trực giác.
  */
 
 const axios = require('axios');
@@ -37,21 +37,21 @@ const sign = require('./danmaku-sign');
 const BASE_URL = 'https://api5-normal-sinfonlineb.fqnovel.com';
 const COMMENT_PATH = vid => `/novel/commentapi/comment/list/${encodeURIComponent(vid)}/v1/`;
 
-// 冒充官方 Android 客户端；UA 与签名参数必须成套，不能只改一个。
+// Giả lập client Android chính thức; UA và tham số chữ ký phải đi đồng bộ theo bộ, không được chỉ sửa một cái.
 const USER_AGENT =
   'com.phoenix.read/73532 (Linux; U; Android 16; zh_CN; 25053RT47C; Build/BP2A.250605.031.A3; ' +
   'Cronet/TTNetVersion:04657795 2026-01-23 QuicVersion:c67e9834 2025-09-08)';
 
-const MAX_TEXT_LEN = 200;              // 超长文本直接丢弃（正常弹幕不会这么长）
-const MAX_TIME_SECONDS = 604800;       // 7 天，超出视为脏数据
-const PAGE_COUNT = 90;                 // 单次向上游要的条数
-const MAX_PAGES = 40;                  // 分页上限，防死循环
-const MAX_ITEMS = 3000;                // 单集上限，防内存与 IPC 载荷失控
+const MAX_TEXT_LEN = 200;              // Văn bản quá dài sẽ bị bỏ (danmaku bình thường không dài như vậy)
+const MAX_TIME_SECONDS = 604800;       // 7 ngày, vượt quá coi như dữ liệu bẩn
+const PAGE_COUNT = 90;                 // Số mục yêu cầu thượng nguồn mỗi lần
+const MAX_PAGES = 40;                  // Giới hạn trang tối đa, chống lặp vô hạn
+const MAX_ITEMS = 3000;                // Giới hạn mỗi tập, chống tràn bộ nhớ và tải IPC
 const REQUEST_TIMEOUT = 20000;
-const EFFECTIVE_DURATION_MS = 3600000; // 单次请求声明的"剧集时长"
-const MAX_DURATION_MS = 24 * 60 * 60 * 1000; // 上游窗口上限，超过会被拒
-const MAX_EMPTY_PAGES = 2;             // 连续空页就停：上游偶尔 has_more=true 却一直给空
-const PAGE_GAP_MS = 120;               // 相邻分页间隔，别把上游打急
+const EFFECTIVE_DURATION_MS = 3600000; // "Thời lượng tập" khai báo mỗi lần yêu cầu
+const MAX_DURATION_MS = 24 * 60 * 60 * 1000; // Giới hạn cửa sổ thượng nguồn, vượt quá sẽ bị từ chối
+const MAX_EMPTY_PAGES = 2;             // Dừng khi gặp trang trống liên tiếp: thượng nguồn thi thoảng has_more=true nhưng luôn trả về trống
+const PAGE_GAP_MS = 120;               // Khoảng cách giữa các trang liền kề, tránh dồn dập
 const MAX_RESPONSE_BYTES = 8 * 1024 * 1024;
 
 const CACHE_TTL_OK = 5 * 60 * 1000;
@@ -61,7 +61,7 @@ const CACHE_MAX = 64;
 const cache = new Map();
 const pending = new Map();
 
-// 上游按匿名标识分配弹幕子集，跨重启必须复用同一份本机标识。
+// Thượng nguồn phân bổ tập con danmaku theo định danh ẩn danh, qua mỗi lần khởi động lại phải tái sử dụng cùng một định danh máy cục bộ.
 let identity = null;
 let identityFile = null;
 function setDeviceIdentityFile(file) {
@@ -95,16 +95,16 @@ const deviceIdentity = () => {
   return identity;
 };
 
-/** 仅供测试：覆盖进程内设备指纹。 */
+/** Chỉ dùng cho kiểm thử: Ghi đè dấu vân tay thiết bị trong tiến trình. */
 function setDeviceIdentity(value) {
   identity = value;
 }
 
-// ── 解析（对齐参考实现的清洗规则） ────────────────────────────────────────
+// ── Phân tích (Khớp với quy tắc làm sạch của bản tham chiếu) ─────────────────
 
 const asText = value => (value === null || value === undefined ? '' : typeof value === 'boolean' ? (value ? '1' : '0') : String(value));
 
-/** 归一成 `#RRGGBB`，拿不到用白色。 */
+/** Chuẩn hóa thành `#RRGGBB`, nếu không lấy được dùng màu trắng. */
 function normalizeColor(value) {
   if (typeof value === 'number' && Number.isFinite(value)) {
     if (value < 0) return '#FFFFFF';
@@ -123,10 +123,11 @@ function normalizeColor(value) {
 }
 
 /**
- * 归一成 scroll / top / bottom。
+ * Chuẩn hóa thành scroll / top / bottom.
  *
- * 红果评论接口目前**不下发**位置字段，所以实测恒为 `scroll`。保留多 holder 的
- * 兜底识别，是给上游将来补字段留的口子；不要因为"反正总是 scroll"就删掉。
+ * Giao diện bình luận Hồng Quả hiện **không gửi xuống** trường vị trí, nên thực tế luôn là `scroll`.
+ * Giữ lại nhận diện dự phòng cho nhiều holder để chừa lối cho thượng nguồn bổ sung trường sau này;
+ * đừng xóa chỉ vì "đằng nào cũng luôn là scroll".
  */
 function normalizeMode(...holders) {
   for (const holder of holders) {
@@ -135,14 +136,14 @@ function normalizeMode(...holders) {
       const value = holder[key];
       if (value === null || value === undefined) continue;
       const token = asText(value).trim().toLowerCase();
-      if (['top', '2', 'fix_top', '顶部'].includes(token)) return 'top';
-      if (['bottom', '3', 'fix_bottom', '底部'].includes(token)) return 'bottom';
+      if (['top', '2', 'fix_top', '顶部', 'trên'].includes(token)) return 'top';
+      if (['bottom', '3', 'fix_bottom', '底部', 'dưới'].includes(token)) return 'bottom';
     }
   }
   return 'scroll';
 }
 
-/** 控制字符与行分隔符换成空格，避免污染渲染层。 */
+/** Thay thế ký tự điều khiển và dấu ngắt dòng bằng khoảng trắng, tránh làm hỏng lớp kết xuất. */
 function cleanControl(text) {
   let out = '';
   for (const char of String(text)) {
@@ -152,7 +153,7 @@ function cleanControl(text) {
   return out.trim();
 }
 
-/** 毫秒 → 秒，并挡掉越界值。 */
+/** Đổi mili-giây → giây, và lọc bỏ các giá trị ngoài giới hạn. */
 function toSeconds(value) {
   if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+(?:\.\d+)?$/.test(value))) return null;
   const num = Number(value);
@@ -163,14 +164,14 @@ function toSeconds(value) {
 }
 
 /**
- * 解析一页，返回 `{ items, nextMs }`。
+ * Phân tích một trang, trả về `{ items, nextMs }`.
  *
- * 分页信号有两个来源，实测里都出现过：
- *   1. `data.extra.next_query_danmaku_list_time` —— 参考实现用的就是这个；
- *   2. `data.common_list_info`（`has_more` + `cursor.end_offset_time`）。
- * 实测响应里 `extra` 常常是空对象，真正的"还有没有"写在 `common_list_info` 里。
- * 只认第 1 个的话，`extra` 一空就会把"还有更多"误判成"没有了"，于是整集只拿到
- * 首页 90 条。两个都读，显式的 `has_more: false` 优先。
+ * Tín hiệu phân trang có hai nguồn, thực tế đều từng xuất hiện:
+ *   1. `data.extra.next_query_danmaku_list_time` — bản tham chiếu dùng cái này;
+ *   2. `data.common_list_info` (`has_more` + `cursor.end_offset_time`).
+ * Thực tế trong phản hồi `extra` thường là đối tượng rỗng, thông tin "còn nữa hay không" thực sự nằm ở `common_list_info`.
+ * Nếu chỉ nhận cái thứ nhất, khi `extra` rỗng sẽ phán đoán nhầm "vẫn còn" thành "hết rồi", dẫn đến cả tập chỉ lấy được
+ * 90 mục ở trang đầu. Đọc cả hai, trong đó `has_more: false` rõ ràng được ưu tiên.
  */
 function parsePage(payload, vid) {
   const empty = { items: [], nextMs: null, hasMore: null };
@@ -216,7 +217,7 @@ function parsePage(payload, vid) {
     }
   }
 
-  // 明确说没有更多了，就别再翻（此时即便有 cursor 也不该继续）
+  // Khi nói rõ ràng không còn nữa thì không lật tiếp (lúc này dù có cursor cũng không nên tiếp tục)
   if (hasMore === false) nextMs = null;
 
   const items = [];
@@ -226,7 +227,7 @@ function parsePage(payload, vid) {
     if (!comment || typeof comment !== 'object') continue;
     const common = comment.common && typeof comment.common === 'object' ? comment.common : {};
 
-    // 只收本视频、且状态正常的弹幕：别的值会把待审核/已折叠的脏数据混进来
+    // Chỉ nhận danmaku của đúng video này và ở trạng thái bình thường: giá trị khác sẽ lẫn dữ liệu bẩn chờ duyệt/đã thu gọn
     const groupId = asText(common.group_id);
     if (groupId && groupId !== vid) continue;
     if (asText(common.status) !== '1') continue;
@@ -257,7 +258,7 @@ function parsePage(payload, vid) {
   return { items, nextMs, hasMore };
 }
 
-// ── 请求 ──────────────────────────────────────────────────────────────────
+// ── Yêu cầu ─────────────────────────────────────────────────────────────────
 
 function buildBody(vid, bookId, start, duration) {
   return {
@@ -281,10 +282,10 @@ function buildBody(vid, bookId, start, duration) {
 }
 
 /**
- * 向评论接口请求一个时间窗口。
+ * Yêu cầu một cửa sổ thời gian tới giao diện bình luận.
  *
- * 时间戳与 nonce 在**同一个函数里**生成并共用：签名是对 query 字符串算的，
- * query 里含 `_rticket`，而 `X-Khronos` 用的是秒。三者不一致就是无效签名。
+ * Dấu thời gian và nonce được tạo và dùng chung trong **cùng một hàm**: chữ ký được tính trên chuỗi query,
+ * query chứa `_rticket`, còn `X-Khronos` dùng giây. Ba cái không nhất quán sẽ tạo ra chữ ký không hợp lệ.
  */
 async function requestWindow({ vid, bookId, start, duration, transport = axios.post, now = Date.now, random = require('node:crypto').randomBytes }) {
   const stampMs = now();
@@ -315,37 +316,37 @@ async function requestWindow({ vid, bookId, start, duration, transport = axios.p
   });
 
   const body = typeof response?.data === 'string' ? response.data : JSON.stringify(response?.data ?? null);
-  if (Buffer.byteLength(body) > MAX_RESPONSE_BYTES) throw new Error('弹幕响应过大');
+  if (Buffer.byteLength(body) > MAX_RESPONSE_BYTES) throw new Error('Phản hồi danmaku quá lớn');
   let payload;
   try {
     payload = JSON.parse(body);
   } catch {
-    throw new Error('弹幕接口返回了非 JSON 内容');
+    throw new Error('Giao diện danmaku trả về nội dung không phải JSON');
   }
   const code = payload?.code;
   if ((code !== 0 && code !== '0') || !Array.isArray(payload?.data?.data_list)) {
-    throw new Error('弹幕接口响应无效');
+    throw new Error('Phản hồi giao diện danmaku không hợp lệ');
   }
   return payload;
 }
 
-// ── 对外接口 ──────────────────────────────────────────────────────────────
+// ── Giao diện đối ngoại ──────────────────────────────────────────────────────────
 
 /**
- * 汇总成最终返回值。
+ * Tổng hợp thành giá trị trả về cuối cùng.
  *
- * **所有出口都走这里**：源不可用、被限流、部分成功都要经过同一个地方计算
- * `notice`，否则某条分支提前 return 就会把"拿不到"显示成"本集没有弹幕"。
+ * **Tất cả các đầu ra đều đi qua đây**: Nguồn không khả dụng, bị giới hạn tần suất, thành công một phần đều phải qua cùng một nơi để tính toán
+ * `notice`, nếu không một nhánh nào đó return sớm sẽ hiển thị việc "không lấy được" thành "tập này không có danmaku".
  *
- * `error` 非空时 `notice` 一律沿用错误说明，绝不因为 `items` 为空就改口说
- * "本集暂无弹幕" —— 这两件事对用户的意义完全不同（一个是源的问题，一个是
- * 这集真的没人发）。
+ * Khi `error` không rỗng thì `notice` luôn dùng thông tin giải thích lỗi, tuyệt đối không vì `items` rỗng mà đổi giọng nói
+ * "Tập này tạm thời chưa có danmaku" — hai việc này có ý nghĩa hoàn toàn khác nhau đối với người dùng (một bên là lỗi nguồn, một bên là
+ * tập này thực sự không có ai gửi danmaku).
  */
 function finalize({ seriesId, vid, items, truncated, error }) {
   let notice;
   if (error) notice = error;
-  else if (truncated) notice = `弹幕较多，本次仅载入前 ${items.length} 条`;
-  else if (!items.length) notice = '本集暂无弹幕';
+  else if (truncated) notice = `Danmaku khá nhiều, lần này chỉ tải trước ${items.length} mục`;
+  else if (!items.length) notice = 'Tập này tạm thời chưa có danmaku';
   else notice = '';
   return {
     success: !error,
@@ -362,10 +363,10 @@ function finalize({ seriesId, vid, items, truncated, error }) {
 }
 
 /**
- * 按 limit 裁剪后再算一次说明。
+ * Cắt gọt theo limit rồi tính lại thông báo một lần nữa.
  *
- * 裁剪只能改变"多少条"，不能改变"为什么是这些条"：错误说明必须原样保留，
- * 否则缓存里的失败结果会在命中缓存时被重新包装成正常结果。
+ * Cắt gọt chỉ thay đổi "bao nhiêu mục", không thể thay đổi "tại sao là những mục này": thông tin lỗi bắt buộc phải giữ nguyên,
+ * nếu không kết quả thất bại trong bộ nhớ đệm khi trúng cache sẽ bị đóng gói lại thành kết quả bình thường.
  */
 function present(result, items, limit) {
   if (items.length <= limit) return { ...result, items, total: items.length };
@@ -375,43 +376,43 @@ function present(result, items, limit) {
     items: sliced,
     total: sliced.length,
     truncated: true,
-    notice: result.error ? result.notice : `弹幕较多，本次仅载入前 ${sliced.length} 条`,
+    notice: result.error ? result.notice : `Danmaku khá nhiều, lần này chỉ tải trước ${sliced.length} mục`,
   };
 }
 
 /**
- * 抓取一集的官方弹幕。
+ * Thu thập danmaku chính thức của một tập.
  *
  * @param {object} options
- * @param {string} options.seriesId 剧集 ID（business_param.book_id）
- * @param {string} options.vid      本集视频 ID（group_id）。两者不同，填错会被上游拒。
+ * @param {string} options.seriesId ID phim (business_param.book_id)
+ * @param {string} options.vid      ID video tập này (group_id). Hai cái này khác nhau, điền sai sẽ bị thượng nguồn từ chối.
  * @returns {Promise<{success:boolean, source:string, items:Array<{time:number,text:string,color:string,mode:string}>, notice:string, error:string}>}
- *          按时间升序；任何异常都转成 `success:false` + 中文说明，不抛出。
+ *          Sắp xếp theo thời gian tăng dần; mọi ngoại lệ đều chuyển thành `success:false` + giải thích, không ném ra ngoài.
  */
 async function fetchDanmaku(options = {}) {
   if (!options || typeof options !== 'object' || Array.isArray(options)) {
-    return finalize({ seriesId: '', vid: '', items: [], error: '弹幕请求无效' });
+    return finalize({ seriesId: '', vid: '', items: [], error: 'Yêu cầu danmaku không hợp lệ' });
   }
   const seriesId = typeof options.seriesId === 'string' ? options.seriesId.trim() : '';
   const vid = typeof options.vid === 'string' ? options.vid.trim() : '';
   const limit = options.limit === undefined ? MAX_ITEMS : options.limit;
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_ITEMS ||
       (options.fresh !== undefined && typeof options.fresh !== 'boolean')) {
-    return finalize({ seriesId, vid, items: [], error: '弹幕请求参数无效' });
+    return finalize({ seriesId, vid, items: [], error: 'Tham số yêu cầu danmaku không hợp lệ' });
   }
-  // 允许测试注入：不打网络的假传输层、固定时钟与固定 nonce
+  // Cho phép kiểm thử tiêm vào: lớp truyền tải giả lập không gọi mạng, đồng hồ cố định và nonce cố định
   const transport = options.transport;
   const now = options.now || Date.now;
   const random = options.random;
 
   if (!/^\d{6,30}$/.test(seriesId) || !/^\d{6,30}$/.test(vid)) {
-    return finalize({ seriesId, vid, items: [], error: '仅红果来源的剧集支持弹幕' });
+    return finalize({ seriesId, vid, items: [], error: 'Chỉ nguồn Hồng Quả mới hỗ trợ danmaku' });
   }
 
   const cacheKey = `${seriesId}:${vid}`;
   const hit = cache.get(cacheKey);
-  // `fresh` 供界面上的"重试"使用：失败结果有 15 秒 TTL，不绕过的话用户点了重试
-  // 只会再拿到同一条缓存失败，看起来像按钮没反应。
+  // `fresh` dùng cho thao tác "thử lại" trên giao diện: kết quả thất bại có TTL 15 giây, nếu không bỏ qua thì người dùng bấm thử lại
+  // sẽ chỉ nhận lại kết quả thất bại cùng một tệp cache, trông như nút bấm không phản hồi.
   if (hit && hit.expires > Date.now() && options.fresh !== true) return present(hit.result, hit.items, limit);
   if (pending.has(cacheKey)) {
     const shared = await pending.get(cacheKey);
@@ -435,18 +436,18 @@ async function fetchDanmaku(options = {}) {
         try {
           payload = await requestWindow({ vid, bookId: seriesId, start, duration, transport, now, random });
         } catch (error) {
-          // 错误说明要能让用户自己判断：发生了什么、已经试过什么、还能做什么。
-          // 首页失败说明源不可用；后续页失败则保留已拿到的部分，不把整集判死。
-          // 不透传异常文本：Axios 错误可能携带签名 URL 或设备指纹。
+          // Giải thích lỗi cần giúp người dùng tự phán đoán: chuyện gì đã xảy ra, đã thử cái gì, còn có thể làm gì.
+          // Thất bại trang đầu cho thấy nguồn không khả dụng; thất bại các trang sau thì giữ lại phần đã lấy được, không coi cả tập là hỏng.
+          // Không truyền trực tiếp chuỗi ngoại lệ: lỗi Axios có thể mang theo URL chữ ký hoặc dấu vân tay thiết bị.
           failure = error?.code === 'DANMAKU_IDENTITY_IO'
-            ? '弹幕本机配置读取或保存失败，请检查资料目录权限后重试'
+            ? 'Đọc hoặc lưu cấu hình máy danmaku thất bại, vui lòng kiểm tra quyền thư mục dữ liệu rồi thử lại'
             : collected.length
-            ? '后续弹幕加载中断，已保留已获取的部分'
+            ? 'Tải danmaku tiếp theo bị gián đoạn, đã giữ lại phần đã lấy được'
             : error?.code === 'ECONNABORTED' || error?.name === 'TimeoutError' || error?.code === 'ERR_CANCELED'
-              ? '弹幕接口响应超时（已用官方签名请求），可稍后再试'
+              ? 'Giao diện danmaku phản hồi quá thời gian (đã thử yêu cầu chữ ký chính thức), có thể thử lại sau'
               : error?.response
-                ? `弹幕接口不可用（HTTP ${Number.isInteger(error.response.status) ? error.response.status : '错误'}），已尝试官方签名请求；可改用「本集评论」`
-                : '弹幕接口暂不可用（已尝试官方签名请求），请稍后重试';
+                ? `Giao diện danmaku không khả dụng (HTTP ${Number.isInteger(error.response.status) ? error.response.status : 'lỗi'}), đã thử yêu cầu chữ ký chính thức; có thể chuyển sang dùng "Bình luận tập"`
+                : 'Giao diện danmaku tạm thời không khả dụng (đã thử yêu cầu chữ ký chính thức), vui lòng thử lại sau';
           break;
         }
 
@@ -473,27 +474,27 @@ async function fetchDanmaku(options = {}) {
         if (nextMs === null) {
           if (hasMore === true) {
             truncated = true;
-            if (!collected.length) failure = '弹幕接口未返回有效分页，请稍后重试';
+            if (!collected.length) failure = 'Giao diện danmaku không trả về phân trang hợp lệ, vui lòng thử lại sau';
           }
           break;
         }
         if (nextMs <= start || nextMs > MAX_TIME_SECONDS * 1000 || emptyPages >= MAX_EMPTY_PAGES || page === MAX_PAGES - 1) {
           truncated = true;
-          if (!collected.length) failure = '弹幕接口未返回有效分页，请稍后重试';
+          if (!collected.length) failure = 'Giao diện danmaku không trả về phân trang hợp lệ, vui lòng thử lại sau';
           break;
         }
         start = nextMs;
-        // 上游拒绝超过 24 小时的窗口，所以 duration 向后延时要封顶
+        // Thượng nguồn từ chối cửa sổ vượt quá 24 giờ, nên duration kéo dài về sau phải có chặn trần
         duration = Math.min(Math.max(duration, start + EFFECTIVE_DURATION_MS), MAX_DURATION_MS);
-        // 上游说"还有更多"但连续给空页 —— 上面的分页护栏会停止并注明截断。
+        // Thượng nguồn nói "còn nữa" nhưng liên tục trả về trang trống — rào chắn phân trang ở trên sẽ dừng lại và đánh dấu bị cắt gọt.
       }
     } catch (error) {
-      failure = '弹幕处理失败，请稍后重试';
+      failure = 'Xử lý danmaku thất bại, vui lòng thử lại sau';
     }
 
     collected.sort((a, b) => a.time - b.time);
 
-    // 缓存完整结果与完整列表；limit 只在呈现时裁剪，避免缓存被"半截"结果污染。
+    // Lưu cache toàn bộ kết quả và toàn bộ danh sách; limit chỉ cắt gọt khi hiển thị, tránh để cache bị nhiễm bẩn bởi kết quả "nửa vời".
     const result = finalize({ seriesId, vid, items: collected, truncated, error: failure });
     cache.set(cacheKey, {
       expires: Date.now() + (failure ? CACHE_TTL_FAIL : CACHE_TTL_OK),
@@ -513,7 +514,7 @@ async function fetchDanmaku(options = {}) {
   }
 }
 
-/** 仅供测试：清空缓存与在途状态。 */
+/** Chỉ dùng cho kiểm thử: Xóa bộ nhớ đệm và trạng thái đang xử lý. */
 function resetDanmakuCache() {
   cache.clear();
   pending.clear();
@@ -521,7 +522,7 @@ function resetDanmakuCache() {
 
 module.exports = {
   fetchDanmaku,
-  // 测试与复用需要的内部件
+  // Các thành phần nội bộ cần cho kiểm thử và tái sử dụng
   parsePage,
   normalizeColor,
   normalizeMode,

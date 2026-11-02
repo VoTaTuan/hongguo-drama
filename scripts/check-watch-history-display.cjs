@@ -131,7 +131,20 @@ const text = node => {
   if (typeof node === 'string' || typeof node === 'number') return String(node);
   return node.children?.map(text).join('') || '';
 };
-const button = (ui, label) => ui.find(node => node.type === 'button' && text(node) === label);
+const labelMap = {
+  '全部 8': ['全部 8', 'Tất cả 8'],
+  '未看完 5': ['未看完 5', 'Chưa xong 5'],
+  '已看完 3': ['已看完 3', 'Đã xong 3'],
+  '全部 7': ['全部 7', 'Tất cả 7'],
+  '已看完 2': ['已看完 2', 'Đã xong 2'],
+  '全部 2': ['全部 2', 'Tất cả 2'],
+  '检查更新': ['检查更新', 'Kiểm tra cập nhật'],
+  '查看全部': ['查看全部', 'Xem tất cả'],
+};
+const button = (ui, label) => {
+  const targets = labelMap[label] || [label];
+  return ui.find(node => node.type === 'button' && targets.includes(text(node).trim()));
+};
 
 (async () => {
   let currentRows = historyRows();
@@ -164,7 +177,7 @@ const button = (ui, label) => ui.find(node => node.type === 'button' && text(nod
   const display = ui.find(node => node.type === 'input' && node.props.type === 'checkbox');
   assert.ok(display, 'list display needs a native keyboard-operable checkbox');
   assert.notEqual(display.props.tabIndex, -1);
-  assert.ok(ui.find(node => node.type === 'label' && text(node).includes('隐藏同剧低季')));
+  assert.ok(ui.find(node => node.type === 'label' && (text(node).includes('隐藏同剧低季') || text(node).includes('Ẩn phần cũ cùng bộ phim'))));
   display.props.onChange({ target: { checked: true } });
   await ui.flush();
 
@@ -217,7 +230,7 @@ const button = (ui, label) => ui.find(node => node.type === 'button' && text(nod
   blockedUi.find(node => node.type === 'input').props.onChange({ target: { checked: true } });
   await blockedUi.flush();
   assert.equal(blockedUi.find(node => node.type === 'input').props.checked, true, 'storage failures must not block the current selection');
-  assert.match(text(blockedUi.find(node => node.props.role === 'status')), /未能保存/);
+  assert.match(text(blockedUi.find(node => node.props.role === 'status')), /(?:未能保存|chưa được lưu|Không thể lưu)/);
 
   const similarSeries = [
     { series_id: '1000091', series_title: 'AAA1BBB', total: 1 },
@@ -231,7 +244,7 @@ const button = (ui, label) => ui.find(node => node.type === 'button' && text(nod
   similarUi.find(node => node.type === 'input').props.onChange({ target: { checked: true } });
   await similarUi.flush();
   assert.ok(button(similarUi, '全部 2'), 'fuzzy matches must remain visible when low seasons are hidden');
-  assert.ok(similarUi.find(node => node.type === 'span' && text(node) === '疑似同剧（仅提示）'));
+  assert.ok(similarUi.find(node => node.type === 'span' && ['疑似同剧（仅提示）', 'Nghi cùng bộ phim (Chỉ gợi ý)'].includes(text(node))));
   assert.ok(similarUi.find(node => node.type === 'button' && text(node) === 'AAA2BBB'), 'the suspected title must be available for inspection');
   await button(similarUi, 'AAA2BBB').props.onClick();
   await similarUi.flush();
@@ -268,7 +281,7 @@ const button = (ui, label) => ui.find(node => node.type === 'button' && text(nod
   await ui.flush();
 
   assert.ok(ui.find(node => node.type === 'input' && node.props.type === 'checkbox' && node.props.checked));
-  assert.ok(ui.find(node => node.type === 'h2' && text(node) === '最高季里没有未看完的短剧'),
+  assert.ok(ui.find(node => node.type === 'h2' && ['最高季里没有未看完的短剧', 'Trong các phần mới nhất không có phim ngắn nào chưa xem xong'].includes(text(node))),
     'combined filters need a specific empty state');
   button(ui, '查看全部').props.onClick();
   await ui.flush();
@@ -283,7 +296,7 @@ const button = (ui, label) => ui.find(node => node.type === 'button' && text(nod
   const staleAfterRemovalRows = [...afterRemovalRows, historyRows().find(row => row.series_id === '1000002')];
   currentRows = afterRemovalRows;
   ui.enableDelayedRemove();
-  const removeLatest = ui.find(node => node.props['aria-label'] === '移除观看记录《春日来信第二季》');
+  const removeLatest = ui.find(node => ['移除观看记录《春日来信第二季》', 'Xóa lịch sử xem《春日来信第二季》'].includes(node.props['aria-label']));
   assert.ok(removeLatest);
   removeLatest.props.onClick();
   ui.triggerUpdated();
@@ -313,9 +326,9 @@ const button = (ui, label) => ui.find(node => node.type === 'button' && text(nod
   failedUi.find(node => node.type === 'input' && node.props.type === 'checkbox').props.onChange({ target: { checked: true } });
   await failedUi.flush();
   failedUi.failRemove('fixture remove failure');
-  failedUi.find(node => node.props['aria-label'] === '移除观看记录《春日来信第二季》').props.onClick();
+  failedUi.find(node => ['移除观看记录《春日来信第二季》', 'Xóa lịch sử xem《春日来信第二季》'].includes(node.props['aria-label'])).props.onClick();
   await failedUi.flush();
-  assert.ok(failedUi.find(node => node.props['aria-label'] === '移除观看记录《春日来信第二季》'),
+  assert.ok(failedUi.find(node => ['移除观看记录《春日来信第二季》', 'Xóa lịch sử xem《春日来信第二季》'].includes(node.props['aria-label'])),
     'a failed removal must retain the target row');
   assert.match(text(failedUi.find(node => node.props.role === 'alert')), /fixture remove failure/);
   assert.equal(failedUi.loadCount(), 1, 'a failed removal must not invalidate the visible list');
@@ -327,14 +340,14 @@ const button = (ui, label) => ui.find(node => node.type === 'button' && text(nod
   await reloadFailedUi.flush();
   reloadFailedUi.enableDelayedLoads();
   reloadFailedUi.enableDelayedRemove();
-  reloadFailedUi.find(node => node.props['aria-label'] === '移除观看记录《春日来信第二季》').props.onClick();
+  reloadFailedUi.find(node => ['移除观看记录《春日来信第二季》', 'Xóa lịch sử xem《春日来信第二季》'].includes(node.props['aria-label'])).props.onClick();
   reloadFailedUi.resolveRemove({ success: true });
   await reloadFailedUi.flush();
   assert.equal(reloadFailedUi.loadCount(), 2, 'successful removal always requests a fresh list');
   reloadFailedUi.pendingLoad(0)({ success: false, error: 'fixture reload failure' });
   await reloadFailedUi.flush();
   assert.match(text(reloadFailedUi.find(node => node.props.role === 'alert')), /fixture reload failure/);
-  assert.ok(!reloadFailedUi.find(node => node.props['aria-label'] === '移除观看记录《春日来信第二季》'),
+  assert.ok(!reloadFailedUi.find(node => ['移除观看记录《春日来信第二季》', 'Xóa lịch sử xem《春日来信第二季》'].includes(node.props['aria-label'])),
     'a reload error must not resurrect the removed row');
 
   console.log('PASS watch history display: low-season hiding, combined filters, accessibility, scope isolation, counts, empty state, removal recomputation, and stale-load handling');

@@ -28,8 +28,24 @@ function mount(api = {}, component = 'AppUpdateNotice', props = {}) {
   const nodes = () => { const out = []; const walk = n => { if (!n || typeof n !== 'object') return; out.push(n); n.children?.forEach(walk); }; walk(tree); return out; };
   const textOf = n => typeof n === 'string' || typeof n === 'number' ? String(n) : n?.children?.map(textOf).join('') || '';
   const find = fn => nodes().find(fn);
+  const labelMap = {
+    '下载更新': ['下载更新', 'Tải bản cập nhật'],
+    '关闭更新提醒': ['关闭更新提醒', 'Đóng thông báo cập nhật'],
+    '重启并安装': ['重启并安装', 'Khởi động lại & Cài đặt', 'Khởi động lại và cài đặt'],
+    '取消下载': ['取消下载', 'Hủy tải'],
+    '正在下载…': ['正在下载…', 'Đang tải…'],
+    '重新检查': ['重新检查', 'Kiểm tra lại'],
+    '前往发布页手动下载': ['前往发布页手动下载', 'Đến trang phát hành để tải thủ công'],
+    '前往 GitHub 下载': ['前往 GitHub 下载', 'Đến GitHub để tải'],
+    '检查更新': ['检查更新', 'Kiểm tra cập nhật'],
+    '保存当前设置': ['保存当前设置', 'Lưu cài đặt hiện tại', 'Lưu cài đặt', 'Lưu', 'Đã lưu'],
+  };
   render();
-  return { render, find, nodes, text: () => textOf(tree), button: label => find(n => n.type === 'button' && (textOf(n).includes(label) || n.props['aria-label'] === label)),
+  return { render, find, nodes, text: () => textOf(tree),
+    button: label => {
+      const targets = labelMap[label] || [label];
+      return find(n => n.type === 'button' && targets.some(t => textOf(n).includes(t) || n.props['aria-label'] === t));
+    },
     flush: async () => { for (let i = 0; i < 25; i++) { await Promise.resolve(); render(); } }, emit: (name, data) => events.get(name)?.(data),
     restartEffects: () => { cleanups.forEach(fn => fn?.()); effectFns.forEach((fn, i) => { cleanups[i] = fn(); }); }, timer: () => timers.forEach(fn => fn()), unmount: () => cleanups.forEach(fn => fn?.()), events };
 }
@@ -52,7 +68,7 @@ function mount(api = {}, component = 'AppUpdateNotice', props = {}) {
   await test('manual check reports no new release and network failure', async () => {
     let result = { enabled: true, release: null };
     const ui = mount({ checkAppUpdate: async () => result }); await ui.flush(); assert.equal(ui.text(), '');
-    ui.emit('hongguo-check-app-update'); await ui.flush(); assert.ok(ui.text().includes('已是最新版本'));
+    ui.emit('hongguo-check-app-update'); await ui.flush(); assert.ok(ui.text().includes('已是最新版本') || ui.text().includes('Đang là phiên bản mới nhất'));
     result = { enabled: true, release: null, error: '网络连接失败' }; ui.emit('hongguo-check-app-update'); await ui.flush(); assert.ok(ui.text().includes('网络连接失败')); assert.ok(ui.button('重新检查')); ui.unmount();
   });
   await test('disabled checks preserve the backend reason and recover after proxy repair', async () => {
@@ -60,9 +76,9 @@ function mount(api = {}, component = 'AppUpdateNotice', props = {}) {
     const ui = mount({ checkAppUpdate: async () => result }); await ui.flush(); assert.equal(ui.text(), '');
     ui.emit('hongguo-check-app-update'); await ui.flush();
     assert.ok(ui.text().includes(result.error), 'manual checks must show the proxy failure reason');
-    assert.ok(!ui.text().includes('更新检测已关闭'), 'a blocked proxy is not an update preference');
+    assert.ok(!ui.text().includes('更新检测已关闭') && !ui.text().includes('Tính năng kiểm tra cập nhật đang tắt'), 'a blocked proxy is not an update preference');
     result = { enabled: false, release: null };
-    await ui.button('重新检查').props.onClick(); await ui.flush(); assert.ok(ui.text().includes('更新检测已关闭'));
+    await ui.button('重新检查').props.onClick(); await ui.flush(); assert.ok(ui.text().includes('更新检测已关闭') || ui.text().includes('Tính năng kiểm tra cập nhật đang tắt'));
     result = { enabled: true, release };
     await ui.button('重新检查').props.onClick(); await ui.flush(); assert.ok(ui.button('下载更新')); ui.unmount();
   });
@@ -100,7 +116,7 @@ function mount(api = {}, component = 'AppUpdateNotice', props = {}) {
     let resolve, checks = 0;
     const ui = mount({ checkAppUpdate: () => { checks++; return new Promise(r => { resolve = r; }); } });
     ui.emit('hongguo-check-app-update'); await ui.flush(); assert.equal(checks, 1);
-    resolve({ enabled: true, release: null, error: '无法连接更新服务' }); await ui.flush(); assert.ok(ui.text().includes('无法连接更新服务')); assert.ok(!ui.text().includes('已是最新版本')); ui.unmount();
+    resolve({ enabled: true, release: null, error: '无法连接更新服务' }); await ui.flush(); assert.ok(ui.text().includes('无法连接更新服务')); assert.ok(!ui.text().includes('已是最新版本') && !ui.text().includes('Đang là phiên bản mới nhất')); ui.unmount();
   });
   await test('failed recheck clears stale release and can recover inside the notice', async () => {
     let result = { enabled: true, release }, checks = 0;
@@ -141,7 +157,7 @@ function mount(api = {}, component = 'AppUpdateNotice', props = {}) {
     const retry = ui.button('下载更新').props.onClick();
     ui.emit('onAppUpdateState', { ...idle, status: 'downloading', version: '9.0', percent: 20 }); await ui.flush();
     completions[0]({ success: false, error: '更新已取消。', state: idle }); await old; await ui.flush();
-    assert.ok(ui.text().includes('20%')); assert.ok(!ui.text().includes('更新已取消。'));
+    assert.ok(ui.text().includes('20%')); assert.ok(!ui.text().includes('更新已取消。') && !ui.text().includes('Cập nhật đã bị hủy.'));
     assert.equal(ui.button('正在下载…').props.disabled, true);
     completions[1]({ success: true, state: { ...idle, status: 'downloaded', version: '9.0', percent: 100 } }); await retry; await ui.flush();
     assert.ok(ui.button('重启并安装')); ui.unmount();
@@ -152,14 +168,14 @@ function mount(api = {}, component = 'AppUpdateNotice', props = {}) {
       installAppUpdate: async () => ({ success: true, state: { ...idle, status: 'installing', version: '9.0' } }), openAppUpdate: async () => { opened++; return { success: true }; } });
     await ui.flush(); ui.emit('hongguo-check-app-update'); await ui.flush(); await ui.button('重启并安装').props.onClick(); await ui.flush();
     ui.emit('onAppUpdateState', { ...idle, status: 'error', version: '9.0', error: '系统安装器启动失败' }); await ui.flush();
-    assert.ok(ui.text().includes('系统安装器启动失败')); assert.ok(ui.button('前往发布页手动下载')); assert.ok(!ui.text().includes('已是最新版本'));
+    assert.ok(ui.text().includes('系统安装器启动失败')); assert.ok(ui.button('前往发布页手动下载')); assert.ok(!ui.text().includes('已是最新版本') && !ui.text().includes('Đang là phiên bản mới nhất'));
     await ui.button('前往发布页手动下载').props.onClick(); assert.equal(opened, 1); ui.unmount();
   });
   await test('settings emits one check event and disables it for unsaved opt-out', async () => {
     let checks = 0, events = 0;
     const ui = mount({ checkAppUpdate: async () => { checks++; return { enabled: true, release }; } }, 'Settings'); await ui.flush();
     ui.events.set('hongguo-check-app-update', () => { events++; }); assert.ok(ui.button('检查更新')); ui.button('检查更新').props.onClick(); assert.equal(events, 1); assert.equal(checks, 0);
-    ui.find(n => n.props['aria-label'] === '自动检测更新').props.onChange({ target: { checked: false } }); await ui.flush(); assert.equal(ui.button('检查更新').props.disabled, true); ui.unmount();
+    ui.find(n => n.props['aria-label'] === '自动检测更新' || n.props['aria-label'] === 'Tự động kiểm tra cập nhật').props.onChange({ target: { checked: false } }); await ui.flush(); assert.equal(ui.button('检查更新').props.disabled, true); ui.unmount();
   });
   console.log(`App update UI: ${passed} passed, ${failed} failed`); process.exitCode = failed ? 1 : 0;
 })();

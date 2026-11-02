@@ -1,9 +1,10 @@
 /**
- * Windows 便携版资料目录。
+ * Thư mục dữ liệu bản di động Windows.
  *
- * electron-builder 的 portable 目标会设置 PORTABLE_EXECUTABLE_DIR。便携版
- * 把数据放在程序目录的 data 子目录，移动程序时一起带走；只复制缺失的
- * 资料文件，不删除系统目录里的旧数据。程序目录不可写时回退系统目录。
+ * Mục tiêu portable của electron-builder sẽ thiết lập PORTABLE_EXECUTABLE_DIR.
+ * Bản di động đặt dữ liệu vào thư mục con data trong thư mục chương trình, mang theo khi di chuyển;
+ * chỉ sao chép các tệp dữ liệu còn thiếu, không xóa dữ liệu cũ trong thư mục hệ thống.
+ * Khi thư mục chương trình không có quyền ghi sẽ quay về dùng thư mục hệ thống.
  */
 const fs = require('fs');
 const path = require('path');
@@ -61,29 +62,29 @@ function migrateDataFiles(fromDir, toDir) {
   const copied = [];
   if (!fromDir || !toDir || path.resolve(fromDir) === path.resolve(toDir)) return { copied, failed: false };
   const pending = [];
-  // 先完整暂存：全部复制成功之前不碰正式文件。
+  // Lưu tạm toàn bộ trước: Không chạm vào tệp chính thức trước khi tất cả sao chép thành công.
   try {
     for (const name of DATA_FILES) {
       const source = path.join(fromDir, name);
       const target = path.join(toDir, name);
       const temporary = `${target}.importing`;
       if (!fs.existsSync(source) || fs.existsSync(target)) continue;
-      try { fs.unlinkSync(temporary); } catch (_) { /* 没有残留临时文件 */ }
+      try { fs.unlinkSync(temporary); } catch (_) { /* Không có tệp tạm còn sót lại */ }
       fs.copyFileSync(source, temporary);
       pending.push({ name, target, temporary });
     }
   } catch (_) {
-    for (const item of pending) { try { fs.unlinkSync(item.temporary); } catch (_) { /* 已不存在 */ } }
+    for (const item of pending) { try { fs.unlinkSync(item.temporary); } catch (_) { /* Đã không còn tồn tại */ } }
     return { copied: [], failed: true };
   }
   if (!pending.length) return { copied, failed: false };
 
   const sentinel = path.join(toDir, MIGRATION_SENTINEL);
-  // 提交前写标记：提交中途崩溃或回滚失败时，下次启动一定知道不能直接用这套资料。
+  // Ghi cờ hiệu trước khi xác nhận: Khi gặp sự cố giữa chừng hoặc hoàn tác thất bại, lần khởi động sau sẽ biết không được dùng trực tiếp bộ dữ liệu này.
   try {
     fs.writeFileSync(sentinel, JSON.stringify({ files: pending.map(item => item.name) }));
   } catch (_) {
-    for (const item of pending) { try { fs.unlinkSync(item.temporary); } catch (_) { /* 已不存在 */ } }
+    for (const item of pending) { try { fs.unlinkSync(item.temporary); } catch (_) { /* Đã không còn tồn tại */ } }
     return { copied: [], failed: true };
   }
 
@@ -95,23 +96,23 @@ function migrateDataFiles(fromDir, toDir) {
       copied.push(item.name);
     }
   } catch (_) {
-    for (const item of committed) { try { fs.unlinkSync(item.target); } catch (_) { /* 删不掉时由 sentinel 兜底 */ } }
-    for (const item of pending) { try { fs.unlinkSync(item.temporary); } catch (_) { /* 已重命名或不存在 */ } }
-    // 保留 sentinel；调用方会回退系统目录，下次启动再清理/重试。
+    for (const item of committed) { try { fs.unlinkSync(item.target); } catch (_) { /* Khi không xóa được sẽ do sentinel xử lý dự phòng */ } }
+    for (const item of pending) { try { fs.unlinkSync(item.temporary); } catch (_) { /* Đã đổi tên hoặc không tồn tại */ } }
+    // Giữ lại sentinel; bên gọi sẽ quay về thư mục hệ thống, dọn dẹp/thử lại trong lần khởi động tiếp theo.
     return { copied: [], failed: true };
   }
 
   try {
     fs.unlinkSync(sentinel);
   } catch (_) {
-    // 已提交但标记删不掉：同样回退旧目录，避免下次启动误把残留当完整资料。
+    // Đã xác nhận nhưng không xóa được cờ hiệu: cũng quay về thư mục cũ, tránh lần khởi động sau hiểu nhầm dữ liệu còn sót là hoàn chỉnh.
     return { copied: [], failed: true };
   }
   return { copied, failed: false };
 }
 
 /**
- * 解析便携版资料目录。不直接调用 app.setPath，便于单元测试。
+ * Phân tích thư mục dữ liệu bản di động. Không gọi trực tiếp app.setPath, thuận tiện cho kiểm thử đơn vị.
  * @returns {{ mode: 'default'|'portable', dir: string, reason: string, copied: string[], portableDir: string }}
  */
 function resolvePortableDataDir({
@@ -122,7 +123,7 @@ function resolvePortableDataDir({
 } = {}) {
   const fallback = { mode: 'default', dir: defaultUserData || '', reason: '', copied: [], portableDir: '' };
   if (platform !== 'win32') return fallback;
-  // 单文件便携 EXE 由 electron-builder 设置环境变量；便携 ZIP 用标记文件识别。
+  // File EXE di động đơn lẻ được thiết lập biến môi trường bởi electron-builder; file ZIP di động nhận diện qua tệp cờ hiệu.
   const portableDir = getPortableDirectory({ env, platform, execPath });
   if (!portableDir) return fallback;
   const target = path.join(portableDir, PORTABLE_DATA_FOLDER);
@@ -155,8 +156,8 @@ function resolvePortableDataDir({
 }
 
 /**
- * 把解析结果实际应用到 Electron app：便携版同时切换 userData 与 sessionData。
- * 单独导出便于用假 app 覆盖启动接线，不必启动 Electron。
+ * Áp dụng kết quả phân tích thực tế vào Electron app: Bản di động chuyển đổi đồng thời userData và sessionData.
+ * Xuất riêng biệt thuận tiện cho việc kiểm thử với app giả lập, không cần khởi chạy Electron.
  */
 function applyPortableDataDir({ app, env, platform, execPath, defaultUserData } = {}) {
   const resolved = resolvePortableDataDir({ env, platform, execPath, defaultUserData });

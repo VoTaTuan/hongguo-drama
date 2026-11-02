@@ -19,20 +19,20 @@ let failures=0;async function check(name,fn){if(process.argv[2]&&!name.includes(
   const result=await handlers['search-series']({},'剧名',{source:'hema'});assert.equal(result.results?.[0]?.series_id,'hema:1');
  });
  await check('Hema queue rechecks locked state and rejects cross-source IDs',async()=>{
-  await assert.rejects(context.enqueueEpisodes({seriesId:'hema:1',seriesTitle:'同名剧',episodes:[{vid:'hema:1:2',vid_index:2,locked:false}]}),/锁定/);
-  await assert.rejects(context.enqueueEpisodes({seriesId:'123',seriesTitle:'同名剧',episodes:[{vid:'hema:1:2',vid_index:2,locked:false}]}),/来源不匹配/);
+  await assert.rejects(context.enqueueEpisodes({seriesId:'hema:1',seriesTitle:'同名剧',episodes:[{vid:'hema:1:2',vid_index:2,locked:false}]}),/锁定|khóa/);
+  await assert.rejects(context.enqueueEpisodes({seriesId:'123',seriesTitle:'同名剧',episodes:[{vid:'hema:1:2',vid_index:2,locked:false}]}),/来源不匹配|không khớp/i);
  });
  await check('Hema cached playback and compatibility still enforce current access',async()=>{
   vm.runInContext("onlineCache.set('hema:1:2',{size:123,playInfo:{url:'https://example.invalid/media.mp4'}})",context);
-  const online=await handlers['prepare-online-play']({},{vid:'hema:1:2',seriesId:'hema:1',vidIndex:2});assert.equal(online.success,false);assert.match(online.error,/锁定/);assert.equal(permissionCalls,1);
+  const online=await handlers['prepare-online-play']({},{vid:'hema:1:2',seriesId:'hema:1',vidIndex:2});assert.equal(online.success,false);assert.match(online.error,/锁定|khóa/);assert.equal(permissionCalls,1);
   fs.writeFileSync(context.compatPathFor('hema:1',2),Buffer.alloc(120000));
-  const compat=await handlers['transcode-for-playback']({},{seriesId:'hema:1',vid:'hema:1:2',vidIndex:2,requestId:'hema-locked'});assert.equal(compat.success,false);assert.match(compat.error,/锁定/);
+  const compat=await handlers['transcode-for-playback']({},{seriesId:'hema:1',vid:'hema:1:2',vidIndex:2,requestId:'hema-locked'});assert.equal(compat.success,false);assert.match(compat.error,/锁定|khóa/);
  });
  await check('Hema queued download rechecks access before trusting existing files',async()=>{
   const saved=path.join(root,'saved.mp4');fs.writeFileSync(saved,Buffer.alloc(120000));
   const task={id:'hema-test',type:'hongguo',status:'pending',filename:'saved.mp4',savePath:saved,customDir:root,hongguoInfo:{vid:'hema:1:2',series_id:'hema:1',series_title:'同名剧'}};
   context.testTask=task;vm.runInContext('downloadTasks=[testTask]',context);
-  await context.executeHongguoDownload(task);assert.equal(task.status,'failed');assert.match(task.error,/锁定/);assert.equal(fs.statSync(saved).size,120000);
+  await context.executeHongguoDownload(task);assert.equal(task.status,'failed');assert.match(task.error,/锁定|khóa/);assert.equal(fs.statSync(saved).size,120000);
  });
  await check('Hema detail and play routes never fall through to Hongguo',async()=>{
   const route={fetchEpisodeList:async id=>({series_id:id,source:'hema'}),fetchPlayUrlSingle:async(vid,sid)=>({vid,sid,source:'hema'})};

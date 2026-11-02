@@ -74,7 +74,7 @@ export function resizeDanmaku(state, before, after) {
     const x = after.reducedMotion ? 12 : after.width - (before.width - item.x) / (before.width + item.width) * (after.width + item.width);
     const lane = Array.from({ length: lanes }, (_, offset) => (item.lane + offset) % lanes).find(index =>
       !placed.some(other => other.lane === index && x < other.x + other.width + 24 && x + item.width + 24 > other.x));
-    if (lane === undefined) continue; // 缩小后放不下的条目才移除，保留时间光标与可见弹幕。
+    if (lane === undefined) continue; // Chỉ xóa các mục không vừa sau khi thu nhỏ, giữ lại con trỏ thời gian và danmaku hiển thị.
     Object.assign(item, { x, lane, y: top + lane * lineHeight });
     placed.push(item);
   }

@@ -1,7 +1,7 @@
 @echo off
-rem Phim Ngan Hong Qua 5.3 - Thong tin phien ban: package.json
+rem Phim Ngan Hong Qua - Development Mode
 chcp 65001 >nul
-title Phim Ngan Hong Qua - Che do phat trien
+title Phim Ngan Hong Qua - Dev Mode
 cd /d "%~dp0"
 
 echo ============================================

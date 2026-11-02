@@ -498,12 +498,13 @@ test('main IPC uses trusted main-window/frame guard, broadcasts only saved prefe
     sendToRenderer: (...args) => events.push(args),
   });
   vm.runInContext(source.slice(source.indexOf('const UPDATE_BLOCKED_CHANNELS'), source.indexOf('let storageError')), context);
-  const start = source.indexOf('// ===== 远程公告');
+  const start = source.indexOf('// ===== 远程公告') !== -1 ? source.indexOf('// ===== 远程公告') : source.indexOf('// ===== Thông báo từ xa');
   assert.ok(start >= 0, 'main announcement IPC block is missing');
-  vm.runInContext(source.slice(start, source.indexOf('// ===== 应用内更新', start)), context);
+  const end = source.indexOf('// ===== 应用内更新', start) !== -1 ? source.indexOf('// ===== 应用内更新', start) : source.indexOf('// ===== Cập nhật trong ứng dụng', start);
+  vm.runInContext(source.slice(start, end), context);
   for (const channel of ['check-announcements', 'acknowledge-announcement', 'dismiss-announcement', 'get-announcement-preferences', 'set-announcement-preferences']) {
     assert.ok(handlers.has(channel), channel);
-    await assert.rejects(handlers.get(channel)({ ...event, senderFrame: { ...frame } }, {}), /窗口请求无效/);
+    await assert.rejects(handlers.get(channel)({ ...event, senderFrame: { ...frame } }, {}), /(?:窗口请求无效|Yêu cầu từ cửa sổ không hợp lệ)/i);
   }
   await handlers.get('set-announcement-preferences')(event, { normalEnabled: false });
   assert.equal(events.length, 1);

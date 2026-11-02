@@ -80,7 +80,7 @@ const { mount } = require('./check-player-resume.cjs');
     deleteSeriesFiles: () => { throw new Error('record removal must never delete files'); },
   } });
   await library.flush(); library.button('切换剧集').props.onClick(); await library.flush();
-  library.find(n => n.props['aria-label'] === '永久移除 甲 的剧库记录').props.onClick({ stopPropagation() {} });
+  library.find(n => n.props['aria-label'] === '永久移除 甲 的剧库记录' || n.props['aria-label'] === 'Xóa vĩnh viễn bản ghi kho phim của 甲').props.onClick({ stopPropagation() {} });
   await library.flush(); assert.deepEqual(forgotten, [], 'record removal requires the concrete confirmation');
   await library.button('永久移除').props.onClick(); await library.flush();
   assert.deepEqual(forgotten, ['A']); assert.equal(library.prepares.length, 0, 'removing a record must not play its replacement');
@@ -98,7 +98,7 @@ const { mount } = require('./check-player-resume.cjs');
   await ranges.button('下载后5集').props.onClick(); await ranges.flush();
   assert.deepEqual(queued.map(args => args[1]), [9, 12, 13], 'next five excludes current, locked and completed, without extending the range');
   const text = n => typeof n === 'string' || typeof n === 'number' ? String(n) : n?.children?.map(text).join('') || '';
-  assert.match(text(ranges.find(n => n.props.className === 'dm-toast dm-toast-success')), /2 集提交成功，1 集失败/);
+  assert.match(text(ranges.find(n => n.props.className === 'dm-toast dm-toast-success')), /(?:2 集提交成功，1 集失败|2 tập gửi thành công, 1 tập thất bại)/i);
   queued.length = 0;
   await ranges.button('下载后10集').props.onClick(); await ranges.flush();
   assert.deepEqual(queued.map(args => args[1]), [9, 12, 13, 14, 15, 16, 17, 18]);

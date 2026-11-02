@@ -6,12 +6,12 @@ import { createOfficialFeed, appendOfficialPage, advanceTimedDanmaku, resolveDan
 import './CommentDanmaku.css';
 
 /**
- * 官方弹幕叠层：按视频时间投放。
+ * Lớp phủ danmaku chính thức: Phát theo mốc thời gian của video.
  *
- * 与 `CommentDanmaku.jsx`（本集评论滚动条）是两个独立组件，不是同一个组件的
- * 分支。这样上游那套评论逻辑与其夹具测试完全不受影响，将来合并上游也不用解冲突。
+ * Tách biệt độc lập với `CommentDanmaku.jsx` (thanh cuộn bình luận tập này).
+ * Nhờ đó logic bình luận thượng nguồn và các bài test kiểm thử hoàn toàn không bị ảnh hưởng.
  *
- * 视觉设置沿用同一个存储键，换源不会清掉用户调好的字号与屏蔽词。
+ * Cài đặt hiển thị sử dụng chung khóa lưu trữ, đổi nguồn sẽ không làm mất kích cỡ chữ và từ khóa chặn mà người dùng đã thiết lập.
  */
 
 export function useOfficialDanmaku({ seriesId, vid, active, preferences }) {
@@ -32,7 +32,7 @@ export function useOfficialDanmaku({ seriesId, vid, active, preferences }) {
     return () => document.removeEventListener('visibilitychange', update);
   }, []);
 
-  // 正常只读取一次；失败或部分结果由用户手动重试，主进程复用短期缓存。
+  // Thông thường chỉ đọc một lần; trường hợp thất bại hoặc kết quả một phần do người dùng thử lại thủ công, tiến trình chính tái sử dụng bộ nhớ đệm ngắn hạn.
   useEffect(() => {
     if (!running || feed.loaded || feed.loading) return undefined;
     let cancelled = false;
@@ -69,8 +69,8 @@ export function useOfficialDanmaku({ seriesId, vid, active, preferences }) {
     return () => { cancelled = true; feed.loading = false; };
   }, [running, feed, requestVersion]);
 
-  // 状态文案只有这一个出口：失败、部分成功、加载中、空集都必须经由它，
-  // 否则某条路径会把"源坏了"显示成"本集没有弹幕"。
+  // Văn bản trạng thái chỉ có duy nhất một đầu ra này: thất bại, thành công một phần, đang tải, danh sách rỗng đều phải qua đây,
+  // nếu không một số luồng có thể hiển thị "nguồn hỏng" thành "tập này không có danmaku".
   const status = resolveDanmakuStatus({
     source: 'official',
     supported,
@@ -104,7 +104,7 @@ export function useOfficialDanmaku({ seriesId, vid, active, preferences }) {
       feed.error = '';
       feed.notice = '';
       feed.loaded = false;
-      feed.fresh = true; // 绕过主进程的失败缓存，否则重试只会拿到同一条失败
+      feed.fresh = true; // Bỏ qua bộ nhớ đệm thất bại của tiến trình chính, nếu không thử lại chỉ nhận lại cùng một lỗi
       retryRequest(value => value + 1);
     },
   };
@@ -133,7 +133,7 @@ export default function OfficialDanmaku({ videoRef, source, available, danmaku }
     setItems([]);
   }, [source, feed, enabled, active, supported, available, settings.fontSize, settings.area, settings.density, reducedMotion]);
 
-  // 布局改变时重对齐；透明度、速度与屏蔽词调整保留当前轨迹。
+  // Căn chỉnh lại khi bố cục thay đổi; điều chỉnh độ mờ, tốc độ và từ khóa chặn vẫn giữ nguyên quỹ đạo hiện tại.
   useEffect(() => {
     const state = feed.animation;
     state.items = state.items.filter(item => !commentIsBlocked(item.content, settings));

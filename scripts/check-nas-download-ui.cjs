@@ -105,7 +105,7 @@ function mountNas(overrides = {}) {
     nodes,
     text: () => textOf(tree),
     button: () => nodes().find(node => node.type === 'button'
-      && (textOf(node).includes('下载到 NAS') || node.props['aria-label'] === '下载到 NAS')),
+      && (textOf(node).includes('下载到 NAS') || textOf(node).includes('Tải về NAS') || node.props['aria-label'] === '下载到 NAS' || node.props['aria-label'] === 'Tải về NAS')),
     alert: () => nodes().find(node => node.props.role === 'alert'),
     unmount: () => {
       cleanups.forEach(cleanup => cleanup?.());
@@ -125,13 +125,13 @@ test('NAS download UI calls the bridge, reports results, and isolates series cha
 
   const button = ui.button();
   assert.ok(button, 'NAS action must be visible');
-  assert.equal(button.props['aria-label'], '下载到 NAS');
+  assert.ok(button.props['aria-label'] === '下载到 NAS' || button.props['aria-label'] === 'Tải về NAS');
   assert.equal(button.props['aria-describedby'], 'nas-description');
   const description = ui.nodes().find(node => node.props.id === 'nas-description');
   assert.ok(description, 'button description must be addressable by id');
   const descriptionText = description.children.map(node => typeof node === 'string' ? node : node.children || '').flat(Infinity).join('');
-  assert.match(descriptionText, /一并保存封面与剧情简介/);
-  assert.match(descriptionText, /先将 NAS 共享文件夹挂载到电脑/);
+  assert.match(descriptionText, /(?:一并保存封面与剧情简介|Lưu cùng ảnh bìa và tóm tắt nội dung)/);
+  assert.match(descriptionText, /(?:先将 NAS 共享文件夹挂载到电脑|gắn kết thư mục chia sẻ NAS vào máy tính)/i);
   assert.doesNotMatch(ui.text(), /飞牛/);
 
   const oldClick = button.props.onClick();
@@ -153,8 +153,8 @@ test('NAS download UI calls the bridge, reports results, and isolates series cha
   await ui.button().props.onClick();
   await ui.flush();
   assert.deepEqual(ui.calls.at(-1), ['B', '1080p']);
-  assert.match(ui.text(), /新增 2 集下载/);
-  assert.match(ui.text(), /复用 3 集/);
+  assert.match(ui.text(), /(?:新增 2 集下载|Đã thêm 2 tập tải về)/);
+  assert.match(ui.text(), /(?:复用 3 集|dùng lại 3 tập)/);
   assert.match(ui.text(), /剧情简介缺失/);
 
   const raced = deferred();
@@ -169,12 +169,12 @@ test('NAS download UI calls the bridge, reports results, and isolates series cha
   await racedClick;
   await ui.flush();
   assert.match(ui.text(), /第 2 集复制失败/, 'background failure must beat a later successful submit reply');
-  assert.doesNotMatch(ui.text(), /新增 9 集下载/);
+  assert.doesNotMatch(ui.text(), /(?:新增 9 集下载|Đã thêm 9 tập tải về)/);
 
   ui.api.downloadSeriesToNas = async () => ({ success: false, canceled: true, warnings: [] });
   await ui.button().props.onClick();
   await ui.flush();
-  assert.doesNotMatch(ui.text(), /新增 2 集下载|复用 3 集|剧情简介缺失/, 'cancel must leave the status silent');
+  assert.doesNotMatch(ui.text(), /(?:新增 2 集下载|复用 3 集|剧情简介缺失|Đã thêm 2 tập tải về|dùng lại 3 tập)/, 'cancel must leave the status silent');
 
   ui.api.downloadSeriesToNas = async () => ({ success: false, error: '无法写入 NAS' });
   await ui.button().props.onClick();
@@ -192,7 +192,7 @@ test('NAS download UI calls the bridge, reports results, and isolates series cha
   assert.doesNotMatch(ui.text(), /第 3 集失败/);
   ui.listeners[0]?.({ seriesId: 'C', vidIndex: 4, success: true });
   await ui.flush();
-  assert.doesNotMatch(ui.text(), /已加入 NAS 下载|已整理到 NAS/, 'successful per-episode events must stay quiet');
+  assert.doesNotMatch(ui.text(), /(?:已加入 NAS 下载|已整理到 NAS|Đã thêm vào tải về NAS|Đã sắp xếp vào NAS)/, 'successful per-episode events must stay quiet');
   ui.listeners[0]?.({ seriesId: 'C', vidIndex: 4, success: false, error: '第 4 集失败' });
   await ui.flush();
   assert.match(ui.text(), /第 4 集失败/);

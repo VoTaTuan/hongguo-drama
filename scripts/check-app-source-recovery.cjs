@@ -79,7 +79,7 @@ function row(definition, width, height, suffix) {
     error => error,
   );
   assert.equal(empty.code, 'EMPTY_RESPONSE');
-  assert.match(empty.message, /空响应/);
+  assert.match(empty.message, /(?:空响应|phản hồi trống)/i);
 
   let call = 0;
   const api = load(async () => {

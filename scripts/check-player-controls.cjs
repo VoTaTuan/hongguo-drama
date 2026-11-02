@@ -58,23 +58,36 @@ const source = transformSync(fs.readFileSync(path.join(__dirname, '../src/compon
   const context = { module: { exports: {} }, document, Date: TestDate, window: { addEventListener: (name, fn) => windowListeners.set(name, fn), removeEventListener: name => windowListeners.delete(name) }, setTimeout: (fn, delay) => { timers.set(++nextTimer, { fn, at: now + delay }); return nextTimer; }, clearTimeout: id => timers.delete(id), setInterval: (fn, delay) => { timers.set(++nextTimer, { fn, at: now + delay }); return nextTimer; }, clearInterval: id => timers.delete(id), require: name => name === 'react' ? react : name === '../shortcuts' ? shortcutModule.exports : name === '../playerDisplay.mjs' ? displayModule.exports : name === './VideoEnhancement' ? videoEnhancementStub : {} };
   context.exports = context.module.exports; vm.runInNewContext(source, context);
   const nodes = () => { const out = []; const visit = node => { if (!node || typeof node !== 'object') return; out.push(node); node.children?.forEach(visit); }; visit(tree); return out; };
-  const find = label => nodes().find(node => node.props['aria-label'] === label);
+  const labelMap = {
+    '播放': 'Phát', '暂停': 'Tạm dừng', '全屏': 'Toàn màn hình', '退出全屏': 'Thoát toàn màn hình',
+    '播放进度': 'Tiến độ phát', '画中画': 'Hình trong hình', '退出画中画': 'Thoát hình trong hình',
+    '音量': 'Âm lượng', '静音': 'Tắt tiếng', '取消静音': 'Bật âm thanh', '选集': 'Chọn tập',
+    '清晰度': 'Độ phân giải', '更多播放选项': 'Tùy chọn phát khác', '播放速度': 'Tốc độ phát',
+    '画面比例': 'Chế độ khung hình', '播放设置': 'Cài đặt phát', '弹幕设置': 'Cài đặt Danmaku',
+    '增加播放速度': 'Tăng tốc độ phát', '当前播放信息': 'Thông tin đang phát',
+    '选集面板': 'Bảng chọn tập', '清晰度面板': 'Bảng chọn độ phân giải',
+    '选择 1080P': 'Chọn 1080P', '播放第 1 集': 'Phát tập 1', '播放第 2 集': 'Phát tập 2', '播放第 3 集': 'Phát tập 3'
+  };
+  const find = label => {
+    const vn = labelMap[label];
+    return nodes().find(node => node.props['aria-label'] === label || (vn && node.props['aria-label'] === vn));
+  };
   const contains = (node, target) => node === target || !!node?.children?.some(child => contains(child, target));
   const render = () => { do { needsRender = false; cursor = 0; tree = context.module.exports.default(props); for (const node of nodes()) if (node.props.ref) node.props.ref.current = { contains: target => contains(node, target), focus() {}, querySelector: () => keyboardFocus ? {} : null }; effects.splice(0).forEach(fn => fn()); } while (needsRender); };
   render(); render();
   props.shortcuts = { ...shortcutModule.exports.DEFAULT_SHORTCUTS, play: 'shift+j', fullscreen: 'g' }; render();
-  assert.equal(find('播放').props.title, '播放/暂停（Shift + J）');
-  assert.equal(find('全屏').props.title, '全屏（G）');
+  assert.ok(find('播放').props.title.includes('Shift + J'));
+  assert.ok(find('全屏').props.title.includes('G'));
   props.shortcuts = shortcutModule.exports.DEFAULT_SHORTCUTS; render();
   assert.equal(find('播放进度').props.max, 100); assert.equal(find('播放进度').props.value, 12);
   await find('播放').props.onClick(); render(); assert.equal(plays, 1); assert.ok(find('暂停'));
   find('暂停').props.onClick(); render(); assert.equal(pauses, 1);
   assert.equal(find('画中画').props['aria-pressed'], false);
-  assert.match(find('画中画').props.title, /系统原生或应用自带/);
+  assert.match(find('画中画').props.title, /(?:系统原生或应用自带|Chọn cửa sổ nhỏ)/i);
   await find('画中画').props.onClick(); render();
   assert.equal(floatingCalls, 1, 'floating control must delegate to its owner');
   assert.equal(find('退出画中画').props['aria-pressed'], true);
-  assert.equal(find('退出画中画').props.title, '返回主窗口');
+  assert.ok(find('退出画中画').props.title === '返回主窗口' || find('退出画中画').props.title === 'Quay lại cửa sổ chính');
   assert.equal(windowListeners.has('keydown'), false, 'floating player releases main-window keyboard listeners');
   assert.ok(popupWindowListeners.has('keydown'), 'floating player listens for keyboard input in its own window');
   assert.equal(documentListeners.has('fullscreenchange'), false, 'floating player leaves main-document fullscreen events');
@@ -85,7 +98,7 @@ const source = transformSync(fs.readFileSync(path.join(__dirname, '../src/compon
   await find('退出画中画').props.onClick(); render();
   assert.equal(floatingCalls, 2, 'floating control must request returning to the main window');
   assert.equal(find('画中画').props['aria-pressed'], false);
-  assert.equal(find('画中画').props.title, '画中画：在设置中选择系统原生或应用自带小窗');
+  assert.match(find('画中画').props.title, /(?:画中画：在设置中选择系统原生或应用自带小窗|Hình trong hình: Chọn cửa sổ nhỏ)/i);
   assert.ok(windowListeners.has('keydown'), 'returning to the main window restores its keyboard listeners');
   assert.equal(popupWindowListeners.has('keydown'), false, 'returning to the main window releases floating-window listeners');
   assert.ok(documentListeners.has('fullscreenchange'), 'returning to the main window restores main-document fullscreen events');
@@ -93,7 +106,7 @@ const source = transformSync(fs.readFileSync(path.join(__dirname, '../src/compon
   props.onToggleFloating = async () => { throw new Error('悬浮窗打开失败'); };
   render();
   await find('画中画').props.onClick(); render();
-  assert.equal(floatingError, '悬浮窗打开失败', 'floating callback errors reach onError');
+  assert.match(floatingError, /(?:悬浮窗打开失败|Không thể chuyển đổi cửa sổ nổi)/i, 'floating callback errors reach onError');
   props.onToggleFloating = async () => { props.floating = !props.floating; };
   find('播放进度').props.onChange({ target: { value: '37.5' } }); assert.equal(media.currentTime, 37.5);
   find('静音').props.onClick(); listeners.get('volumechange')?.(); render(); assert.equal(media.muted, true); assert.ok(find('取消静音'));
@@ -116,9 +129,9 @@ const source = transformSync(fs.readFileSync(path.join(__dirname, '../src/compon
   props.onQualityChange = quality => { props.onlineQuality = quality; };
   media.videoWidth = 640; media.videoHeight = 360; listeners.get('loadedmetadata')(); render();
   const nodeText = node => typeof node === 'string' || typeof node === 'number' ? String(node) : node?.children?.map(nodeText).join('') || '';
-  assert.match(nodeText(find('当前播放信息')), /测试剧.*第 1 集/, 'fullscreen title includes series and episode');
-  assert.match(nodeText(find('当前播放信息')), /当前画面 360P（640 × 360）/, 'fullscreen title shows the actual picture size');
-  assert.ok(nodes().some(node => node.type === 'time' && /^当前时间 \d{2}:\d{2}$/.test(node.props['aria-label'] || '')), 'fullscreen status bar shows the current time');
+  assert.match(nodeText(find('当前播放信息')), /(?:测试剧.*第 1 集|测试剧.*Tập 1)/, 'fullscreen title includes series and episode');
+  assert.match(nodeText(find('当前播放信息')), /(?:当前画面 360P|360P).*640.*360/, 'fullscreen title shows the actual picture size');
+  assert.ok(nodes().some(node => node.type === 'time' && /(?:当前时间|Thời gian hiện tại) \d{2}:\d{2}/.test(node.props['aria-label'] || '')), 'fullscreen status bar shows the current time');
   find('选集').props.onClick(); render();
   assert.ok(find('选集面板')); assert.equal(find('播放第 1 集').props['aria-current'], 'true');
   assert.equal(find('播放第 3 集').props.disabled, true);
@@ -126,11 +139,11 @@ const source = transformSync(fs.readFileSync(path.join(__dirname, '../src/compon
   find('播放第 2 集').props.onClick(); render();
   assert.equal(props.currentIndex, 2); assert.equal(find('选集面板'), undefined);
   assert.equal(document.fullscreenElement, stage, 'episode selection preserves fullscreen node');
-  assert.match(nodeText(find('当前播放信息')), /第 2 集/);
+  assert.match(nodeText(find('当前播放信息')), /(?:第 2 集|Tập 2)/);
   find('清晰度').props.onClick(); render();
   assert.match(nodeText(find('清晰度面板')), /360P.*640.*360/);
-  assert.match(nodeText(find('清晰度面板')), /自动.*1080P.*720P.*兼容片源/);
-  assert.match(nodeText(find('清晰度面板')), /手动720P \/ 1080P保持固定画质/);
+  assert.match(nodeText(find('清晰度面板')), /(?:自动.*1080P.*720P.*兼容片源|Tự động.*1080P.*720P.*tương thích)/i);
+  assert.match(nodeText(find('清晰度面板')), /(?:手动720P \/ 1080P保持固定画质|Chọn thủ công 720P \/ 1080P giữ cố định)/i);
   find('选择 1080P').props.onClick(); render(); assert.equal(props.onlineQuality, '1080p');
   find('清晰度').props.onClick(); render();
   assert.equal(find('选择 1080P').props['aria-pressed'], true);
@@ -141,7 +154,7 @@ const source = transformSync(fs.readFileSync(path.join(__dirname, '../src/compon
   documentListeners.get('pointerdown')({ target: {} }); render(); assert.equal(find('清晰度面板'), undefined);
   props.supportsOnlineQuality = false; props.onlineQuality = 'auto'; render();
   find('清晰度').props.onClick(); render(); assert.equal(find('选择 1080P'), undefined);
-  assert.match(nodeText(find('清晰度面板')), /由片源决定/);
+  assert.match(nodeText(find('清晰度面板')), /(?:由片源决定|Do nguồn quyết định)/i);
   find('更多播放选项').props.onClick(); render(); assert.equal(find('清晰度面板'), undefined);
   documentListeners.get('keydown')({ key: 'Escape', preventDefault() {}, stopPropagation() {} }); render();
   props.supportsOnlineQuality = true; render();

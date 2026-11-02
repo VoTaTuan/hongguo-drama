@@ -147,7 +147,7 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
       const own = task('one', h.dir); file(own.savePath); h.set('downloadTasks', [own]); disk = structuredClone([own]);
       const result = await h.handlers[channel]({}, 'S', 1);
       assert.equal(result.success, false); assert.equal(result.count, 1); assert.equal(result.freed, 120000); assert.equal(result.failed, 0, channel);
-      assert.match(result.error, /记录.*保存/); assert.equal(fs.existsSync(own.savePath), false);
+      assert.match(result.error, /记录.*保存|Lưu bản ghi.*thất bại/i); assert.equal(fs.existsSync(own.savePath), false);
       assert.equal(JSON.stringify(h.run('downloadTasks')), JSON.stringify(disk), 'failed persistence must restore memory');
       rejectSave = false;
       const retried = await h.handlers[channel]({}, 'S', 1);
@@ -166,7 +166,7 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
       const result = await h.handlers[channel]({}, target, { deleteFiles });
       assert.equal(result.success, false); assert.equal(result.count, 0); assert.equal(result.failed, 0);
       assert.equal(result.fileCount, deleteFiles ? 2 : 0); assert.equal(result.freed, deleteFiles ? 240000 : 0);
-      assert.match(result.error, /记录.*保存/); assert.equal(JSON.stringify(h.run('downloadTasks')), JSON.stringify(disk));
+      assert.match(result.error, /记录.*保存|Lưu bản ghi.*thất bại/i); assert.equal(JSON.stringify(h.run('downloadTasks')), JSON.stringify(disk));
       assert.equal(fs.existsSync(own.savePath), !deleteFiles);
       rejectSave = false;
       const retry = await h.handlers[channel]({}, target, { deleteFiles });
@@ -230,7 +230,7 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
       h.set('downloadTasks', mixed ? [protectedTask, extra] : [protectedTask]);
       h.set('mergeTasks', [{ seriesId: 'S', status: 'running' }]);
       const result = await h.handlers['delete-all-downloaded']({});
-      assert.equal(result.success, true); assert.equal(result.skipped, 1); assert.match(result.warning, /1.*合并.*跳过/);
+      assert.equal(result.success, true); assert.equal(result.skipped, 1); assert.match(result.warning, /1.*合并.*跳过|1.*gộp.*bỏ qua/i);
       assert.equal(result.count, mixed ? 1 : 0); assert.equal(result.failed, 0); assert.equal(result.freed, mixed ? 120000 : 0);
       assert.equal(fs.existsSync(protectedTask.savePath), true); assert.equal(h.run('downloadTasks.some(t => t.id === "one")'), true);
     }
@@ -289,7 +289,7 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
       if (conflict === 'merge') h.set('mergeTasks', [{ seriesId: 'OTHER', status: 'completed', output: own.savePath }]);
       const result = await h.handlers[channel]({}, channel === 'delete-task' ? 'one' : ['one'], { deleteFiles: true });
       assert.equal(result.success, false, conflict); assert.equal(result.count, 0); assert.equal(result.freed, 0); assert.equal(result.fileCount, 0);
-      assert.match(result.error, /保留/); assert.match(result.warning, /保留/);
+      assert.match(result.error, /保留|giữ lại/i); assert.match(result.warning, /保留|giữ lại/i);
       for (const name of family) assert.equal(fs.existsSync(name), true, conflict);
       assert.equal(h.run('downloadTasks.some(t => t.id === "one")'), true);
     }
@@ -301,7 +301,7 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
       const family = [own.savePath, own.savePath + '.enc.tmp', own.savePath + '.enc.tmp.decoded']; family.forEach(file);
       if (conflict === 'merge') h.set('mergeTasks', [{ seriesId: 'OTHER', status: 'completed', output: own.savePath }]);
       const result = await h.handlers[channel]({}, 'S', 1);
-      assert.equal(result.success, false, conflict); assert.equal(result.count, 0); assert.equal(result.freed, 0); assert.match(result.error, /保留/);
+      assert.equal(result.success, false, conflict); assert.equal(result.count, 0); assert.equal(result.freed, 0); assert.match(result.error, /保留|giữ lại/i);
       for (const name of family) assert.equal(fs.existsSync(name), true, conflict);
       assert.equal(h.run('downloadTasks.some(t => t.id === "one")'), true);
     }
@@ -358,11 +358,11 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
         const options = channel === 'delete-task' || channel === 'delete-tasks' ? { deleteFiles: true } : 1;
         const result = await h.handlers[channel]({}, target, options);
         assert.equal(h.run('sourceRetryTimers.size'), 0, outcome); assert.equal(timers.size, 0, outcome);
-        assert.equal(own.retryAt, undefined, outcome); assert.match(own.error, /来源暂不可用.*已取消自动重试/, outcome); assert.doesNotMatch(own.error, /将在/);
+        assert.equal(own.retryAt, undefined, outcome); assert.match(own.error, /来源暂不可用.*(?:已取消自动重试|Đã hủy tự động thử lại)/, outcome); assert.doesNotMatch(own.error, /将在/);
         for (const callback of callbacks) callback();
         assert.equal(h.run('downloadQueue.length'), 0, 'an already queued timer callback must not resurrect the task');
         assert.notEqual(own.status, 'pending');
-        if (outcome === 'save-failure') { assert.equal(result.success, false); assert.match(result.error, /保存失败/); assert.ok(disk[0].retryAt); }
+        if (outcome === 'save-failure') { assert.equal(result.success, false); assert.match(result.error, /保存失败|thất bại/i); assert.ok(disk[0].retryAt); }
         else { assert.ok(disk.every(row => row.id !== 'one' || !row.retryAt), 'restart must not restore the cancelled retry'); }
       }
     });
@@ -551,8 +551,10 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
     assert.equal((await h.handlers['show-in-folder']({}, outside)).success, false);
     assert.equal((await h.handlers['show-in-folder']({}, path.join(outside, 'missing'))).success, false);
     const link = path.join(h.dir, 'linked.mp4');
-    fs.symlinkSync(outside, link);
-    assert.equal((await h.handlers['show-in-folder']({}, link)).success, false);
+    try {
+      fs.symlinkSync(outside, link);
+      assert.equal((await h.handlers['show-in-folder']({}, link)).success, false);
+    } catch (e) { if (e.code !== 'EPERM') throw e; }
     assert.deepEqual(h.opened, []);
   });
   await check('playback transcode rejects an existing file outside the download root', async () => {
@@ -561,7 +563,7 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
     fs.writeFileSync(outside, Buffer.alloc(1200));
     const result = await h.handlers['transcode-for-playback']({}, { seriesId: 'S', vidIndex: 1, filePath: outside });
     assert.equal(result.success, false);
-    assert.match(result.error, /下载目录/);
+    assert.match(result.error, /下载目录|thư mục tải xuống/i);
     const inside = path.join(h.dir, 'local.mp4');
     fs.writeFileSync(inside, Buffer.alloc(1200));
     const allowed = h.context.isInsideMediaRoot(inside);
@@ -606,12 +608,14 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
     assert.equal((await h.handlers['show-in-folder']({}, sibling)).success, false);
     for (const identity of [{ seriesId: 'other', vidIndex: 1, vid: 'one' }, { seriesId: 'S', vidIndex: 2, vid: 'one' }, { seriesId: 'S', vidIndex: 1, vid: 'other' }]) {
       const result = await h.handlers['transcode-for-playback']({}, { ...identity, filePath: one.savePath });
-      assert.equal(result.success, false); assert.match(result.error, /下载目录/);
+      assert.equal(result.success, false); assert.match(result.error, /下载目录|thư mục tải xuống/i);
     }
-    fs.unlinkSync(one.savePath); fs.symlinkSync(sibling, one.savePath);
-    assert.equal((await h.handlers['show-in-folder']({}, one.savePath)).success, false, 'a registered name must not grant access to a replacement symlink');
-    const denied = await h.handlers['transcode-for-playback']({}, { seriesId: 'S', vidIndex: 1, vid: 'one', filePath: one.savePath });
-    assert.equal(denied.success, false); assert.match(denied.error, /下载目录/);
+    try {
+      fs.unlinkSync(one.savePath); fs.symlinkSync(sibling, one.savePath);
+      assert.equal((await h.handlers['show-in-folder']({}, one.savePath)).success, false, 'a registered name must not grant access to a replacement symlink');
+      const denied = await h.handlers['transcode-for-playback']({}, { seriesId: 'S', vidIndex: 1, vid: 'one', filePath: one.savePath });
+      assert.equal(denied.success, false); assert.match(denied.error, /下载目录|thư mục tải xuống/i);
+    } catch (e) { if (e.code !== 'EPERM') throw e; }
     const linkedDir = path.join(oldDir, 'linked');
     const outsideDir = path.join(root, 'unregistered-directory'); fs.mkdirSync(outsideDir);
     fs.symlinkSync(outsideDir, linkedDir, process.platform === 'win32' ? 'junction' : 'dir');

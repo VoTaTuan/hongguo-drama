@@ -67,7 +67,7 @@ async function check(name, fn) { try { await fn(); console.log('PASS ' + name); 
     const h = load({ permission: async () => ({ episodes: [{ vid: 'xifan:v', vid_index: 1, locked: true }] }) });
     fs.writeFileSync(h.context.compatPathFor('xifan:S', 1), Buffer.alloc(120000));
     const result = await h.handlers['transcode-for-playback']({}, { ...payload('locked'), force: false });
-    assert.equal(result.success, false); assert.match(result.error, /锁定/); assert.equal(h.metrics.media, 0); assert.equal(h.children.length, 0);
+    assert.equal(result.success, false); assert.match(result.error, /(?:锁定|khóa)/i); assert.equal(h.metrics.media, 0); assert.equal(h.children.length, 0);
   });
   await check('clear cache cancels permission-pending jobs before they can publish output', async () => {
     const gate = deferred(), h = load({ permission: () => gate.promise });
@@ -123,7 +123,7 @@ async function check(name, fn) { try { await fn(); console.log('PASS ' + name); 
     const h = load({ encoder: 'h264_nvenc', exitCodes: [1, 2] });
     const result = await h.handlers['transcode-for-playback']({}, { ...payload('software-failure'), force: false });
     assert.equal(result.success, false); assert.equal(h.children.length, 2);
-    assert.match(result.error, /软件转码失败.*2/);
+    assert.match(result.error, /(?:软件转码失败.*2|Chuyển mã phần mềm thất bại.*2)/i);
     assert.deepEqual(fs.readdirSync(h.context.getCompatDir()), []); assert.equal(h.run('compatPreparing.size'), 0);
   });
   await check('cancelling hardware transcode never starts software fallback', async () => {
@@ -155,7 +155,7 @@ async function check(name, fn) { try { await fn(); console.log('PASS ' + name); 
   await check('forced software failure stops after one attempt', async () => {
     const h = load({ encoder: 'h264_nvenc', exitCodes: [9] });
     const result = await h.handlers['transcode-for-playback']({}, payload('force-failure'));
-    assert.equal(result.success, false); assert.match(result.error, /软件转码失败.*9/);
+    assert.equal(result.success, false); assert.match(result.error, /(?:软件转码失败.*9|Chuyển mã phần mềm thất bại.*9)/i);
     assert.equal(h.children.length, 1); assert.equal(h.metrics.encoder, 0);
     assert.deepEqual(fs.readdirSync(h.context.getCompatDir()), []);
   });

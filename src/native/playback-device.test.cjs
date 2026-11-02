@@ -10,7 +10,7 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, 'playback-device.js'), 'utf8');
 const endpoint = 'https://log5-applog-lf.fqnovel.com/service/2/device_register/?tt_data=a&cronet_version=8d40f833_2026-03-03&ttnet_version=4.2.243.31-douyin&use_store_region_cookie=1';
-const failureMessage = '匿名播放设备注册失败，请检查网络，10 秒后重试';
+const failureMessage = /^(?:匿名播放设备注册失败，请检查网络，10 秒后重试|Đăng ký thiết bị phát ẩn danh thất bại, vui lòng kiểm tra mạng, thử lại sau 10 giây)$/;
 function load(clock = Date) {
     const module = { exports: {} };
     vm.runInNewContext(source, {
@@ -164,7 +164,7 @@ test('synchronous and asynchronous failures share a safe error during cooldown',
         assert.ok(results.every(result => result.status === 'rejected' && result.reason === results[0].reason));
         const error = results[0].reason;
         assert.equal(error.code, 'DEVICE_REGISTRATION_FAILED');
-        assert.equal(error.message, failureMessage);
+        assert.match(error.message, failureMessage);
         assert.deepEqual(Object.keys(error), ['code', 'registrationFailure']);
         assert.equal(error.registrationFailure, 'TIMEOUT');
         assert.equal(error.cause, undefined);
@@ -227,7 +227,7 @@ test('registration reports only whitelisted failure reasons without retaining re
         }), error => {
             assert.equal(error.code, 'DEVICE_REGISTRATION_FAILED');
             assert.equal(error.registrationFailure, expected);
-            assert.equal(error.message, failureMessage);
+            assert.match(error.message, failureMessage);
             assert.doesNotMatch(String(error.stack) + JSON.stringify(error), /PRIVATE_RESPONSE_SENTINEL/);
             return true;
         });

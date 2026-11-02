@@ -37,7 +37,7 @@ function searchModule() { assert.ok(fs.existsSync(file), 'bounded search module 
     const result = await searchModule().searchSeries('双子房客', async kw => kw === '双子房客' ? ok([first, second]) : Promise.reject(new Error('offline')));
     assert.equal(result.success, true); assert.equal(result.partial, true);
     assert.deepEqual(result.results.map(item => item.series_id), ['1000001', '1000002']);
-    assert.match(result.error, /补充搜索/);
+    assert.match(result.error, /补充搜索|Tìm kiếm bổ sung/);
   });
   await check('sequel matching is same-source, same-base, explicit and nearest-season-first', () => {
     const results = findSequels(first, [fourth, { series_id: 'hema:7', series_title: third.series_title }, third, second, second, { series_id: '1999999', series_title: '双子房客番外' }]);
@@ -88,7 +88,7 @@ function searchModule() { assert.ok(fs.existsSync(file), 'bounded search module 
     assert.deepEqual(calls, ['双子房客']);
     assert.equal(result.success, true);
     assert.equal(result.partial, true);
-    assert.match(result.error, /时间预算/);
+    assert.match(result.error, /时间预算|ngân sách/);
   });
   await check('missing or unsupported identities never trigger remote searches', async () => {
     const { findSeriesSequels } = searchModule(); let calls = 0;

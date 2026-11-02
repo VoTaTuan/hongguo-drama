@@ -71,7 +71,7 @@ assert.equal(mediaIdentity.currentTime, 38, 'returning must restore position aft
 assert.equal(mediaIdentity.paused, true, 'returning must preserve manual pause');
 assert.deepEqual(changes, [true, false]);
 blocked = true;
-assert.throws(() => api.toggle(), /悬浮/);
+assert.throws(() => api.toggle(), /(?:悬浮|cửa sổ nổi)/i);
 assert.equal(api.host.parentNode, slot, 'a blocked popup must leave the current player in place');
 blocked = false; api.toggle(); render(); cleanups.forEach(fn => fn?.());
 assert.equal(child.closed, true, 'unmount must close the owned window');

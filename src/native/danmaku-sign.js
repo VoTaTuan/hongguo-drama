@@ -3,30 +3,31 @@
 'use strict';
 
 /**
- * 红果/番茄弹幕接口的请求签名（X-Gorgon / X-Ladon / X-Argus）。
+ * Chữ ký yêu cầu (request signing) cho giao diện danmaku Hồng Quả/Phiên Sa (X-Gorgon / X-Ladon / X-Argus).
  *
- * ## 这个文件为什么长这样
+ * ## Tại sao tệp này lại có cấu trúc như thế này
  *
- * 上游接口没有任何公开文档，签名算法只能从已验证可用的实现里逐字节搬运。
- * 本文件是 `nas-backend/danmaku.py` 的 JavaScript 移植，而后者又是 guoapp
- * Go 版（`provider_hongguo_comment_sign.go`）的移植。三层实现，同一个算法。
+ * Giao diện thượng nguồn không có bất kỳ tài liệu công khai nào, thuật toán ký chỉ có thể
+ * chuyển đổi từng byte từ bản triển khai đã được xác minh hoạt động.
+ * Tệp này là bản chuyển đổi sang JavaScript của `nas-backend/danmaku.py`, vốn lại là bản chuyển đổi từ
+ * phiên bản Go của guoapp (`provider_hongguo_comment_sign.go`). Ba tầng triển khai, cùng một thuật toán.
  *
- * 因此本文件有两条硬约束：
+ * Do đó tệp này có 2 ràng buộc cứng:
  *
- * 1. **不得"顺手修正"参考实现里看起来像 bug 的写法。** 例如 X-Gorgon 的
- *    RC4 密钥调度是 `box[i] = box[j]` 赋值而非交换 —— 这看着不对，但服务端
- *    接受它。改成"正确"的交换会让签名失效。
- * 2. **不得改变位运算的宽度与截断位置。** 全部 64 位运算使用 BigInt 并显式
- *    掩码；Python 的任意精度整数在这里必须靠 `BigInt.asUintN` 补齐语义。
+ * 1. **Không được "tiện tay sửa" các đoạn mã có vẻ giống lỗi trong bản tham chiếu.** Ví dụ phân phối khóa
+ *    RC4 của X-Gorgon là gán `box[i] = box[j]` thay vì hoán đổi — điều này trông có vẻ sai, nhưng máy chủ
+ *    chấp nhận nó. Đổi thành hoán đổi "đúng" sẽ làm chữ ký mất hiệu lực.
+ * 2. **Không được thay đổi độ rộng và vị trí cắt của các phép toán thao tác bit.** Toàn bộ phép toán 64-bit dùng BigInt và mask
+ *    rõ ràng; số nguyên độ chính xác tùy ý của Python ở đây phải dựa vào `BigInt.asUintN` để khớp ngữ nghĩa.
  *
- * 正确性由 `danmaku-sign.test.cjs` 用参考实现生成的黄金向量逐字节断言。
- * 改本文件后必须先跑该测试，再跑 `scripts/check-danmaku-official.cjs` 联网验证。
+ * Tính chính xác được khẳng định từng byte bởi `danmaku-sign.test.cjs` bằng vector vàng tạo từ bản tham chiếu.
+ * Sau khi sửa tệp này phải chạy kiểm thử đó trước, rồi chạy `scripts/check-danmaku-official.cjs` để xác minh mạng.
  *
- * ## 依赖
+ * ## Phụ thuộc
  *
- * 几乎只用 Node 标准库。MD5 用 `node:crypto`；**SM3 自带纯 JS 实现**，因为
- * Electron 内置的 BoringSSL 没有 SM3（详见 `sm3` 的注释）。AES-128-CBC 用
- * `node:crypto`，Electron 与系统 Node 都支持。
+ * Hầu như chỉ dùng thư viện chuẩn Node. MD5 dùng `node:crypto`; **SM3 tự mang bản triển khai JS thuần**, vì
+ * BoringSSL tích hợp của Electron không có SM3 (xem chi tiết trong chú thích `sm3`). AES-128-CBC dùng
+ * `node:crypto`, cả Electron và Node hệ thống đều hỗ trợ.
  */
 
 const { createHash, createCipheriv, randomBytes } = require('node:crypto');
@@ -34,26 +35,26 @@ const { createHash, createCipheriv, randomBytes } = require('node:crypto');
 const M64 = (1n << 64n) - 1n;
 const M32 = (1n << 32n) - 1n;
 
-// ── 摘要 ──────────────────────────────────────────────────────────────────
+// ── Tóm tắt (Digest) ─────────────────────────────────────────────────────────
 
 const md5 = data => createHash('md5').update(data).digest();
 
 /**
- * 国密 SM3：**复用仓库里已有的** `sm3.js`，不要改用 `createHash('sm3')`。
+ * Chuẩn mã hóa SM3: **Tái sử dụng tệp có sẵn** `sm3.js` trong kho mã, không đổi sang `createHash('sm3')`.
  *
- * 系统 Node 用的是 OpenSSL 3，有 SM3；Electron 内置的却是 BoringSSL
- * （`process.versions.openssl === '0.0.0'`），没有 SM3，`createHash('sm3')` 会抛
- * `Digest method not supported`。`app-source.js` 早先已经为同一个原因写了
- * `sm3.js`，这里直接共用，避免同一份算法维护两遍。
+ * Node hệ thống dùng OpenSSL 3, có SM3; nhưng Electron tích hợp BoringSSL
+ * (`process.versions.openssl === '0.0.0'`), không có SM3, `createHash('sm3')` sẽ ném
+ * `Digest method not supported`. `app-source.js` trước đó cũng đã vì lý do này mà viết
+ * `sm3.js`, ở đây dùng chung trực tiếp, tránh bảo trì cùng một thuật toán ở hai nơi.
  *
- * 这个差异在离线单测里**完全看不出来**（单测跑在系统 Node 上，全绿），只有把应用
- * 真正跑起来调一次接口才会暴露：X-Argus 算不出来，弹幕接口就全部失败。
- * `danmaku-sign.test.cjs` 用 SM3 标准向量（含跨块长输入）与系统 Node 的 native
- * 实现双向比对，把这条护栏钉住。
+ * Sự khác biệt này trong unit test ngoại tuyến **hoàn toàn không thấy được** (test chạy trên Node hệ thống, xanh toàn bộ),
+ * chỉ khi ứng dụng thực sự chạy lên và gọi giao diện một lần mới lộ ra: X-Argus không tính được, toàn bộ giao diện danmaku sẽ thất bại.
+ * `danmaku-sign.test.cjs` dùng vector chuẩn SM3 (bao gồm đầu vào dài vượt khối) và so sánh đối chiếu hai chiều với bản native
+ * của Node hệ thống để khóa chặt rào chắn này.
  */
 const sm3 = require('./sm3');
 
-// ── 位运算（对齐 Python 的 _rotl32/_rotl64/_rotr64/_rotl8/_reverse8） ──────
+// ── Phép toán bit (khớp với _rotl32/_rotl64/_rotr64/_rotl8/_reverse8 của Python) ──────
 
 const rotl32 = (x, n) => {
   const v = x & 0xFFFFFFFFn;
@@ -67,7 +68,7 @@ const rotl64 = (x, n) => {
   return BigInt.asUintN(64, (v << s) | (v >> ((64n - s) & 63n)));
 };
 
-// Python 的 _rotr64 定义为 rotl64(x, -n)。
+// _rotr64 của Python được định nghĩa là rotl64(x, -n).
 const rotr64 = (x, n) => rotl64(x, -n);
 
 const rotl8 = (x, n) => {
@@ -84,9 +85,9 @@ const reverse8 = x => {
   return v & 0xFF;
 };
 
-// ── 通用小工具 ────────────────────────────────────────────────────────────
+// ── Tiện ích chung ──────────────────────────────────────────────────────────
 
-/** PKCS#7，恒定补齐 1~16 字节（与参考实现的 hongguoCommentPad 一致）。 */
+/** PKCS#7, đệm cố định 1~16 byte (nhất quán với hongguoCommentPad của bản tham chiếu). */
 function pad(data) {
   const padding = 16 - (data.length % 16);
   return Buffer.concat([Buffer.from(data), Buffer.alloc(padding, padding)]);
@@ -95,7 +96,7 @@ function pad(data) {
 const u64le = buf => BigInt.asUintN(64, buf.readBigUInt64LE(0));
 const putU64le = (value, target, offset) => target.writeBigUInt64LE(BigInt.asUintN(64, value), offset);
 
-/** protobuf 变长无符号整数（等价于 Go 的 binary.AppendUvarint）。 */
+/** Số nguyên không dấu độ dài biến thiên của protobuf (tương đương với binary.AppendUvarint của Go). */
 function uvarint(value) {
   let v = BigInt.asUintN(64, value);
   const out = [];
@@ -110,17 +111,17 @@ function uvarint(value) {
   }
 }
 
-/** 与 Go 的 newHongguoDeviceID 一致：1e18 + 随机数，19 位数字串。 */
+/** Nhất quán với newHongguoDeviceID của Go: 1e18 + số ngẫu nhiên, chuỗi số 19 chữ số. */
 function newDeviceId(random = randomBytes) {
   const raw = BigInt.asUintN(64, BigInt('0x' + random(8).toString('hex')));
   return String(1000000000000000000n + (raw % 8000000000000000000n));
 }
 
-// ── 请求 query ────────────────────────────────────────────────────────────
+// ── Tham số query yêu cầu ──────────────────────────────────────────────────
 
 /**
- * 固定 query 参数。这些值冒充官方 Android 客户端，改动会影响上游风控判定，
- * 非必要不要动。
+ * Các tham số query cố định. Những giá trị này giả lập client Android chính thức, thay đổi sẽ ảnh hưởng đến kiểm soát rủi ro của thượng nguồn,
+ * không cần thiết thì không nên chỉnh sửa.
  */
 function baseParams(deviceId, installId) {
   return {
@@ -148,11 +149,11 @@ function baseParams(deviceId, installId) {
 }
 
 /**
- * 模仿 Python 的 `urlencode`（默认 `quote_plus`）。
+ * Mô phỏng `urlencode` của Python (mặc định `quote_plus`).
  *
- * `encodeURIComponent` 不转义 `! ' ( ) *`，而 Python 的 `quote` 会（它只保留
- * `A-Za-z0-9_.-~`）。签名是对 query 字符串做的，少转义一个 `*` 就会算出服务端
- * 拒绝的签名，因此这里必须补齐这个差异。
+ * `encodeURIComponent` không escape `! ' ( ) *`, trong khi `quote` của Python thì có (nó chỉ giữ lại
+ * `A-Za-z0-9_.-~`). Chữ ký được thực hiện trên chuỗi query, thiếu escape một ký tự `*` sẽ tính ra chữ ký mà máy chủ
+ * từ chối, do đó ở đây bắt buộc phải bù đắp sự khác biệt này.
  */
 const quotePlus = value =>
   encodeURIComponent(value)
@@ -163,7 +164,7 @@ function encodeQuery(pairs) {
   return pairs.map(([key, value]) => `${quotePlus(key)}=${quotePlus(value)}`).join('&');
 }
 
-/** 键按字典序排序后编码，与 Go 的 url.Values.Encode 行为一致。 */
+/** Sắp xếp key theo thứ tự từ điển rồi mã hóa, nhất quán với hành vi url.Values.Encode của Go. */
 function buildQuery({ stampMs, deviceId, installId, random = randomBytes }) {
   const params = baseParams(deviceId ?? newDeviceId(random), installId ?? newDeviceId(random));
   params._rticket = String(stampMs);
@@ -174,9 +175,9 @@ function buildQuery({ stampMs, deviceId, installId, random = randomBytes }) {
 // ── X-Gorgon ──────────────────────────────────────────────────────────────
 
 /**
- * 带 nonce 变体的 X-Gorgon。
+ * Biến thể X-Gorgon mang nonce.
  *
- * 注意 `box[i] = box[j]` 是**赋值**不是交换：照抄参考实现，不要"修好"它。
+ * Chú ý `box[i] = box[j]` là **phép gán** chứ không phải hoán đổi: chép nguyên xi bản tham chiếu, không "sửa cho đúng".
  */
 function commentXGorgon(rawQuery, stamp, nonce) {
   const head2 = ((nonce[0] % 7) + 1) << 5;
@@ -215,7 +216,7 @@ function commentXGorgon(rawQuery, stamp, nonce) {
 
 // ── X-Ladon ───────────────────────────────────────────────────────────────
 
-/** 34 轮 uint64 密钥扩展 + TEA 风格变换 + base64。 */
+/** Mở rộng khóa uint64 34 vòng + biến đổi phong cách TEA + base64. */
 function commentLadon(aid, timestamp, prefix) {
   const digest = Buffer.from(md5(Buffer.concat([Buffer.from(prefix), Buffer.from(String(aid), 'utf8')])).toString('hex'), 'ascii');
 
@@ -251,7 +252,7 @@ function commentLadon(aid, timestamp, prefix) {
 
 const ARGUS_KEY = Buffer.from('ac1adaae95a7af94a5114ab3b3a97dd80050aa0a39314c40528caec95256c28c', 'hex');
 
-/** 手写 protobuf 组包 + SM3 派生 + 72 轮变换 + AES-128-CBC 封装。 */
+/** Đóng gói protobuf thủ công + phái sinh SM3 + 72 vòng biến đổi + đóng gói AES-128-CBC. */
 function commentArgus(rawQuery, timestamp, nonce) {
   const key = ARGUS_KEY;
   const parts = [];
@@ -334,8 +335,8 @@ function commentArgus(rawQuery, timestamp, nonce) {
     Buffer.from([0x56, 0x7B]),
   ]));
 
-  // 参考实现的 AES-CBC 要求明文长度已是 16 的整数倍，且**不再**追加填充，
-  // 所以这里必须关掉 Node 的自动填充，否则会多出一个整块。
+  // AES-CBC của bản tham chiếu yêu cầu độ dài bản rõ đã là bội số của 16, và **không** nối thêm đệm,
+  // nên ở đây bắt buộc phải tắt tự động đệm của Node, nếu không sẽ thừa ra một khối nguyên.
   const cipher = createCipheriv('aes-128-cbc', md5(key.subarray(0, 16)), md5(key.subarray(16)));
   cipher.setAutoPadding(false);
   const encrypted = Buffer.concat([cipher.update(container), cipher.final()]);
@@ -343,14 +344,14 @@ function commentArgus(rawQuery, timestamp, nonce) {
   return Buffer.concat([Buffer.from([0x3C, 0xCC]), encrypted]).toString('base64');
 }
 
-// ── 头部组装 ──────────────────────────────────────────────────────────────
+// ── Ghép header ────────────────────────────────────────────────────────────
 
 /**
- * 产出全部签名头部。
+ * Tạo ra toàn bộ header chữ ký.
  *
- * `nonce` 必须是 11 字节：各段分别喂给不同算法（`[0:2]` 进 Gorgon，
- * `[2:6]` 进 Ladon，`[6:11]` 进 Argus）。长度不对不会报错，只会算出服务端
- * 拒绝的签名 —— 调用方必须自己保证。
+ * `nonce` bắt buộc phải là 11 byte: mỗi đoạn được cấp cho thuật toán khác nhau (`[0:2]` vào Gorgon,
+ * `[2:6]` vào Ladon, `[6:11]` vào Argus). Độ dài sai sẽ không báo lỗi, mà chỉ tính ra chữ ký
+ * bị máy chủ từ chối — phía gọi phải tự mình đảm bảo.
  */
 function signCommentHeaders({ rawQuery, stamp, nonce, aid = '8662' }) {
   return {
@@ -370,7 +371,7 @@ module.exports = {
   buildQuery,
   signCommentHeaders,
   newDeviceId,
-  // 低层导出：给黄金向量测试逐项比对用
+  // Xuất tầng thấp: dùng cho kiểm thử đối chiếu từng mục với vector vàng
   commentXGorgon,
   commentLadon,
   commentArgus,

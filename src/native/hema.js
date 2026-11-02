@@ -76,44 +76,44 @@ async function browseList(options = {}) {
     if (forceRefresh || !genreCache || genreCache.expires <= Date.now()) {
       firstHtml = await request('/browse');
       const directory = pageData(firstHtml);
-      if (!Array.isArray(directory.typeThreeList)) throw new Error('河马没有返回可用题材，请重试');
+      if (!Array.isArray(directory.typeThreeList)) throw new Error('Hà Mã không trả về thể loại khả dụng, vui lòng thử lại');
       const seen = new Set();
       const items = directory.typeThreeList.filter(item => Array.isArray(item?.typeThreeIds)
         && item.typeThreeIds.length > 0 && item.typeThreeIds.length <= 16
         && item.typeThreeIds.every(id => ID.test(String(id))) && plainText(item.name))
         .map(item => ({ slug: item.typeThreeIds.join('-'), label: plainText(item.name) }))
         .filter(item => { if (item.slug === '0' || seen.has(item.slug)) return false; seen.add(item.slug); return true; });
-      if (!items.length) throw new Error('河马没有返回可用题材，请重试');
+      if (!items.length) throw new Error('Hà Mã không trả về thể loại khả dụng, vui lòng thử lại');
       genreCache = { items, expires: Date.now() + 300000 };
     }
-    if (slug !== '0' && !genreCache.items.some(item => item.slug === slug)) throw new Error('河马题材无效，请重新选择');
+    if (slug !== '0' && !genreCache.items.some(item => item.slug === slug)) throw new Error('Thể loại Hà Mã không hợp lệ, vui lòng chọn lại');
     const apiPath = slug === '0' && pg === 1 ? '/browse' : `/browse/${slug}${pg > 1 ? `/${pg}` : ''}`;
     const html = apiPath === '/browse' && firstHtml ? firstHtml : await request(apiPath);
     const data = pageData(html);
     if (!Array.isArray(data.bookList) || Number(data.page) !== pg || String(data.typeThreeId || '0') !== slug) {
-      throw new Error('河马返回的目录与请求不一致，请重试');
+      throw new Error('Danh mục Hà Mã trả về không khớp với yêu cầu, vui lòng thử lại');
     }
     const results = normalizeBooks(data.bookList);
     // shortcut: genre totals are unverified; follow observed next links until accurate totals are confirmed.
     const hasMore = results.length > 0 && new RegExp(`<a\\b[^>]*\\shref=["']/browse/${slug}/${pg + 1}["']`).test(html);
     return { success: true, results, page: pg, total: 0, totalPages: 0, hasMore,
       nextPage: hasMore ? pg + 1 : null, genres: genreCache.items,
-      pageTitle: '河马短剧', sourceUrl: ORIGIN + apiPath };
+      pageTitle: 'Phim ngắn Hà Mã', sourceUrl: ORIGIN + apiPath };
   } catch (error) { return { success: false, error: error.message }; }
 }
 
 async function search(keyword, page = 1, options = {}) {
   try {
     const kw = String(keyword || '').trim();
-    if (!kw) throw new Error('请输入搜索关键词');
+    if (!kw) throw new Error('Vui lòng nhập từ khóa tìm kiếm');
     const pg = Math.max(1, Number.parseInt(page, 10) || 1);
     const response = await request('/seo/video/6007', { sourceType: 1, keyword: kw, index: pg }, options);
-    if (response?.retCode !== 0 || !Array.isArray(response.data?.bookList)) throw new Error('河马搜索数据异常，请稍后重试');
+    if (response?.retCode !== 0 || !Array.isArray(response.data?.bookList)) throw new Error('Dữ liệu tìm kiếm Hà Mã bất thường, vui lòng thử lại sau');
     const data = response.data;
     const results = normalizeBooks(data.bookList);
     const hasMore = data.isMore === 1 && results.length > 0;
     return { success: true, results, page: pg, total: Number(data.totalSize) || 0, totalPages: 0,
-      hasMore, nextPage: hasMore ? pg + 1 : null, genres: [], pageTitle: '河马短剧', sourceUrl: ORIGIN };
+      hasMore, nextPage: hasMore ? pg + 1 : null, genres: [], pageTitle: 'Phim ngắn Hà Mã', sourceUrl: ORIGIN };
   } catch (error) { return { success: false, error: error.message }; }
 }
 
@@ -123,15 +123,15 @@ async function detail(seriesId) {
   const match = typeof html === 'string' && html.match(/<script\b[^>]*\bid=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
   let result;
   try { result = JSON.parse(match?.[1]).props.pageProps; }
-  catch (_) { throw new Error('河马详情数据异常，请稍后重试'); }
+  catch (_) { throw new Error('Dữ liệu chi tiết Hà Mã bất thường, vui lòng thử lại sau'); }
   if (String(result?.bookInfoVo?.bookId) !== bookId || !Array.isArray(result?.chapterList)) {
-    throw new Error('河马返回的剧集与请求不一致');
+    throw new Error('Phim Hà Mã trả về không khớp với yêu cầu');
   }
   const seen = new Set();
   for (const episode of result.chapterList) {
     const id = String(episode?.chapterId || '');
     if (!ID.test(id) || seen.has(id) || (episode.bookId != null && String(episode.bookId) !== bookId)) {
-      throw new Error('河马分集数据异常，请稍后重试');
+      throw new Error('Dữ liệu tập phim Hà Mã bất thường, vui lòng thử lại sau');
     }
     seen.add(id);
   }
@@ -140,29 +140,29 @@ async function detail(seriesId) {
 
 async function fetchEpisodeList(seriesId) {
   const result = await detail(seriesId);
-  const series_title = plainText(result.bookInfoVo.bookName) || '未命名短剧';
+  const series_title = plainText(result.bookInfoVo.bookName) || 'Phim ngắn chưa đặt tên';
   const cover = httpsUrl(result.bookInfoVo.coverWap);
   const episodes = result.chapterList.map((episode, index) => ({
     vid: `${seriesId}:${episode.chapterId}`, vid_index: Number(episode.chapterIndex) || index + 1,
     title: plainText(episode.chapterName), series_id: seriesId, series_title, cover,
     locked: episode.isCharge !== '0', source: 'hema',
   })).sort((a, b) => a.vid_index - b.vid_index);
-  if (!episodes.length) throw new Error('河马分集列表为空');
+  if (!episodes.length) throw new Error('Danh sách tập phim Hà Mã rỗng');
   return { series_id: seriesId, series_title, cover, total: episodes.length, episodes, source: 'hema' };
 }
 
 async function fetchPlayUrlSingle(vid, sid) {
   try {
     const id = parseId(vid, true);
-    if (sid != null && sid !== '' && parseId(sid).seriesId !== id.seriesId) throw new Error('河马分集不属于当前剧集');
+    if (sid != null && sid !== '' && parseId(sid).seriesId !== id.seriesId) throw new Error('Tập phim Hà Mã không thuộc về bộ phim hiện tại');
     // Re-read the public detail for every request: never reuse a cached free/paid decision.
     const result = await detail(id.seriesId);
     const episode = result.chapterList.find(item => String(item.chapterId) === id.chapterId);
-    if (!episode) throw new Error('河马未找到该分集');
+    if (!episode) throw new Error('Hà Mã không tìm thấy tập phim này');
     if (episode.isCharge !== '0') return { url: null, spadeA: null, codec: null, source: 'hema', locked: true,
-      error: `第 ${Number(episode.chapterIndex) || ''} 集当前锁定，请在河马官方平台确认可看范围` };
+      error: `Tập ${Number(episode.chapterIndex) || ''} hiện đang bị khóa, vui lòng kiểm tra phạm vi xem trên nền tảng chính thức Hà Mã` };
     const url = httpsUrl(episode.chapterVideoVo?.mp4720p) || httpsUrl(episode.chapterVideoVo?.mp4);
-    if (!url) throw new Error('河马未提供有效 HTTPS 播放地址');
+    if (!url) throw new Error('Hà Mã chưa cung cấp địa chỉ phát HTTPS hợp lệ');
     return { url, spadeA: null, codec: '', source: 'hema' };
   } catch (error) { return { url: null, spadeA: null, codec: null, source: 'hema', error: error.message }; }
 }

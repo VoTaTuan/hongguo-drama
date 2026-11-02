@@ -89,18 +89,18 @@ const checks = [
     assert.equal(normal.proxy, undefined, 'existing media requests retain configured proxy behavior');
     assert.equal(trusted.proxy, false, 'explicit trusted catalog route must remain direct');
     for (const url of ['http://hongguoduanju.com/a', 'https://hongguoduanju.com:444/a', 'https://other.example/a']) {
-      assert.throws(() => guard.webMediaRequestOptions(url, { trustedOfficialDns: true }), /公网/);
+      assert.throws(() => guard.webMediaRequestOptions(url, { trustedOfficialDns: true }), /(?:公网|mạng công cộng)/);
     }
   }],
   ['catalog trusted DNS still rejects private redirect destinations and their DNS answers', async () => {
     const guard = guardWithDns([{ address: '127.0.0.1', family: 4 }]);
     const options = guard.webMediaRequestOptions('https://hongguoduanju.com/rank/hot-drama', { trustedOfficialDns: true });
     assert.throws(() => options.beforeRedirect({}, { headers: { location: 'http://127.0.0.1/private' } },
-      { url: 'https://hongguoduanju.com/rank/hot-drama' }), /公网/);
+      { url: 'https://hongguoduanju.com/rank/hot-drama' }), /(?:公网|mạng công cộng)/);
     options.beforeRedirect({}, { headers: { location: 'https://other.example/rank' } },
       { url: 'https://hongguoduanju.com/rank/hot-drama' });
     await assert.rejects(new Promise((resolve, reject) => options.lookup('other.example', { all: true },
-      (error, addresses) => error ? reject(error) : resolve(addresses))), /公网/);
+      (error, addresses) => error ? reject(error) : resolve(addresses))), /(?:公网|mạng công cộng)/);
   }],
   ['guarded Range requests reuse validated sockets without global agents', async () => {
     const axios = req('axios'), guard = guardWithDns([{ address: '8.8.8.8', family: 4 }]);
@@ -165,7 +165,7 @@ const checks = [
       [{ address: '8.8.8.8', family: 4 }, { address: '10.0.0.1', family: 4 }]]) {
       const options = guardWithDns(addresses).webMediaRequestOptions('https://media.example/a');
       await assert.rejects(new Promise((resolve, reject) => options.lookup('media.example', { all: true },
-        (error, result) => error ? reject(error) : resolve(result))), /公网/);
+        (error, result) => error ? reject(error) : resolve(result))), /(?:公网|mạng công cộng)/);
     }
   }],
   ['Fake-IP compatibility is confined to the exact official HTTPS origin', async () => {
@@ -174,18 +174,18 @@ const checks = [
       (error, result) => error ? reject(error) : resolve(result)));
     const guard = guardWithDns(records).webMediaRequestOptions('https://hongguoduanju.com/video/a');
     assert.equal((await lookup(guard, 'hongguoduanju.com'))[0].address, '8.8.8.8');
-    await assert.rejects(lookup(guardWithDns(records, '127.0.0.1').webMediaRequestOptions('https://hongguoduanju.com/a'), 'hongguoduanju.com'), /公网/);
+    await assert.rejects(lookup(guardWithDns(records, '127.0.0.1').webMediaRequestOptions('https://hongguoduanju.com/a'), 'hongguoduanju.com'), /(?:公网|mạng công cộng)/);
     for (const url of ['http://hongguoduanju.com/a', 'https://hongguoduanju.com:8443/a',
       'https://other.example/a', 'https://sub.hongguoduanju.com/a']) {
-      await assert.rejects(lookup(guardWithDns(records).webMediaRequestOptions(url), new URL(url).hostname), /公网/);
+      await assert.rejects(lookup(guardWithDns(records).webMediaRequestOptions(url), new URL(url).hostname), /(?:公网|mạng công cộng)/);
     }
-    assert.throws(() => guardWithDns(records).webMediaRequestOptions('https://198.18.14.190/a'), /公网/);
+    assert.throws(() => guardWithDns(records).webMediaRequestOptions('https://198.18.14.190/a'), /(?:公网|mạng công cộng)/);
     for (const address of ['127.0.0.1', '10.0.0.1', '192.168.1.1']) {
       await assert.rejects(lookup(guardWithDns([...records, { address, family: 4 }])
-        .webMediaRequestOptions('https://hongguoduanju.com/a'), 'hongguoduanju.com'), /公网/);
+        .webMediaRequestOptions('https://hongguoduanju.com/a'), 'hongguoduanju.com'), /(?:公网|mạng công cộng)/);
     }
     guard.beforeRedirect({}, { headers: { location: 'http://hongguoduanju.com/b' } }, { url: 'https://hongguoduanju.com/a' });
-    await assert.rejects(lookup(guard, 'hongguoduanju.com'), /公网/);
+    await assert.rejects(lookup(guard, 'hongguoduanju.com'), /(?:公网|mạng công cộng)/);
   }],
   ['official secure DNS survives an unavailable or hanging resolver and cancels the loser', async () => {
     for (const hanging of [false, true]) {
@@ -274,7 +274,7 @@ const checks = [
     const guard = guardWithDns([{ address: '192.168.1.1', family: 4 }]).webMediaRequestOptions('https://media.example/a');
     guard.beforeRedirect({}, { headers: { location: 'https://other.example/b' } }, { url: 'https://media.example/a' });
     await assert.rejects(new Promise((resolve, reject) => guard.lookup('other.example', {},
-      (error, result) => error ? reject(error) : resolve(result))), /公网/);
+      (error, result) => error ? reject(error) : resolve(result))), /(?:公网|mạng công cộng)/);
   }],
   ['real Axios direct connection rejects a private DNS answer before opening a socket', async () => {
     const options = guardWithDns([{ address: '127.0.0.1', family: 4 }]).webMediaRequestOptions('http://media.example/a');
@@ -294,7 +294,7 @@ const checks = [
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const proxy = { host: '127.0.0.1', port: server.address().port, protocol: 'http' };
     try {
-      await assert.rejects(axios.get('http://media.example/bad', { proxy, timeout: 2000, ...webMediaRequestOptions('http://media.example/bad') }), /公网/);
+      await assert.rejects(axios.get('http://media.example/bad', { proxy, timeout: 2000, ...webMediaRequestOptions('http://media.example/bad') }), /(?:公网|mạng công cộng)/);
       assert.equal(hits.length, 1);
       const response = await axios.get('http://media.example/start', { proxy, timeout: 2000, headers: { Range: 'bytes=0-1' }, ...webMediaRequestOptions('http://media.example/start') });
       assert.equal(response.status, 206); assert.equal(hits.length, 3);

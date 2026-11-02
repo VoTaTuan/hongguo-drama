@@ -11,8 +11,8 @@ import { rankSearchResults } from './searchRanking.mjs';
 const SEARCH_SAFETY_TIMEOUT_MS = 25000;
 
 /**
- * SearchPanel —— 按所选来源搜索短剧
- * 拿到 series_id 后交给父组件走既有的「拉全集 + 选集下载」流程。
+ * SearchPanel —— Tìm kiếm phim ngắn theo nguồn đã chọn
+ * Sau khi lấy được series_id sẽ chuyển cho component cha xử lý quy trình "lấy toàn bộ tập + chọn tập tải xuống".
  */
 function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
   const [source, setSource] = useState('all');
@@ -26,7 +26,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
   const inputRef = useRef(null);
   const suggestions = getSearchSuggestions(keyword, history);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState(null); // null=未搜索, []=无结果
+  const [results, setResults] = useState(null); // null=chưa tìm kiếm, []=không có kết quả
   const [error, setError] = useState('');
   const [searchWarning, setSearchWarning] = useState('');
   const [pageTitle, setPageTitle] = useState('');
@@ -182,7 +182,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
       setLoading(false);
     }, SEARCH_SAFETY_TIMEOUT_MS);
     try {
-      // 每个来源完成就记下来；总超时到达时仍能展示已完成来源的结果。
+      // Ghi nhận ngay khi mỗi nguồn hoàn thành; khi chạm ngưỡng hết giờ tổng vẫn có thể hiển thị kết quả của các nguồn đã xong.
       const responses = await Promise.allSettled(sources.map((searchSource, index) => window.electronAPI.searchSeries(kw, { source: searchSource })
         .then(res => {
           if (!res?.success) throw new Error(res?.error || 'Tìm kiếm thất bại, vui lòng thử lại');
@@ -202,7 +202,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
       applyResponses(false);
     } catch (e) {
       if (request !== requestVersion.current) return;
-      // allSettled 通常不会 reject；保留防御路径，避免同步异常留下空转圈。
+      // allSettled thông thường không reject; giữ đường dẫn phòng vệ để tránh ngoại lệ đồng bộ khiến vòng quay tải bị kẹt.
       settled.forEach((entry, index) => { if (!entry) settled[index] = { status: 'rejected', reason: e }; });
       applyResponses(false);
     } finally {
@@ -212,7 +212,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
     }
   };
 
-  // 选中某部剧 -> 拉取完整分集 -> 交给下载页
+  // Chọn một bộ phim -> Lấy danh sách tập đầy đủ -> Chuyển sang trang tải xuống
   const pick = async (item) => {
     const request = ++requestVersion.current;
     pendingSearch.current = null;

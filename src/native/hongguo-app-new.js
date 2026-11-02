@@ -1,5 +1,5 @@
-// App「近期上新」目录补搜：官网搜索索引与 App 不同步时，用 App 分类接口
-// （线上时间倒序）补齐当天刚上线、官网搜索还查不到的短剧。
+// Tìm kiếm bổ sung danh mục "Phim mới gần đây" trên App: khi chỉ mục tìm kiếm web không đồng bộ với App, dùng API phân loại của App
+// (thứ tự thời gian online giảm dần) để bổ sung phim ngắn mới ra mắt trong ngày mà tìm kiếm web chưa thấy.
 const { signedMetadataRequest, parseSearchInteger, requestJson } = require('./app-source');
 const { cleanTitle } = require('./hongguo-app-search');
 const { catalogCover } = require('./hongguo-app-catalog');
@@ -8,10 +8,10 @@ const CATEGORY_API = '/reading/distribution/category/landpage/v/';
 const REQUEST_TIMEOUT_MS = 8000;
 const CACHE_TTL_MS = 60 * 1000;
 const PAGE_LIMIT = 50;
-// 默认翻两页（真人 + AI 各最多 100 条），降低繁忙日当天新剧落在首屏之外的概率。
+// Mặc định lật 2 trang (người đóng + AI mỗi loại tối đa 100 mục), giảm xác suất phim mới trong ngày bận rộn rơi ra ngoài màn hình đầu.
 const DEFAULT_PAGES = 2;
 const MAX_RESULTS = 20;
-// 真人剧与 AI 剧使用同一分类接口、不同筛选值；两者都能出现在搜索结果里。
+// Phim người đóng và phim AI dùng cùng API phân loại, giá trị bộ lọc khác nhau; cả hai đều có thể xuất hiện trong kết quả tìm kiếm.
 const GENRES = [
   { reqScene: 'default', genre: 'short_play' },
   { reqScene: 'ai_series', genre: 'ai_series' },
@@ -42,17 +42,17 @@ function newReleaseFromRow(row) {
     const text = cleanTitle(value);
     if (text && !labels.includes(text)) labels.push(text);
   };
-  // 「新剧」标签在 tag_info，上线日期在 sub_title_list；两处都保留用于展示和排序。
+  // Nhãn "Phim mới" trong tag_info, ngày lên sóng trong sub_title_list; giữ lại cả hai để hiển thị và sắp xếp.
   addLabel(row.tag_info?.text);
   for (const item of Array.isArray(row.sub_title_list) ? row.sub_title_list : []) addLabel(item?.content);
-  const releasedToday = labels.includes('今日上新');
+  const releasedToday = labels.includes('今日上新') || labels.includes('Mới lên hôm nay');
   return {
     series_id: id,
     series_title: title,
     cover: catalogCover(row.cover),
     episode_count: parseSearchInteger(row.episode_cnt) || 0,
     description: cleanTitle(row.video_desc || row.series_intro),
-    tags: labels.filter(label => label !== '新剧' && label !== '今日上新').slice(0, 4),
+    tags: labels.filter(label => label !== '新剧' && label !== '今日上新' && label !== 'Phim mới' && label !== 'Mới lên hôm nay').slice(0, 4),
     new_release: true,
     ...(releasedToday ? { released_today: true } : {}),
     source: 'hongguo',
@@ -67,7 +67,7 @@ function collectRows(rows) {
     if (!item) continue;
     const existing = seen.get(item.series_id);
     if (!existing) { seen.set(item.series_id, item); continue; }
-    // 同一部剧可能同时出现在真人/AI 列表；保留「今日上新」标记和更完整的字段。
+    // Cùng một bộ phim có thể xuất hiện đồng thời trong danh sách người đóng / AI; giữ lại cờ "Mới lên hôm nay" và các trường đầy đủ hơn.
     existing.released_today = existing.released_today || item.released_today;
     existing.tags = [...new Set([...existing.tags, ...item.tags])].slice(0, 4);
     if (!existing.cover) existing.cover = item.cover;
@@ -121,20 +121,20 @@ async function fetchGenre(config, { pages, deadline, request }) {
     if (Date.now() >= deadline) break;
     const signed = signedMetadataRequest(CATEGORY_API, {}, pageBody(config, offset, sessionId));
     const payload = await request(signed, deadline);
-    if (!payload || typeof payload !== 'object') throw appError('App 上新返回空响应', 'APP_EMPTY');
-    if (Number(payload.code ?? 0) !== 0) throw appError('App 上新服务暂不可用', 'APP_BUSINESS');
+    if (!payload || typeof payload !== 'object') throw appError('Phim mới trên App trả về phản hồi rỗng', 'APP_EMPTY');
+    if (Number(payload.code ?? 0) !== 0) throw appError('Dịch vụ phim mới trên App tạm thời không khả dụng', 'APP_BUSINESS');
     const data = payload.data;
-    if (!data || !Array.isArray(data.video_data)) throw appError('App 上新数据结构异常', 'APP_SCHEMA');
+    if (!data || !Array.isArray(data.video_data)) throw appError('Cấu trúc dữ liệu phim mới trên App bất thường', 'APP_SCHEMA');
     rows.push(...data.video_data);
     if (data.has_more !== true) break;
     const next = parseSearchInteger(data.next_offset);
-    // 游标必须前进，否则上游异常时会在同一页空转。
+    // Con trỏ phải tiến lên, nếu không khi máy chủ bất thường sẽ bị lặp vô hạn trên cùng một trang.
     if (next === null || next <= offset) break;
     offset = next;
     sessionId = String(data.session_id || '');
   }
-  // 一页都没读到就撞上截止时间，不能当成“确实没有上新”缓存下来。
-  if (!rows.length && Date.now() >= deadline) throw appError('App 上新请求超时', 'APP_TIMEOUT');
+  // Chưa đọc được trang nào mà đã chạm mốc thời gian giới hạn thì không thể lưu vào bộ nhớ đệm như "thực sự không có phim mới".
+  if (!rows.length && Date.now() >= deadline) throw appError('Yêu cầu phim mới trên App quá thời gian', 'APP_TIMEOUT');
   return rows;
 }
 
@@ -143,8 +143,8 @@ function cachedItems(pages) {
 }
 
 /**
- * 读取 App 近 7 天上新列表（真人 + AI），按线上时间倒序，最多取 pages 页。
- * 结果在进程内短暂缓存；两种剧集任一失败仍可使用另一种的结果。
+ * Đọc danh sách phim mới 7 ngày gần đây trên App (người đóng + AI), theo thứ tự thời gian online giảm dần, lấy tối đa pages trang.
+ * Kết quả được lưu tạm thời trong bộ nhớ đệm tiến trình; nếu một trong hai loại thất bại vẫn có thể dùng kết quả của loại kia.
  */
 async function listNewReleases(options = {}) {
   const { pages = DEFAULT_PAGES, deadline = 0, request = defaultRequest, useCache = true } = options || {};
@@ -153,7 +153,7 @@ async function listNewReleases(options = {}) {
   if (cached) return { items: cached, cached: true, partial: false };
   if (inflight && inflight.pages >= count) return inflight.task;
   const budget = Number(deadline) > 0 ? deadline : Date.now() + REQUEST_TIMEOUT_MS;
-  if (budget <= Date.now()) throw appError('App 上新请求超时', 'APP_TIMEOUT');
+  if (budget <= Date.now()) throw appError('Yêu cầu phim mới trên App quá thời gian', 'APP_TIMEOUT');
   const task = (async () => {
     const settled = await Promise.allSettled(GENRES.map(config => fetchGenre(config, { pages: count, deadline: budget, request })));
     const rows = [], failures = [];
@@ -164,7 +164,7 @@ async function listNewReleases(options = {}) {
     const items = collectRows(rows);
     if (!items.length && failures.length) throw failures[0];
     const result = { items, cached: false, partial: failures.length > 0 };
-    // 只缓存完整结果；部分失败或空列表下次搜索重新请求，避免把上游一次空响应锁住一分钟。
+    // Chỉ lưu vào bộ nhớ đệm kết quả hoàn chỉnh; thất bại một phần hoặc danh sách rỗng sẽ yêu cầu lại ở lần tìm kiếm sau, tránh khóa phản hồi rỗng một phút.
     if (result.partial === false && items.length) cache = { expires: Date.now() + CACHE_TTL_MS, pages: count, items };
     return result;
   })();
@@ -174,8 +174,8 @@ async function listNewReleases(options = {}) {
 }
 
 /**
- * 在 App 上新列表里按标题匹配：完整标题优先，其次包含搜索词，
- * 最后支持用户多打了季数/后缀时用剧名反向匹配。
+ * Khớp theo tiêu đề trong danh sách phim mới của App: ưu tiên tiêu đề đầy đủ, tiếp theo chứa từ khóa tìm kiếm,
+ * cuối cùng hỗ trợ khi người dùng nhập thừa số phần/hậu tố thì dùng tên phim khớp ngược lại.
  */
 function matchNewReleases(items, keyword) {
   const query = normalizeTitle(keyword);

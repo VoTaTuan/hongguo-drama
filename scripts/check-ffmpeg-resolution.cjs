@@ -65,7 +65,7 @@ function load(platform = 'win32', packaged = false) {
   await check('Missing tools explain recovery before native decryption starts', async () => {
     const h = load();
     assert.equal(h.context.resolveFfmpeg('ffmpeg'), null);
-    await assert.rejects(h.context.decryptContentKeyFile('unused', 'unused', '01'.repeat(16)), /FFmpeg.*重新下载.*重启/);
+    await assert.rejects(h.context.decryptContentKeyFile('unused', 'unused', '01'.repeat(16)), /(?:FFmpeg.*重新下载.*重启|Không tìm thấy FFmpeg.*tải lại.*khởi động lại)/i);
   });
   await check('macOS bundled executable discovery remains unchanged', () => {
     const h = load('darwin'), ff = h.tool('resources/bin/ffmpeg');

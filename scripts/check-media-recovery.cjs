@@ -185,7 +185,7 @@ function load(fetchPlayUrlSingle, overrides = {}) {
     const result=await Promise.race([pending,sleep(2000).then(()=>({unbounded:true}))]);
     await h.handlers['release-online-play']({}, {requestId:'timeout'});await pending;
     assert.ok(deadlines.includes(30000),'source lookup must retain its 30-second deadline');
-    assert.ok(!result.unbounded,'source lookup never settled within its time budget');assert.equal(result.success,false);assert.match(result.error,/超时/);
+    assert.ok(!result.unbounded,'source lookup never settled within its time budget');assert.equal(result.success,false);assert.match(result.error,/(?:超时|quá thời gian)/i);
   });
   for(const h of harnesses) {
     h.context.clearOnlineCache();

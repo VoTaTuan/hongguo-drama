@@ -47,7 +47,7 @@ const checks = [
     assert.equal(result.variants[1].quality, '720p');
     const onlyLow = await appFixture({ low:stream('480',480,854) }).fetchAppPlayUrl('11',{quality:'1080p',allowLowerQuality:true});
     assert.equal(onlyLow.quality,'480p');
-    await assert.rejects(f.fetchAppPlayUrl('11',{quality:'4k',allowLowerQuality:true}), /清晰度/);
+    await assert.rejects(f.fetchAppPlayUrl('11',{quality:'4k',allowLowerQuality:true}), /(?:清晰度|Độ phân giải)/i);
   }],
   ['download fallback cache never leaks lower variants into strict playback', async () => {
     const f = routeFixture();
@@ -104,11 +104,11 @@ const checks = [
   }],
   ['unknown quality is rejected before network or third-party dispatch', async () => {
     const app = appFixture({ one: stream('one', 1080, 1920) });
-    await assert.rejects(app.fetchAppPlayUrl('11', { quality: '4k' }), /清晰度/); assert.equal(app.calls.length, 0);
+    await assert.rejects(app.fetchAppPlayUrl('11', { quality: '4k' }), /(?:清晰度|Độ phân giải)/i); assert.equal(app.calls.length, 0);
     const f = routeFixture();
     for (const vid of ['11', 'hema:11', 'xifan:11']) {
       const result = await f.fetchPlayUrlSingle(vid, '1', { quality: '4k' });
-      assert.equal(result.url, null); assert.match(result.error, /清晰度/);
+      assert.equal(result.url, null); assert.match(result.error, /(?:清晰度|Độ phân giải)/i);
     }
     assert.equal(f.calls.length, 0);
   }],
@@ -128,7 +128,7 @@ const checks = [
   ['explicit App failure returns no URL and never silently falls back to web', async () => {
     const f = routeFixture(true);
     const result = await f.fetchPlayUrlSingle('11', '1', { quality: '1080p' });
-    assert.equal(result.url, null); assert.match(result.error, /清晰度/); assert.deepEqual(f.calls, ['1080p']);
+    assert.equal(result.url, null); assert.match(result.error, /(?:清晰度|Độ phân giải|độ nét)/i); assert.deepEqual(f.calls, ['1080p']);
   }],
   ['third-party source keeps its authorized URL for later local resolution check', async () => {
     const f = routeFixture();
@@ -141,7 +141,7 @@ const checks = [
     const { normalizeDownloadQuality, meetsDownloadQuality } = require(file);
     assert.equal(normalizeDownloadQuality(), 'auto');
     for (const quality of ['auto', '720p', '1080p']) assert.equal(normalizeDownloadQuality(quality), quality);
-    for (const quality of [null, '', '1080', '4k']) assert.throws(() => normalizeDownloadQuality(quality), /清晰度/);
+    for (const quality of [null, '', '1080', '4k']) assert.throws(() => normalizeDownloadQuality(quality), /(?:清晰度|Độ phân giải)/i);
     assert.ok(meetsDownloadQuality({}, 'auto'));
     for (const dimensions of [{ width: 1080, height: 1920 }, { width: 1920, height: 1080 }, { width: 1440, height: 2560 }]) assert.ok(meetsDownloadQuality(dimensions, '1080p'));
     for (const dimensions of [{}, { width: 720, height: 1920 }, { width: Infinity, height: 1080 }]) assert.equal(meetsDownloadQuality(dimensions, '1080p'), false);

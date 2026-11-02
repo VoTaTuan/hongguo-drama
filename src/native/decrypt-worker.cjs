@@ -3,7 +3,7 @@ const { Worker, isMainThread, parentPort, workerData } = require('node:worker_th
 // Media parsing and sample decryption must not block Electron's cancellation IPC.
 function decryptInWorker(payload, { signal, cancelToken } = {}) {
   return new Promise((resolve, reject) => {
-    if (signal?.aborted || cancelToken?.reason) return reject(new Error('已取消'));
+    if (signal?.aborted || cancelToken?.reason) return reject(new Error('Đã hủy'));
     const worker = new Worker(__filename, { workerData: payload });
     let settled = false;
     const finish = async (error, result) => {
@@ -16,12 +16,12 @@ function decryptInWorker(payload, { signal, cancelToken } = {}) {
       if (error) reject(error);
       else resolve(result?.buffer ? Buffer.from(result.buffer) : undefined);
     };
-    const cancel = () => { void finish(new Error('已取消')); };
+    const cancel = () => { void finish(new Error('Đã hủy')); };
     signal?.addEventListener('abort', cancel, { once: true });
     cancelToken?.subscribe?.(cancel);
     worker.once('message', result => void finish(result.error ? new Error(result.error) : null, result));
     worker.once('error', error => void finish(error));
-    worker.once('exit', code => { if (!settled) void finish(new Error(`视频处理意外中断（${code}）`)); });
+    worker.once('exit', code => { if (!settled) void finish(new Error(`Xử lý video bị gián đoạn bất thường (${code})`)); });
     if (signal?.aborted || cancelToken?.reason) cancel();
   });
 }

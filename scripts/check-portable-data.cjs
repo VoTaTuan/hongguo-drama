@@ -70,7 +70,7 @@ check('an unwritable portable location falls back with a visible reason', () => 
   const result = resolvePortableDataDir({ platform: 'win32', env: { PORTABLE_EXECUTABLE_DIR: blocked }, defaultUserData: appData });
   assert.equal(result.mode, 'default');
   assert.equal(result.dir, appData);
-  assert.match(result.reason, /不可写/);
+  assert.match(result.reason, /(?:不可写|không có quyền ghi)/i);
 });
 
 check('a failed migration rolls back and keeps using the old data directory', () => {
@@ -84,7 +84,7 @@ check('a failed migration rolls back and keeps using the old data directory', ()
   const result = resolvePortableDataDir({ platform: 'win32', env: { PORTABLE_EXECUTABLE_DIR: portableLocked }, defaultUserData: oldData });
   assert.equal(result.mode, 'default');
   assert.equal(result.dir, oldData);
-  assert.match(result.reason, /复制失败/);
+  assert.match(result.reason, /(?:复制失败|Sao chép.*thất bại)/i);
   assert.equal(fs.existsSync(path.join(portableLocked, 'data', 'data.json')), false, 'a failed migration must not leave a partial copy');
   assert.equal(fs.existsSync(path.join(oldData, 'data.json')), true, 'the original data must stay untouched');
 });
@@ -114,7 +114,7 @@ check('session data failure is reported without losing the portable user data pa
   const result = applyPortableDataDir({ app, platform: 'win32', env: { PORTABLE_EXECUTABLE_DIR: portDir }, defaultUserData: appData });
   assert.equal(result.mode, 'portable');
   assert.deepEqual(calls, ['userData', 'sessionData']);
-  assert.match(result.reason, /会话目录/);
+  assert.match(result.reason, /(?:会话目录|thư mục phiên)/i);
 });
 
 check('an incomplete migration marker is cleaned and the migration retries', () => {
@@ -137,7 +137,7 @@ check('an unrecoverable incomplete migration falls back to the system directory'
   const result = resolvePortableDataDir({ platform: 'win32', env: { PORTABLE_EXECUTABLE_DIR: portDir }, defaultUserData: appData });
   assert.equal(result.mode, 'default');
   assert.equal(result.dir, appData);
-  assert.match(result.reason, /迁移未完成/);
+  assert.match(result.reason, /(?:迁移未完成|chưa hoàn thành)/i);
 });
 
 fs.rmSync(root, { recursive: true, force: true });

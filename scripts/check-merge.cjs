@@ -11,7 +11,7 @@ const { buildMergePlan, readMergeInfo } = require('../src/native/merge-plan');
 const { cleanupMergeTemps } = require('../src/native/merge-runner');
 const source = path.resolve(__dirname, '../main.js'), req = createRequire(source);
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hongguo-merge-'));
-const bin = name => process.env[name.toUpperCase()] || path.resolve(__dirname, '../build/ffmpeg/darwin-arm64', name);
+const bin = name => process.env[name.toUpperCase()] || (fs.existsSync(path.resolve(__dirname, '../build/ffmpeg/darwin-arm64', name)) ? path.resolve(__dirname, '../build/ffmpeg/darwin-arm64', name) : name);
 const run = (name, args) => execFileSync(bin(name), args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 110000 });
 const probe = file => JSON.parse(run('ffprobe', ['-v', 'error', '-show_data_hash', 'sha256', '-show_streams', '-show_format', '-of', 'json', file]));
 const probeFrames = file => JSON.parse(run('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_frames',
@@ -73,8 +73,8 @@ async function merge(label, files, compatible, mode = '', expected = null, reque
   if (mode === 'quality-reject' || mode === 'quality-probe-fail') {
     assert.equal(started.success, false);
     assert.equal(started.code, 'MERGE_1080_UNAVAILABLE');
-    if (mode === 'quality-reject') assert.match(started.error, /第 2 集实际为 720P/);
-    else assert.match(started.error, /第 2 集视频信息读取失败/);
+    if (mode === 'quality-reject') assert.match(started.error, /(?:第 2 集实际为 720P|Tập 2 thực tế là 720P)/i);
+    else assert.match(started.error, /(?:第 2 集视频信息读取失败|Đọc thông tin video tập 2 thất bại)/i);
     assert.equal(saveCalls, 0, 'rejected quality gate persisted a task');
     assert.equal(addedTasks, 0, 'rejected quality gate emitted a task');
     assert.equal(vm.runInContext('mergeTasks.length', context), 0, 'rejected quality gate created a task');
@@ -94,7 +94,7 @@ async function merge(label, files, compatible, mode = '', expected = null, reque
   assert.ok(!fs.readdirSync(root).some(file => file.startsWith('.merge-') || file.endsWith('.part') || file.endsWith('.ffconcat.txt')), 'temporary files remain');
   assert.ok(probeCalls.every(file => files.some(source => path.resolve(source) === file)), 'later normalization/output probes are not allowed');
   if (mode === 'cancel' || mode === 'cancel-ts') {
-    assert.equal(result.event, 'merge-failed'); assert.equal(result.error, '已取消');
+    assert.equal(result.event, 'merge-failed'); assert.ok(['已取消', 'Đã hủy'].includes(result.error));
     assert.equal(fs.existsSync(started.output), false, 'cancel published a partial output');
     console.log('PASS cancellation: child stopped, partial files removed, sources unchanged');
     return;
@@ -102,7 +102,7 @@ async function merge(label, files, compatible, mode = '', expected = null, reque
   assert.equal(probeCalls.length, files.length, 'completed or failed merges must probe each source exactly once');
   if (mode === 'ffmpeg-fail') {
     assert.equal(result.event, 'merge-failed');
-    assert.match(result.error, /FFmpeg 退出码/);
+    assert.match(result.error, /(?:FFmpeg 退出码|Mã thoát FFmpeg)/i);
     assert.equal(fs.existsSync(started.output), false, 'FFmpeg failure published output');
     console.log('PASS FFmpeg failure: no output published, temporary files removed, sources unchanged');
     return;
@@ -125,9 +125,17 @@ async function merge(label, files, compatible, mode = '', expected = null, reque
   assert.ok(files.every(file => fs.existsSync(file)), 'source files were removed');
   const task = savedTasks.find(item => item.id === result.id);
   const method = task?.method;
-  if (expected?.method) assert.equal(method, expected.method);
+  if (expected?.method) {
+    const methodMap = {
+      '无损快速合并': ['无损快速合并', 'Ghép nhanh không nén'],
+      '无损统一封装': ['无损统一封装', 'Đóng gói thống nhất không nén'],
+      '统一视频编码': ['统一视频编码', 'Mã hóa video thống nhất'],
+    };
+    const valid = methodMap[expected.method] || [expected.method];
+    assert.ok(valid.includes(method), `unexpected method: ${method}`);
+  }
   assert.equal(task?.verified, '', 'completion must not claim a post-merge verification');
-  assert.equal(task?.stageText, '合并完成');
+  assert.ok(['合并完成', 'Ghép nối hoàn tất'].includes(task?.stageText));
   const sizes = [...new Set(outputFrames.map(frame => `${frame.width}x${frame.height}`))].join(' -> ');
   console.log(`PASS ${label}: ${videoInfo.codec_name} ${sizes || `${videoInfo.width}x${videoInfo.height}`}, ${method}, ${Number(info.format.duration).toFixed(3)}s, ${frames.at(-1)} frames decoded`);
   return { info, method, path: started.output };

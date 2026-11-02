@@ -72,15 +72,15 @@ async function check(name, fn) { try { await fn(); } catch (error) { failures.pu
     assert.deepEqual({ ...view.bounds }, { x: 0, y: 0, width: 400, height: 568 });
   });
   await check('trusted page can invoke IPC', async () => assert.equal((await handlers['get-app-info'](event)).version, 'test'));
-  await check('foreign window rejected', async () => assert.rejects(async () => handlers['get-app-info']({ sender: {}, senderFrame: event.senderFrame }), /窗口请求无效/));
-  await check('subframe rejected', async () => assert.rejects(async () => handlers['get-app-info']({ sender: event.sender, senderFrame: { url: event.senderFrame.url } }), /窗口请求无效/));
+  await check('foreign window rejected', async () => assert.rejects(async () => handlers['get-app-info']({ sender: {}, senderFrame: event.senderFrame }), /(?:窗口请求无效|Yêu cầu từ cửa sổ không hợp lệ)/));
+  await check('subframe rejected', async () => assert.rejects(async () => handlers['get-app-info']({ sender: event.sender, senderFrame: { url: event.senderFrame.url } }), /(?:窗口请求无效|Yêu cầu từ cửa sổ không hợp lệ)/));
   await check('navigated main frame rejected', async () => {
     const url = event.senderFrame.url; event.senderFrame.url = 'https://evil.invalid/';
-    try { await assert.rejects(async () => handlers['get-app-info'](event), /窗口请求无效/); } finally { event.senderFrame.url = url; }
+    try { await assert.rejects(async () => handlers['get-app-info'](event), /(?:窗口请求无效|Yêu cầu từ cửa sổ không hợp lệ)/); } finally { event.senderFrame.url = url; }
   });
   await check('other file rejected', async () => {
     const url = event.senderFrame.url; event.senderFrame.url = 'file:///tmp/hostile.html';
-    try { await assert.rejects(async () => handlers['get-app-info'](event), /窗口请求无效/); } finally { event.senderFrame.url = url; }
+    try { await assert.rejects(async () => handlers['get-app-info'](event), /(?:窗口请求无效|Yêu cầu từ cửa sổ không hợp lệ)/); } finally { event.senderFrame.url = url; }
   });
   await check('hash routing remains trusted', async () => {
     const url = event.senderFrame.url; event.senderFrame.url += '#/settings';

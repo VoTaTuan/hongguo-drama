@@ -14,15 +14,16 @@ const text = node => typeof node === 'string' || typeof node === 'number' ? Stri
   const accountSource = fs.readFileSync(path.join(__dirname, '../src/components/AccountManagement.jsx'), 'utf8');
   const appSource = fs.readFileSync(path.join(__dirname, '../src/App.jsx'), 'utf8');
   const shortcutIndex = settingsSource.indexOf('<ShortcutSettings');
-  const pictureModeIndex = settingsSource.indexOf('aria-label="画中画小窗设置"');
+  const pictureModeMatch = settingsSource.match(/aria-label="(?:画中画小窗设置|Cài đặt cửa sổ thu nhỏ PiP)"/);
+  const pictureModeIndex = pictureModeMatch ? pictureModeMatch.index : -1;
   const builtinIndex = settingsSource.indexOf('<BuiltinSources');
   assert.ok(shortcutIndex >= 0 && shortcutIndex < pictureModeIndex && pictureModeIndex < builtinIndex, 'picture-in-picture setting must sit between shortcuts and built-in sources');
-  assert.match(appSource, /label: '红果账号'/);
-  assert.match(appSource, /id: 'manager'[^\n]+\n\s*\{ id: 'account', label: '红果账号'/, 'account follows download management');
+  assert.match(appSource, /label: '(?:红果账号|Tài khoản Hồng Quả)'/);
+  assert.match(appSource, /id: 'manager'[^\n]+\n\s*\{ id: 'account', label: '(?:红果账号|Tài khoản Hồng Quả)'/, 'account follows download management');
   const sidebarMenu = appSource.split('<nav className="sidebar-menu">')[1].split('</nav>')[0];
   assert.match(sidebarMenu, /MENU\.filter\(\(item\) => item\.id !== 'settings'\)\.map/, 'main navigation includes the account entry');
   const sidebarFooter = appSource.split('<div className="sidebar-footer">')[1].split('</aside>')[0];
-  assert.doesNotMatch(sidebarFooter, /account|红果账号/, 'footer must not duplicate the account entry');
+  assert.doesNotMatch(sidebarFooter, /account|红果账号|Tài khoản Hồng Quả/, 'footer must not duplicate the account entry');
   assert.match(sidebarFooter, /navigate\('settings'\)/, 'settings stays in the footer');
   assert.doesNotMatch(appSource, /登录管理/);
   assert.doesNotMatch(accountSource, /登录管理/);
@@ -45,8 +46,8 @@ const text = node => typeof node === 'string' || typeof node === 'number' ? Stri
   try {
     await settingsUi.flush();
     assert.equal(modeSelect().props.value, 'custom', 'missing setting defaults to the app floating window');
-    assert.match(settingsUi.text(), /已打开的小窗不会被中断或切换/);
-    assert.match(settingsUi.text(), /下次开启时生效/);
+    assert.match(settingsUi.text(), /(?:已打开的小窗不会被中断或切换|Cửa sổ đang mở sẽ không bị ngắt quãng)/);
+    assert.match(settingsUi.text(), /(?:下次开启时生效|lần mở tiếp theo)/);
 
     failure = '画中画设置保存失败';
     await modeSelect().props.onChange({ target: { value: 'native' } });
@@ -66,7 +67,7 @@ const text = node => typeof node === 'string' || typeof node === 'number' ? Stri
     await settingsUi.flush();
     assert.equal(persisted.picture_in_picture_mode, 'native');
     assert.equal(modeSelect().props.value, 'native');
-    assert.ok(settingsUi.find(node => node.props.role === 'status' && text(node).includes('已自动保存，下次开启悬浮窗时生效')));
+    assert.ok(settingsUi.find(node => node.props.role === 'status' && /(?:已自动保存，下次开启悬浮窗时生效|Đã tự động lưu, có hiệu lực lần mở cửa sổ nổi tiếp theo)/.test(text(node))));
     assert.equal(saves.length, 3);
     for (const patch of saves) assert.deepEqual(patch, { picture_in_picture_mode: 'native' }, 'mode changes submit only the floating-window field');
   } finally {
@@ -111,7 +112,7 @@ const text = node => typeof node === 'string' || typeof node === 'number' ? Stri
   }, 'AccountManagement');
   try {
     await accountUi.flush();
-    assert.ok(accountUi.find(node => node.type === 'h2' && text(node) === '红果账号'), 'account page heading uses the product name');
+    assert.ok(accountUi.find(node => node.type === 'h2' && (text(node) === '红果账号' || text(node) === 'Tài khoản Hồng Quả')), 'account page heading uses the product name');
     assert.ok(!accountUi.text().includes('登录管理'));
   } finally {
     accountUi.unmount();
