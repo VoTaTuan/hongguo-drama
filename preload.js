@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   getAppInfo: () => ipcRenderer.invoke('get-app-info'),
   openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url),
+  translateText: (text, config) => ipcRenderer.invoke('translate-text', text, config),
 
 
   // Phân tích và tải về Hồng Quả
@@ -242,6 +243,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   pauseAll: () => ipcRenderer.invoke('pause-all'),
   resumeAll: () => ipcRenderer.invoke('resume-all'),
   getQueueStatus: () => ipcRenderer.invoke('get-queue-status'),
+
+  // Dịch thuật AI & Google Dịch (chạy trong Main process tránh CORS)
+  translateText: (text, config) => ipcRenderer.invoke('translate-text', text, config),
 
   // Lắng nghe sự kiện
   onDownloadProgress: (cb) => {

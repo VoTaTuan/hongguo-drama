@@ -29,9 +29,13 @@ export default function AiTranslationSettings() {
     setTestResult('');
     setTestError('');
     try {
-      // Force test without cache
-      const res = await translateText(testInput, { ...config });
-      setTestResult(res);
+      // Dịch thử nghiệm trực tiếp với cấu hình hiện tại, không dùng cache
+      const res = await translateText(testInput, { ...config, isTest: true, skipCache: true });
+      if (!res || res === testInput) {
+        setTestError('Không nhận được bản dịch tiếng Việt từ API.');
+      } else {
+        setTestResult(res);
+      }
       setCacheCount(getTranslationCacheCount());
     } catch (err) {
       setTestError(err.message || 'Dịch thử nghiệm thất bại');

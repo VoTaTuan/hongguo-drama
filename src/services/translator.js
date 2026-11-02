@@ -177,46 +177,85 @@ export async function translateText(text, options = {}) {
   if (!trimmed || !hasChinese(trimmed)) return trimmed;
 
   const config = { ...getTranslationConfig(), ...options };
-  if (!config.enabled) return trimmed;
+  if (!config.enabled && !options.isTest) return trimmed;
 
-  // Kiểm tra bộ nhớ đệm
-  const cached = getCachedTranslation(trimmed);
-  if (cached) return cached;
+  // Kiểm tra bộ nhớ đệm (trừ khi yêu cầu skipCache)
+  if (!options.skipCache) {
+    const cached = getCachedTranslation(trimmed);
+    if (cached) return cached;
+  }
 
-  // Tránh gọi trùng lặp cùng lúc
-  if (pendingRequests.has(trimmed)) {
+  // Tránh gọi trùng lặp cùng lúc cho cùng một văn bản
+  if (!options.skipCache && pendingRequests.has(trimmed)) {
     return pendingRequests.get(trimmed);
   }
 
   const promise = (async () => {
     let result = null;
-    if (config.provider === 'custom_ai' && config.apiKey) {
+
+    // 1. Ưu tiên gọi qua Electron IPC Main Process (Không bao giờ bị lỗi CORS)
+    if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.translateText === 'function') {
       try {
-        result = await translateWithCustomAi(trimmed, config);
-      } catch (err) {
-        console.warn('[AI Translator] Custom AI failed, falling back to Google Translate:', err.message);
-        result = null;
+        const response = await window.electronAPI.translateText(trimmed, config);
+        if (response && response.success && response.text) {
+          result = response.text;
+        } else if (options.isTest) {
+          throw new Error(response?.error || 'Lỗi dịch thuật từ hệ thống');
+        } else if (config.provider === 'custom_ai') {
+          // Thử dự phòng Google Dịch qua IPC
+          const fallbackRes = await window.electronAPI.translateText(trimmed, { provider: 'google' });
+          if (fallbackRes && fallbackRes.success && fallbackRes.text) {
+            result = fallbackRes.text;
+          }
+        }
+      } catch (ipcErr) {
+        if (options.isTest) throw ipcErr;
+        console.warn('[AI Translator IPC failed]:', ipcErr.message);
       }
     }
 
-    if (!result) {
-      try {
-        result = await translateWithGoogle(trimmed);
-      } catch (err) {
-        console.warn('[AI Translator] Google Translate failed:', err.message);
+    // 2. Dự phòng gọi trực tiếp bằng browser fetch (nếu chạy ở giao diện web preview không có Electron)
+    if (!result && !(typeof window !== 'undefined' && window.electronAPI?.translateText)) {
+      if (config.provider === 'custom_ai' && config.apiKey) {
+        try {
+          result = await translateWithCustomAi(trimmed, config);
+        } catch (err) {
+          if (options.isTest) throw err;
+          console.warn('[AI Translator] Custom AI failed:', err.message);
+        }
+      }
+
+      if (!result) {
+        try {
+          result = await translateWithGoogle(trimmed);
+        } catch (err) {
+          if (options.isTest) throw err;
+          console.warn('[AI Translator] Google Translate failed:', err.message);
+        }
       }
     }
 
     if (result && result !== trimmed) {
-      setCachedTranslation(trimmed, result);
+      if (!options.skipCache) {
+        setCachedTranslation(trimmed, result);
+      }
       return result;
     }
+
+    if (options.isTest) {
+      throw new Error('Dịch không thành công hoặc văn bản trả về vẫn là tiếng Trung.');
+    }
+
     return trimmed;
   })().finally(() => {
-    pendingRequests.delete(trimmed);
+    if (!options.skipCache) {
+      pendingRequests.delete(trimmed);
+    }
   });
 
-  pendingRequests.set(trimmed, promise);
+  if (!options.skipCache) {
+    pendingRequests.set(trimmed, promise);
+  }
   return promise;
 }
 

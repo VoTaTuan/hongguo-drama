@@ -5064,6 +5064,100 @@ ipcMain.handle('open-external-url', async (event, url) => {
   }
 });
 
+// Xử lý dịch thuật AI & Google Dịch (chạy trong Main Process để tránh lỗi CORS)
+async function executeTranslation(text, config = {}) {
+  const provider = config.provider || 'google';
+
+  if (provider === 'custom_ai') {
+    if (!config.apiKey || !config.apiKey.trim()) {
+      return { success: false, error: 'Chưa nhập API Key cho AI tùy chỉnh' };
+    }
+    try {
+      let endpoint = String(config.endpoint || 'https://api.deepseek.com/v1').trim().replace(/\/+$/, '');
+      if (!endpoint.endsWith('/chat/completions')) {
+        endpoint = endpoint.endsWith('/v1') ? `${endpoint}/chat/completions` : `${endpoint}/v1/chat/completions`;
+      }
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 20000);
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.apiKey.trim()}`,
+          },
+          body: JSON.stringify({
+            model: config.model || 'deepseek-chat',
+            messages: [
+              {
+                role: 'system',
+                content: 'Bạn là chuyên gia dịch thuật phim ngắn tiếng Trung sang tiếng Việt. Hãy dịch tiêu đề hoặc tóm tắt sau đây sang tiếng Việt một cách tự nhiên, cuốn hút, đúng văn phong phim ngắn ngôn tình/hành động/hài hước. Chỉ trả về duy nhất kết quả dịch tiếng Việt, tuyệt đối không kèm giải thích, không kèm ghi chú hay dấu ngoặc kép.',
+              },
+              {
+                role: 'user',
+                content: text,
+              },
+            ],
+            temperature: 0.3,
+          }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          let errDetail = '';
+          try {
+            const errJson = await response.json();
+            errDetail = errJson.error?.message || errJson.message || JSON.stringify(errJson);
+          } catch (_) {
+            errDetail = `HTTP ${response.status} ${response.statusText}`;
+          }
+          return { success: false, error: `Lỗi AI (${response.status}): ${errDetail}` };
+        }
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content?.trim();
+        if (!content) {
+          return { success: false, error: 'Mô hình AI không trả về kết quả dịch' };
+        }
+        const cleaned = content.replace(/^["'《「]|["'》」]$/g, '').trim();
+        return { success: true, text: cleaned };
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch (err) {
+      return { success: false, error: `Lỗi kết nối AI: ${err.message}` };
+    }
+  }
+
+  // Google Translate (Miễn phí)
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=vi&dt=t&q=${encodeURIComponent(text)}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) {
+        return { success: false, error: `Google Translate HTTP ${res.status}` };
+      }
+      const data = await res.json();
+      if (!Array.isArray(data?.[0])) {
+        return { success: false, error: 'Dữ liệu trả về từ Google Translate không đúng định dạng' };
+      }
+      const translated = data[0].map((item) => item?.[0] || '').join('').trim();
+      return { success: true, text: translated };
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (err) {
+    return { success: false, error: `Lỗi kết nối Google Dịch: ${err.message}` };
+  }
+}
+
+ipcMain.handle('translate-text', async (_event, text, config = {}) => {
+  if (!text || typeof text !== 'string') return { success: false, error: 'Văn bản cần dịch không hợp lệ' };
+  return executeTranslation(text, config);
+});
+
 let windowLayout = 'landscape';
 let landscapeBounds = null;
 let layoutChanging = false;
