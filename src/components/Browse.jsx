@@ -3,11 +3,12 @@ import useDialogKeyboard from './useDialogKeyboard';
 import './Browse.css';
 import useMediaSources from './useMediaSources';
 import { mediaSourceLabel } from './mediaSourcesModel.mjs';
-import { Film, RefreshCw, ExternalLink, Download, Play, Check, X, Search } from './icons';
+import { Film, RefreshCw, ExternalLink, Download, Play, Check, X, Search, Copy, Edit3 } from './icons';
 import { isSubmitKey, parseEpisodeRange } from './episodeRange';
 import { rememberCatalogTitles } from '../searchHistory';
 import { translateGenre } from './genreMap';
 import { DramaTitle, DramaDescription } from './TranslatedText';
+import { getCachedTranslation, saveCustomOverride, removeCustomOverride, getTranslationConfig } from '../services/translator';
 
 const PAGE_CACHE_TTL_MS = 60_000;
 const LIST_TIMEOUT_MS = 25_000;
@@ -488,6 +489,56 @@ function Browse({ onNavigate, active = true }) {
     }
   };
 
+  const [copied, setCopied] = useState(false);
+  const handleCopyDramaInfo = async () => {
+    if (!detail) return;
+    const titleZh = detail.series_title || '';
+    const titleVi = getCachedTranslation(titleZh) || titleZh;
+    const totalEps = detail.total || detail.episodes?.length || 0;
+    const rawDesc = detail.description || detail.intro || '';
+    const descVi = rawDesc ? (getCachedTranslation(rawDesc) || rawDesc) : 'Chưa có tóm tắt';
+    const coverUrl = detail.cover || '';
+
+    const lines = [
+      `🎬 Phim: ${titleVi}`,
+      titleZh && titleZh !== titleVi ? `🏷️ Tên gốc: ${titleZh}` : null,
+      `🔢 Số tập: ${totalEps} tập`,
+      `📝 Tóm tắt nội dung:\n${descVi}`,
+      coverUrl ? `🖼️ Ảnh bìa: ${coverUrl}` : null,
+    ].filter(Boolean);
+
+    try {
+      await navigator.clipboard.writeText(lines.join('\n\n'));
+      setCopied(true);
+      showToast('Đã sao chép thông tin phim vào bộ nhớ tạm!');
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      showToast('Sao chép thất bại: ' + err.message, 'error');
+    }
+  };
+
+  const [editTitleState, setEditTitleState] = useState(null);
+
+  const openEditTitleModal = (originalZh) => {
+    const currentVi = getCachedTranslation(originalZh) || originalZh;
+    setEditTitleState({ originalZh, customVi: currentVi });
+  };
+
+  const handleSaveCustomTitle = () => {
+    if (!editTitleState?.originalZh) return;
+    const { originalZh, customVi } = editTitleState;
+    saveCustomOverride(originalZh, customVi);
+    showToast('Đã lưu bản dịch tùy chỉnh!');
+    setEditTitleState(null);
+  };
+
+  const handleResetCustomTitle = () => {
+    if (!editTitleState?.originalZh) return;
+    removeCustomOverride(editTitleState.originalZh);
+    showToast('Đã khôi phục bản dịch mặc định!');
+    setEditTitleState(null);
+  };
+
   const toggleIdx = (idx) => {
     if (!detail?.episodes.some((ep) => ep.vid_index === idx && !ep.locked)) return;
     const next = new Set(selectedIdx);
@@ -511,9 +562,17 @@ function Browse({ onNavigate, active = true }) {
     setSubmitting(true);
     try {
       const eps = detail.episodes.filter((e) => !e.locked && selectedIdx.has(e.vid_index));
+      const transConfig = getTranslationConfig();
+      let targetTitle = detail.series_title;
+      if (transConfig.vietnamese_filenames) {
+        const viTitle = getCachedTranslation(detail.series_title);
+        if (viTitle && viTitle !== detail.series_title) {
+          targetTitle = viTitle;
+        }
+      }
       const res = await window.electronAPI.hongguoDownloadBatch({
         seriesId: detail.series_id,
-        seriesTitle: detail.series_title,
+        seriesTitle: targetTitle,
         episodes: eps,
       });
       if (res && res.success) {
@@ -763,21 +822,51 @@ function Browse({ onNavigate, active = true }) {
                     <div className="browse-drawer-cover-box">
                       {detail.cover && <img src={detail.cover} alt="" className="browse-drawer-cover" />}
                       {detail.cover && (
-                        <button
-                          type="button"
-                          className="btn btn-outline btn-sm download-cover-btn"
-                          onClick={downloadThumbnail}
-                          title="Tải ảnh bìa (thumbnail) về máy"
-                        >
-                          <Download size={13} /> Tải ảnh bìa
-                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', marginTop: '6px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm download-cover-btn"
+                            onClick={downloadThumbnail}
+                            title="Tải ảnh bìa (thumbnail) về máy"
+                          >
+                            <Download size={13} /> Tải ảnh bìa
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm copy-info-btn"
+                            onClick={handleCopyDramaInfo}
+                            title="Sao chép toàn bộ thông tin phim (tên Việt, tên gốc, số tập, tóm tắt, ảnh bìa)"
+                          >
+                            <Copy size={13} /> {copied ? 'Đã sao chép! ✓' : 'Sao chép thông tin'}
+                          </button>
+                        </div>
                       )}
                     </div>
                     <div className="browse-drawer-meta">
                       <div className="browse-drawer-count">
                         {mediaSourceLabel(detail.series_id, mediaSources)} · Tổng {detail.total} tập · Đã tải <b>{detail.completedCount}</b> tập
                       </div>
-                      <DramaTitle title={detail.series_title} as="h3" style={{ margin: '6px 0', fontSize: '15px' }}>{detail.series_title}</DramaTitle>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '6px 0' }}>
+                        <DramaTitle title={detail.series_title} as="h3" style={{ margin: 0, fontSize: '15px', flex: 1 }}>{detail.series_title}</DramaTitle>
+                        <button
+                          type="button"
+                          className="btn-icon-subtle"
+                          onClick={() => openEditTitleModal(detail.series_title)}
+                          title="Sửa bản dịch tên phim theo ý bạn"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--text-tertiary)',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                      </div>
                       {(detail.description || detail.intro) && (
                         <DramaDescription description={detail.description || detail.intro} className="browse-drawer-desc">{detail.description || detail.intro}</DramaDescription>
                       )}
@@ -845,6 +934,85 @@ function Browse({ onNavigate, active = true }) {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal chỉnh sửa bản dịch tên phim */}
+      {editTitleState && (
+        <div className="browse-drawer-mask" style={{ zIndex: 1100 }} onClick={() => setEditTitleState(null)}>
+          <div
+            className="settings-card"
+            style={{
+              maxWidth: '480px',
+              width: '90%',
+              margin: 'auto',
+              background: 'var(--bg-card, #1e1e24)',
+              border: '1px solid var(--border)',
+              borderRadius: '10px',
+              padding: '20px',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit3 size={16} /> Chỉnh sửa bản dịch tên phim
+              </h3>
+              <button className="icon-btn" onClick={() => setEditTitleState(null)}><X size={16} /></button>
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Tên gốc tiếng Trung:
+              </label>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', padding: '6px 10px', background: 'var(--bg-inset)', borderRadius: '6px' }}>
+                {editTitleState.originalZh}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Tên tiếng Việt bạn muốn hiển thị:
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={editTitleState.customVi}
+                onChange={(e) => setEditTitleState({ ...editTitleState, customVi: e.target.value })}
+                placeholder="Nhập tên tiếng Việt theo ý muốn..."
+                autoFocus
+                onKeyDown={(e) => isSubmitKey(e) && handleSaveCustomTitle()}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={handleResetCustomTitle}
+                title="Khôi phục về bản dịch tự động"
+              >
+                Khôi phục tự động
+              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => setEditTitleState(null)}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSaveCustomTitle}
+                  disabled={!editTitleState.customVi.trim()}
+                >
+                  Lưu thay đổi
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

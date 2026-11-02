@@ -5,6 +5,7 @@ import SearchPanel from './SearchPanel';
 import useMediaSources from './useMediaSources';
 import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { isSubmitKey, parseEpisodeRange } from './episodeRange';
+import { getTranslationConfig, getCachedTranslation } from '../services/translator';
 
 
 function HongguoDownload({ onNavigate, active = true }) {
@@ -242,9 +243,17 @@ function HongguoDownload({ onNavigate, active = true }) {
     setSuccessMsg('');
     try {
       const selectedEps = seriesData.episodes.filter((ep) => !ep.locked && selectedVids.has(ep.vid));
+      const transConfig = getTranslationConfig();
+      let targetTitle = seriesData.series_title;
+      if (transConfig.vietnamese_filenames) {
+        const viTitle = getCachedTranslation(seriesData.series_title);
+        if (viTitle && viTitle !== seriesData.series_title) {
+          targetTitle = viTitle;
+        }
+      }
       const res = await window.electronAPI.hongguoDownloadBatch({
         seriesId: seriesData.series_id,
-        seriesTitle: seriesData.series_title,
+        seriesTitle: targetTitle,
         episodes: selectedEps,
         quality: downloadQuality,
         export: kinds,

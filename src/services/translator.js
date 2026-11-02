@@ -16,7 +16,55 @@ const DEFAULT_SETTINGS = {
   endpoint: 'https://api.deepseek.com/v1',
   model: 'deepseek-chat',
   showOriginal: true,
+  vietnamese_filenames: true,
 };
+
+const OVERRIDES_STORAGE_KEY = 'hg_trans_custom_overrides';
+
+export function getCustomOverrides() {
+  try {
+    const raw = localStorage.getItem(OVERRIDES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+export function saveCustomOverride(chineseText, customVietnamese) {
+  if (!chineseText) return {};
+  const zh = chineseText.trim();
+  const vi = (customVietnamese || '').trim();
+  const overrides = getCustomOverrides();
+  if (vi) {
+    overrides[zh] = vi;
+    setCachedTranslation(zh, vi);
+  } else {
+    delete overrides[zh];
+  }
+  try {
+    localStorage.setItem(OVERRIDES_STORAGE_KEY, JSON.stringify(overrides));
+  } catch (_) {}
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('hg-translation-override-changed', { detail: { text: zh, translated: vi } }));
+  }
+  return overrides;
+}
+
+export function removeCustomOverride(chineseText) {
+  if (!chineseText) return {};
+  const zh = chineseText.trim();
+  const overrides = getCustomOverrides();
+  delete overrides[zh];
+  try {
+    localStorage.setItem(OVERRIDES_STORAGE_KEY, JSON.stringify(overrides));
+  } catch (_) {}
+  memoryCache.delete(zh);
+  try { localStorage.removeItem(getCacheKey(zh)); } catch (_) {}
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('hg-translation-override-changed', { detail: { text: zh, translated: null } }));
+  }
+  return overrides;
+}
 
 let cachedSettings = null;
 
@@ -54,6 +102,8 @@ function getCacheKey(text) {
 export function getCachedTranslation(text) {
   if (!text || typeof text !== 'string') return text;
   const key = text.trim();
+  const overrides = getCustomOverrides();
+  if (overrides[key]) return overrides[key];
   if (memoryCache.has(key)) return memoryCache.get(key);
   try {
     const stored = localStorage.getItem(getCacheKey(key));
@@ -299,6 +349,21 @@ export function useTranslatedText(text, options = {}) {
       });
 
     return () => { isMounted = false; };
+  }, [text]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !text) return;
+    const handleOverride = (e) => {
+      if (e.detail?.text === text) {
+        if (e.detail.translated) {
+          setTranslated(e.detail.translated);
+        } else {
+          translateText(text, { skipCache: true }).then((t) => setTranslated(t)).catch(() => {});
+        }
+      }
+    };
+    window.addEventListener('hg-translation-override-changed', handleOverride);
+    return () => window.removeEventListener('hg-translation-override-changed', handleOverride);
   }, [text]);
 
   const isTranslated = hasChinese(text) && translated !== text;

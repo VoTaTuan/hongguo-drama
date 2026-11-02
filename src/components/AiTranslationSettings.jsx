@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   getTranslationConfig,
   saveTranslationConfig,
   getTranslationCacheCount,
   clearTranslationCache,
   translateText,
+  getCustomOverrides,
+  removeCustomOverride,
 } from '../services/translator';
 import { Globe, RefreshCw, Check, AlertCircle } from './icons';
 
@@ -17,6 +19,20 @@ export default function AiTranslationSettings() {
   const [testError, setTestError] = useState('');
   const [cacheCount, setCacheCount] = useState(getTranslationCacheCount);
   const [toast, setToast] = useState('');
+  const [overrides, setOverrides] = useState(getCustomOverrides);
+
+  useEffect(() => {
+    const handleOverrideUpdate = () => setOverrides(getCustomOverrides());
+    window.addEventListener('hg-translation-override-changed', handleOverrideUpdate);
+    return () => window.removeEventListener('hg-translation-override-changed', handleOverrideUpdate);
+  }, []);
+
+  const handleDeleteOverride = (zh) => {
+    const updated = removeCustomOverride(zh);
+    setOverrides(updated);
+    setToast('Đã xóa bản dịch tùy chỉnh!');
+    setTimeout(() => setToast(''), 2500);
+  };
 
   const update = (patch) => {
     const next = saveTranslationConfig(patch);
@@ -91,6 +107,22 @@ export default function AiTranslationSettings() {
               type="checkbox"
               checked={config.showOriginal}
               onChange={(e) => update({ showOriginal: e.target.checked })}
+            />
+            <span className="slider" />
+          </label>
+        </div>
+
+        {/* Toggle đặt tên file tiếng Việt */}
+        <div className="setting-row">
+          <div>
+            <div className="setting-label">Đặt tên thư mục & tập phim bằng tiếng Việt khi tải về</div>
+            <div className="setting-sub">Tự động đặt tên thư mục và file video bằng tiếng Việt đã dịch (rất tiện cho Plex/Emby/Jellyfin)</div>
+          </div>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={config.vietnamese_filenames !== false}
+              onChange={(e) => update({ vietnamese_filenames: e.target.checked })}
             />
             <span className="slider" />
           </label>
@@ -219,6 +251,44 @@ export default function AiTranslationSettings() {
             Xóa bộ nhớ đệm bản dịch
           </button>
         </div>
+
+        {/* Danh sách bản dịch đã tùy chỉnh */}
+        {Object.keys(overrides).length > 0 && (
+          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-muted)' }}>
+            <div className="setting-label" style={{ marginBottom: '8px' }}>
+              Bản dịch đã chỉnh sửa thủ công ({Object.keys(overrides).length})
+            </div>
+            <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {Object.entries(overrides).map(([zh, vi]) => (
+                <div
+                  key={zh}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '6px 10px',
+                    background: 'var(--bg-inset)',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                  }}
+                >
+                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
+                    <span style={{ color: 'var(--text-tertiary)' }}>{zh}</span> ➔ <strong style={{ color: 'var(--text-primary)' }}>{vi}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    style={{ padding: '2px 8px', fontSize: '11px', height: '24px' }}
+                    onClick={() => handleDeleteOverride(zh)}
+                    title="Khôi phục về bản dịch tự động"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {toast && (
           <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--success)' }}>
