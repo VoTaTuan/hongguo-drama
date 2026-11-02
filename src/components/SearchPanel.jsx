@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './HongguoDownload.css';
-import { Search, Film, RefreshCw, ExternalLink } from './icons';
+import { Search, Film, RefreshCw, ExternalLink, Globe } from './icons';
 import { isSubmitKey } from './episodeRange';
 import { readSearchHistory, saveSearchTerm, removeSearchTerm, clearSearchHistory, rememberCatalogTitles, getSearchSuggestions } from '../searchHistory';
 
@@ -8,6 +8,7 @@ import useMediaSources from './useMediaSources';
 import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { rankSearchResults } from './searchRanking.mjs';
 import { DramaTitle } from './TranslatedText';
+import { translateQueryToChinese, hasChinese } from '../services/translator';
 
 const SEARCH_SAFETY_TIMEOUT_MS = 25000;
 
@@ -32,6 +33,8 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
   const [searchWarning, setSearchWarning] = useState('');
   const [pageTitle, setPageTitle] = useState('');
   const [searchedKeyword, setSearchedKeyword] = useState('');
+  const [translatedQuery, setTranslatedQuery] = useState('');
+  const actualQueryRef = useRef('');
   const [more, setMore] = useState({});
   const [moreLoading, setMoreLoading] = useState(false);
   const [moreError, setMoreError] = useState('');
@@ -63,6 +66,8 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
     requestVersion.current++;
     pendingSearch.current = null;
     setSource(next);
+    setTranslatedQuery('');
+    actualQueryRef.current = '';
     setLoading(false);
     setPickingId('');
     setResults(null);
@@ -76,6 +81,8 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
     requestVersion.current++;
     pendingSearch.current = null;
     setKeyword(value);
+    setTranslatedQuery('');
+    actualQueryRef.current = '';
     setLoading(false);
     setPickingId('');
     setResults(null);
@@ -122,6 +129,22 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
     setPageTitle('');
     setMore({}); setMoreError(''); setMoreLoading(false); cancelMore();
     setSearchedKeyword(kw);
+
+    // Tự động dịch từ khóa tiếng Việt sang tiếng Trung để tìm trên kho phim Hồng Quả
+    let queryToSearch = kw;
+    let zhTranslation = '';
+    if (!hasChinese(kw)) {
+      try {
+        zhTranslation = await translateQueryToChinese(kw);
+        if (zhTranslation && zhTranslation !== kw) {
+          queryToSearch = zhTranslation;
+        }
+      } catch (_) {}
+    }
+    if (request !== requestVersion.current) return;
+    setTranslatedQuery(zhTranslation && zhTranslation !== kw ? zhTranslation : '');
+    actualQueryRef.current = queryToSearch;
+
     const sources = source === 'all' ? mediaSources.map(item => item.id) : [source];
     const settled = new Array(sources.length);
     const publishPartial = () => {
@@ -135,7 +158,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
           nextMore[searchSource] = { channel: entry.value.channel, cursor: entry.value.cursor || null, page: entry.value.page || 1, hasMore: true };
         }
       });
-      if (merged.length) setResults(rankSearchResults(merged, kw));
+      if (merged.length) setResults(rankSearchResults(merged, queryToSearch));
       if (sources.length === 1) setPageTitle(settled[0]?.value?.pageTitle || '');
       // Do not offer pagination until every source has settled; otherwise the button can shift under the user.
       if (sources.every((_, index) => settled[index])) setMore(nextMore);
@@ -170,7 +193,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
           setHistoryError('Kết quả tìm kiếm đã hiển thị, nhưng lưu lịch sử tìm kiếm vào máy thất bại.');
         }
       }
-      setResults(rankSearchResults(merged, kw));
+      setResults(rankSearchResults(merged, queryToSearch));
       setMore(nextMore);
       setSearchWarning(warnings.join('; '));
       if (failures.length) setError(`${failures.join('; ')}. ${merged.length ? 'Đã hiển thị kết quả từ nguồn khác. ' : ''}Vui lòng thử lại hoặc đổi nguồn.`);
@@ -184,7 +207,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
     }, SEARCH_SAFETY_TIMEOUT_MS);
     try {
       // Ghi nhận ngay khi mỗi nguồn hoàn thành; khi chạm ngưỡng hết giờ tổng vẫn có thể hiển thị kết quả của các nguồn đã xong.
-      const responses = await Promise.allSettled(sources.map((searchSource, index) => window.electronAPI.searchSeries(kw, { source: searchSource })
+      const responses = await Promise.allSettled(sources.map((searchSource, index) => window.electronAPI.searchSeries(queryToSearch, { source: searchSource })
         .then(res => {
           if (!res?.success) throw new Error(res?.error || 'Tìm kiếm thất bại, vui lòng thử lại');
           const entry = { status: 'fulfilled', value: res };
@@ -246,7 +269,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
 
   const loadMore = async () => {
     const entries = Object.entries(more).filter(([, state]) => state.hasMore);
-    const kw = searchedKeyword.trim();
+    const kw = (actualQueryRef.current || searchedKeyword).trim();
     if (!active || sourcesLoading || moreRequest.current || !kw || !entries.length) return;
     const request = { responses: new Map(), timer: null };
     moreRequest.current = request;
@@ -343,6 +366,26 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
         {source === 'all' ? 'Đồng thời tìm kiếm trên tất cả nguồn đã bật, kết quả có đánh dấu nguồn; chọn một bộ để xem toàn bộ tập.' : 'Tìm kiếm theo tên phim, chọn một bộ để xem toàn bộ tập.'}
       </p>
 
+      {translatedQuery && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 14px',
+          marginTop: '10px',
+          background: 'var(--bg-inset, rgba(59, 130, 246, 0.08))',
+          border: '1px solid var(--border)',
+          borderRadius: '6px',
+          fontSize: '13px',
+          color: 'var(--text-secondary)'
+        }}>
+          <Globe size={15} style={{ color: 'var(--primary, #e50914)', flexShrink: 0 }} />
+          <span>
+            Đã tự động dịch từ khóa sang tiếng Trung: <strong>{searchedKeyword}</strong> ➔ <strong style={{ color: 'var(--primary, #e50914)' }}>{translatedQuery}</strong> để tìm trên nguồn phim.
+          </span>
+        </div>
+      )}
+
       {results === null && !loading && !error && (
         <div className="search-welcome"><Search size={36} /><h3>Câu chuyện hay, bắt đầu từ một cái tên</h3><p>Nhập tên phim đầy đủ hoặc từ khóa để tìm phim ngắn bạn muốn xem.</p></div>
       )}
@@ -358,7 +401,11 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
 
       {results && results.length === 0 && !loading && !error && (
         <div className="search-empty">
-          <p>Không tìm thấy phim ngắn liên quan{pageTitle ? ` (Tiêu đề trang: ${pageTitle})` : ''}</p>
+          <p>
+            Không tìm thấy phim ngắn liên quan cho từ khóa "{searchedKeyword}"
+            {translatedQuery ? ` (tiếng Trung: "${translatedQuery}")` : ''}
+            {pageTitle ? ` (Tiêu đề trang: ${pageTitle})` : ''}
+          </p>
           <div className="search-empty-actions">
             {source === 'hongguo' && <button className="btn btn-outline" onClick={showBrowser}>
               <ExternalLink size={15} />

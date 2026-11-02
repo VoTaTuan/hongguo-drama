@@ -304,3 +304,33 @@ export function useTranslatedText(text, options = {}) {
   const isTranslated = hasChinese(text) && translated !== text;
   return { translated, original: text, loading, isTranslated };
 }
+
+/**
+ * Dịch từ khóa tìm kiếm tiếng Việt sang tiếng Trung để tìm trên kho phim Hồng Quả
+ */
+export async function translateQueryToChinese(query, options = {}) {
+  if (!query || typeof query !== 'string') return query;
+  const trimmed = query.trim();
+  if (!trimmed) return trimmed;
+
+  // Nếu người dùng đã gõ tiếng Trung, không cần dịch
+  if (hasChinese(trimmed)) return trimmed;
+
+  // Nếu từ khóa chỉ là ID số hoặc chuỗi quá ngắn (< 2 ký tự)
+  if (/^\d+$/.test(trimmed) || trimmed.length < 2) return trimmed;
+
+  const config = { ...getTranslationConfig(), ...options, direction: 'vi2zh' };
+  if (!config.enabled) return trimmed;
+
+  try {
+    if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.translateText === 'function') {
+      const res = await window.electronAPI.translateText(trimmed, config);
+      if (res && res.success && res.text) {
+        return res.text.trim();
+      }
+    }
+  } catch (err) {
+    console.warn('[translateQueryToChinese] Error:', err.message);
+  }
+  return trimmed;
+}

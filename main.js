@@ -5067,6 +5067,11 @@ ipcMain.handle('open-external-url', async (event, url) => {
 // Xử lý dịch thuật AI & Google Dịch (chạy trong Main Process để tránh lỗi CORS)
 async function executeTranslation(text, config = {}) {
   const provider = config.provider || 'google';
+  const direction = config.direction || 'zh2vi'; // 'zh2vi' | 'vi2zh'
+
+  const aiSystemPrompt = direction === 'vi2zh'
+    ? 'Bạn là chuyên gia dịch thuật và tìm kiếm phim ngắn. Hãy dịch từ khóa tìm kiếm tên phim hoặc thể loại sau đây từ tiếng Việt sang tiếng Trung giản thể (Simplified Chinese). Chỉ trả về duy nhất từ khóa tiếng Trung ngắn gọn, tuyệt đối không kèm giải thích, không kèm ghi chú hay dấu ngoặc kép.'
+    : 'Bạn là chuyên gia dịch thuật phim ngắn tiếng Trung sang tiếng Việt. Hãy dịch tiêu đề hoặc tóm tắt sau đây sang tiếng Việt một cách tự nhiên, cuốn hút, đúng văn phong phim ngắn ngôn tình/hành động/hài hước. Chỉ trả về duy nhất kết quả dịch tiếng Việt, tuyệt đối không kèm giải thích, không kèm ghi chú hay dấu ngoặc kép.';
 
   if (provider === 'custom_ai') {
     if (!config.apiKey || !config.apiKey.trim()) {
@@ -5091,7 +5096,7 @@ async function executeTranslation(text, config = {}) {
             messages: [
               {
                 role: 'system',
-                content: 'Bạn là chuyên gia dịch thuật phim ngắn tiếng Trung sang tiếng Việt. Hãy dịch tiêu đề hoặc tóm tắt sau đây sang tiếng Việt một cách tự nhiên, cuốn hút, đúng văn phong phim ngắn ngôn tình/hành động/hài hước. Chỉ trả về duy nhất kết quả dịch tiếng Việt, tuyệt đối không kèm giải thích, không kèm ghi chú hay dấu ngoặc kép.',
+                content: aiSystemPrompt,
               },
               {
                 role: 'user',
@@ -5131,7 +5136,9 @@ async function executeTranslation(text, config = {}) {
 
   // Google Translate (Miễn phí)
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=vi&dt=t&q=${encodeURIComponent(text)}`;
+    const sl = direction === 'vi2zh' ? 'vi' : 'zh-CN';
+    const tl = direction === 'vi2zh' ? 'zh-CN' : 'vi';
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12000);
     try {
