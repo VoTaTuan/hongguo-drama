@@ -73,6 +73,7 @@ export default function AccountManagement({ active = true }) {
           loadHistory();
           return;
         }
+        if (result.status === 'cancelled') { setBusy(false); setQr(null); setStatus('扫码已取消'); return; }
         if (result.status === 'expired') {
           setBusy(false); setQr(null); setError('Mã QR đã hết hạn, vui lòng lấy mã mới.');
           return;
@@ -152,6 +153,7 @@ export default function AccountManagement({ active = true }) {
       <User size={22} />
       <div><h2>Tài khoản Hồng Quả</h2><p>Quét mã QR để đăng nhập tài khoản Hồng Quả và đồng bộ lịch sử xem từ ứng dụng.</p></div>
     </div>
+    {!account && <div><button className="btn btn-outline" disabled={busy} onClick={async () => { try { const result = await window.electronAPI.openAccountWebLogin(); if (!result?.success) throw new Error(result?.error || 'Mở trang web đăng nhập thất bại'); } catch(e) { setError(e.message); } }}>Đăng nhập qua trang web chính thức</button><p>Khi điện thoại báo mã QR không hợp lệ, bạn có thể mở trang web chính thức và đăng nhập bằng phương thức trang web cung cấp.</p></div>}
     <section className="account-card" aria-label="Trạng thái tài khoản Hồng Quả">
       {account ? <>
         <div className="account-identity">

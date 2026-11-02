@@ -63,6 +63,14 @@ Dự án này là bản sửa đổi mã nguồn mở do cộng đồng duy trì
 3. Mở chi tiết và nhấp "Phát ngay", hoặc chọn các tập cùng độ nét mong muốn để thêm vào hàng đợi tải xuống.
 4. Lần tiếp theo, tiếp tục xem từ "Kho phim của tôi" hoặc "Lịch sử xem"; tiến độ tải, thử lại khi lỗi và gộp toàn bộ phim nằm trong mục "Quản lý tải xuống".
 
+## 5.4 Cập nhật phiên bản mới
+
+- Thêm tìm kiếm TV DLNA cùng mạng LAN, truyền phát từng tập (cast), phát/tạm dừng/dừng; yêu cầu TV hỗ trợ định dạng video tương ứng.
+- Lịch sử xem được phân nhóm rõ ràng theo số phần/mùa, hỗ trợ thu gọn/mở rộng, xác nhận thủ công cùng một bộ phim và hiển thị đánh dấu đã xem xong.
+- Dọn dẹp bộ nhớ đệm phát của riêng bộ phim khi xóa bản ghi kho phim, giữ lại tệp đã tải và bộ nhớ đệm của các phim khác.
+- Sửa lỗi ghi nhận đăng nhập bất đồng bộ sau khi hủy quét mã; bổ sung lối vào đăng nhập qua trang web chính thức. Khôi phục chữ ký yêu cầu nguồn phát, cải thiện lỗi quá thời gian lấy nguồn và thử lại khi phản hồi rỗng.
+- Chi tiết xem tại [Thuyết minh 5.4](docs/release-5.4.md).
+
 ## 5.3 Tải xuống NAS
 
 - Phía dưới "Kho phim của tôi" bổ sung "Tải xuống NAS": trước tiên hãy gắn kết (mount) thư mục chia sẻ, sau đó chọn thư mục độc lập cho từng bộ phim.

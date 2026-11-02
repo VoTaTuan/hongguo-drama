@@ -1,6 +1,6 @@
 {
   "name": "hongguo-downloader",
-  "version": "5.3.0",
+  "version": "5.4.0",
   "description": "Phát và tải phim ngắn Hồng Quả",
   "main": "main.js",
   "license": "GPL-3.0",
@@ -58,7 +58,7 @@
       "src/store.js"
     ],
     "asar": true,
-    "artifactName": "hongguo-downloader-5.3-${os}-${arch}.${ext}",
+    "artifactName": "hongguo-downloader-5.4-${os}-${arch}.${ext}",
     "win": {
       "target": [
         {
@@ -99,7 +99,7 @@
       ]
     },
     "portable": {
-      "artifactName": "${productName}-5.3-Portable.${ext}"
+      "artifactName": "${productName}-5.4-Portable.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -107,7 +107,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Phim Ngắn Hồng Quả",
-      "artifactName": "hongguo-downloader-5.3-win-x64-setup.${ext}"
+      "artifactName": "hongguo-downloader-5.4-win-x64-setup.${ext}"
     },
     "mac": {
       "target": [

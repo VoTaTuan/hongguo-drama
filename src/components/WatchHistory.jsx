@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Play, RefreshCw, Clock } from './icons';
 import './WatchHistory.css';
+import { groupHistory } from './historyGroups.mjs';
 
 const PREFERENCES_KEY = 'hongguo:watch-history-preferences';
 
@@ -13,6 +14,16 @@ export default function WatchHistory({ active = true, onNavigate }) {
   const [removing, setRemoving] = useState('');
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  const [expanded, setExpanded] = useState({});
+  const [decisions, setDecisions] = useState(() => {
+    try { const value = JSON.parse(localStorage.getItem('hongguo:history-groups')); return value && typeof value === 'object' && !Array.isArray(value) ? value : {}; } catch { return {}; }
+  });
+  const decide = (id, target) => {
+    const next = { ...decisions };
+    if (target === undefined) delete next[id]; else next[id] = target;
+    try { localStorage.setItem('hongguo:history-groups', JSON.stringify(next)); setDecisions(next); }
+    catch { setError('分组未能保存，请检查本地存储后重试'); }
+  };
   const [filter, setFilter] = useState('all');
   const [preferences, setPreferences] = useState(() => {
     try {
@@ -28,7 +39,9 @@ export default function WatchHistory({ active = true, onNavigate }) {
   const request = useRef(0);
   const openingRef = useRef(false);
   const openingRequest = useRef(0);
-  const listedRows = hideLowSeasons ? rows.filter(row => !row.hasHigherSeason) : rows;
+  const groups = groupHistory(rows, decisions);
+  const groupById = new Map(groups.flatMap(items => items.map(row => [row.series_id, items])));
+  const listedRows = groups.flatMap(items => hideLowSeasons && !expanded[items[0].series_id] ? items.slice(0, 1) : items);
   const completedCount = listedRows.filter(row => row.completed === true).length;
   const visibleRows = listedRows.filter(row => filter === 'all' || (row.completed === true) === (filter === 'completed'));
 
@@ -163,7 +176,7 @@ export default function WatchHistory({ active = true, onNavigate }) {
       </div>
       <label className="history-display-option" title="Chỉ điều chỉnh danh sách hiện tại; phạm vi kiểm tra hàng loạt không đổi và không xóa lịch sử">
         <input type="checkbox" checked={hideLowSeasons} disabled={loading} onChange={event => savePreferences({ ...preferences, hideLowSeasons: event.target.checked })} />
-        <span>Ẩn phần cũ cùng bộ phim</span>
+        <span>Thu gọn phần cũ cùng bộ phim</span>
       </label>
     </div>
     <p className="history-hint">Xác định theo tiến độ đoạn kết của tập cuối hiện tại; sau khi ẩn phần cũ, số đếm chỉ đại diện cho các phần trong danh sách, bản ghi cũ có thể hiển thị chưa xem xong.</p>
@@ -178,12 +191,12 @@ export default function WatchHistory({ active = true, onNavigate }) {
     </div> : !visibleRows.length ? <div className="history-empty" role="status">
       <Clock size={30} /><h2>{emptyTitle}</h2>
       <button type="button" className="btn btn-outline" onClick={() => setFilter('all')}>Xem tất cả</button>
-    </div> : <ul className="history-list">{visibleRows.map(row => <li className="history-row" key={row.series_id}>
+    </div> : <ul className="history-list">{visibleRows.map(row => <li className={`history-row ${groupById.get(row.series_id)?.[0] !== row ? 'history-child' : ''}`} key={row.series_id}>
       <div className="history-main">
       <button className="history-resume" onClick={() => resume(row)} disabled={!active || !!opening || !!removing} aria-label={`Tiếp tục xem ${row.series_title} tập ${row.vid_index}${row.hasUpdates ? `, có cập nhật${row.unreadEpisodes ? `, thêm ${row.unreadEpisodes} tập mới` : ', phát hiện nghi là phần tiếp theo'}` : ''}`}>
         {row.cover ? <img className="history-cover" src={row.cover} alt="" loading="lazy" /> : <span className="history-cover history-cover-empty"><Play size={20} /></span>}
         <span className="history-copy">
-          <span className="history-name">{row.hasUpdates && <span className="history-dot" role="img" aria-label="Có cập nhật" />}{row.series_title}</span>
+          <span className="history-name">{row.completed && <span className="history-completed">Đã xem xong · </span>}{row.hasUpdates && <span className="history-dot" role="img" aria-label="Có cập nhật" />}{row.series_title}</span>
           <span className="history-progress">Xem đến tập {row.vid_index} / Tổng {row.total} tập · {Math.floor((row.currentTime || 0) / 60)}:{String(Math.floor((row.currentTime || 0) % 60)).padStart(2, '0')}</span>
           <span className="history-time">Xem gần đây {new Date(row.updatedAt).toLocaleString('vi-VN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
           {row.unreadEpisodes > 0 && <span className="history-update">Thêm {row.unreadEpisodes} tập mới</span>}
@@ -191,6 +204,9 @@ export default function WatchHistory({ active = true, onNavigate }) {
         <span className="history-action"><Play size={15} />{opening === row.series_id ? 'Đang mở…' : 'Tiếp tục xem'}</span>
       </button>
       <div className="history-row-actions">
+        {groupById.get(row.series_id)?.length > 1 && groupById.get(row.series_id)[0] === row && <button className="btn btn-outline btn-sm" aria-expanded={!hideLowSeasons || !!expanded[row.series_id]} onClick={() => { if (!hideLowSeasons) savePreferences({ ...preferences, hideLowSeasons: true }); setExpanded(value => ({ ...value, [row.series_id]: hideLowSeasons ? !value[row.series_id] : false })); }}>{!hideLowSeasons || expanded[row.series_id] ? 'Thu gọn' : 'Mở rộng'} {groupById.get(row.series_id).length} phần</button>}
+        {groupById.get(row.series_id)?.length > 1 && <button className="btn btn-outline btn-sm" onClick={() => decide(row.series_id, null)}>Rời khỏi nhóm</button>}
+        {Object.hasOwn(decisions, row.series_id) && <button className="btn btn-outline btn-sm" onClick={() => decide(row.series_id, undefined)}>Khôi phục nhóm tự động</button>}
         <button type="button" className="btn btn-outline btn-sm history-check" disabled={checking || !!checkingRow || !!removing || !!opening} aria-label={`Kiểm tra cập nhật cho《${row.series_title}》`} title="Chỉ kiểm tra lịch sử xem này" onClick={() => checkRow(row)}>
           <RefreshCw size={14} className={checkingRow === row.series_id ? 'spin' : ''} />{checkingRow === row.series_id ? 'Đang kiểm tra…' : 'Kiểm tra'}
         </button>
@@ -200,6 +216,7 @@ export default function WatchHistory({ active = true, onNavigate }) {
       {!!row.sequels?.length && <div className="history-sequels"><span>Nghi là phần tiếp theo</span>{row.sequels.map(sequel => <button key={sequel.series_id} className="btn btn-outline btn-sm" disabled={!active || !!opening || !!removing} onClick={() => resume(row, sequel)}>{sequel.series_title}</button>)}</div>}
       {!!row.similarSeries?.length && <div className="history-sequels" title="Tên tương tự, chỉ để đối chiếu; không dùng để ẩn phần cũ hoặc gộp nhóm hàng loạt">
         <span>Nghi cùng bộ phim (Chỉ gợi ý)</span>{row.similarSeries.map(candidate => <button key={candidate.series_id} className="btn btn-outline btn-sm" disabled={!active || !!opening || !!removing} onClick={() => resume(row, candidate)}>{candidate.series_title}</button>)}
+        {row.similarSeries.filter(candidate => rows.some(item => item.series_id === candidate.series_id)).map(candidate => <button key={`group:${candidate.series_id}`} className="btn btn-outline btn-sm" onClick={() => decide(candidate.series_id, row.series_id)}>Xác nhận《{candidate.series_title}》cùng bộ phim</button>)}
       </div>}
       {row.lastEpisodeCheckError && <p className="history-check-error">Kiểm tra cập nhật tập chưa hoàn thành: {row.lastEpisodeCheckError}</p>}
       {row.lastSequelCheckError && <p className="history-check-error">Kiểm tra phần tiếp theo chưa hoàn thành: {row.lastSequelCheckError}</p>}

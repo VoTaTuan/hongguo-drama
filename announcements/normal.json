@@ -1,6 +1,6 @@
 {
-  "id": "release-5.3-20261101-01",
-  "title": "Phim Ngắn Hồng Quả 5.3 đã cập nhật",
-  "body": "Thêm tính năng \"Tải xuống NAS\": trước tiên hãy gắn kết (mount) thư mục chia sẻ, sau đó chọn thư mục riêng cho từng bộ phim. Video cùng ảnh bìa, tóm tắt, NFO được lưu cùng cấp, quy chuẩn đặt tên tập phim, tự động tái sử dụng video đã có và bổ sung thông tin còn thiếu; Quản lý tải xuống có thể mở trực tiếp thư mục đã chọn.\n\nThông tin phim dựa theo dữ liệu thực tế do nguồn cung cấp, lưu độc lập chứ không nhúng vào MP4; Nhận diện trên NAS vật lý và thư viện media chưa được thử nghiệm thực tế.\n\nXem mô tả đầy đủ và tải về cho cả 3 nền tảng: https://github.com/jackotom/hongguo-drama/releases/tag/v5.3",
+  "id": "release-5.4-20261102-01",
+  "title": "Phim Ngắn Hồng Quả 5.4 đã cập nhật",
+  "body": "Khôi phục chữ ký yêu cầu lấy nguồn phát, cải thiện lỗi phát và tải xuống thất bại. Bổ sung lối vào đăng nhập dự phòng từ trang web chính thức, dọn dẹp bộ nhớ đệm phát theo từng bộ phim, phân nhóm lịch sử xem và truyền phát DLNA từng tập lên TV.\n\nPhương thức đăng nhập và hỗ trợ định dạng TV do trang web cung cấp tùy thuộc vào thiết bị thực tế; lỗi gián đoạn lấy nguồn từ phía máy chủ gốc vẫn có thể thử lại tập này.\n\nThuyết minh cập nhật và tải về cho cả 3 nền tảng: https://github.com/jackotom/hongguo-drama/releases/tag/v5.4",
   "active": true
 }

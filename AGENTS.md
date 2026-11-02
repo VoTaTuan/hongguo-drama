@@ -62,3 +62,8 @@
 - Chuẩn hóa quy tắc đặt tên tập phim, tái sử dụng an toàn video đã có, bổ sung dữ liệu còn thiếu, không ghi đè tệp xung đột. Video trực tiếp trên NAS bỏ qua tính năng tự động xóa sau khi xem xong.
 - Bản 5.3 đã chính thức phát hành; chưa thay thế bản cài đặt chính thức trên máy.
 - Phát hành, xác minh và hạn chế xem tại `docs/release-5.3.md`.
+
+## Phát hành 5.4
+
+- Yêu cầu mô hình phát được ký theo host cuối cùng, query, body POST và dấu thời gian; tính lại chữ ký sau khi thử lại hoặc cập nhật thiết bị.
+- Bản 5.4 đã chính thức phát hành; xác minh tải về/giải mã thực tế, xử lý lỗi gián đoạn và phát hành đa nền tảng xem tại `docs/release-5.4.md`.

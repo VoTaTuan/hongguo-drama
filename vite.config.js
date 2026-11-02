@@ -1,4 +1,4 @@
-// Phim Ngắn Hồng Quả 5.3: Cấu hình build frontend, phiên bản chạy do package.json cung cấp.
+// Phim Ngắn Hồng Quả 5.4: Cấu hình build frontend, phiên bản chạy do package.json cung cấp.
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 

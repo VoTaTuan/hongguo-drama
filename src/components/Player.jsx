@@ -10,6 +10,7 @@ import { SHORTCUT_ACTIONS, formatShortcut, ignoresPlaybackShortcut, readShortcut
 import CommunityPanel from './CommunityPanel';
 import SequelFinder from './SequelFinder';
 import NasDownload from './NasDownload';
+import CastPanel from './CastPanel';
 import VideoEnhancement, { useVideoEnhancement } from './VideoEnhancement';
 import './Player.css';
 import { Play, Film, Download, Check, RefreshCw, Layers, X, Trash2, ChevronDown, Zap } from './icons';
@@ -1236,7 +1237,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
 
   // Xóa một bộ phim ngắn khỏi danh sách (chỉ hủy đăng ký, không xóa tệp cục bộ)
   const removeSeries = async (sid, title) => {
-    const res = await window.electronAPI.forgetSeries(sid).catch(error => ({ success: false, error: error.message }));
+    const res = await window.electronAPI.forgetSeries(sid, { clearCache: true }).catch(error => ({ success: false, error: error.message }));
     if (!res || !res.success) {
       showToast((res && res.error) || 'Xóa thất bại');
       return;
@@ -1581,7 +1582,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                             aria-label={`Xóa vĩnh viễn bản ghi kho phim của ${s.series_title}`}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setConfirmAsk({ title: 'Xóa vĩnh viễn bản ghi kho phim', message: `Sẽ xóa vĩnh viễn bản ghi kho phim của《${s.series_title}》, không thể tìm lại qua danh sách khôi phục. Tệp video cục bộ sẽ không bị xóa; sau này có thể tìm kiếm để thêm lại.`, okText: 'Xóa vĩnh viễn', danger: true, onOk: () => removeSeries(s.series_id, s.series_title) });
+                              setConfirmAsk({ title: 'Xóa vĩnh viễn bản ghi kho phim', message: `Sẽ xóa vĩnh viễn bản ghi kho phim của《${s.series_title}》, không thể tìm lại qua danh sách khôi phục. Đồng thời dọn dẹp bộ nhớ đệm phát của bộ phim này. Tệp video tải về cục bộ sẽ không bị xóa; sau này có thể tìm kiếm để thêm lại.`, okText: 'Xóa vĩnh viễn', danger: true, onOk: () => removeSeries(s.series_id, s.series_title) });
                             }}
                           >
                             <X size={15} />
@@ -1733,7 +1734,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
               <><Film size={34} /><p role="alert">{playbackError}</p><div className="player-placeholder-actions">
                 <button className="btn btn-primary" onClick={retryPlayback}>{current?.status === 'completed' ? 'Thử lại tập này' : 'Thử lại tập này (Phát trực tuyến)'}</button>
                 {current?.vid && <button className="btn btn-outline" onClick={() => startOnlinePlay(currentIndex, undefined, true)}>Kết nối lại nguồn phim</button>}
-                {current?.vid && !current.locked && !fallbackRef.current?.submitting && <button className="btn btn-outline" onClick={() => startCompatPlay(currentIndex, true)}>Phát sau khi chuyển mã</button>}
+                {current?.vid && !current.locked && (decodeFailed || current?.status === 'completed') && !fallbackRef.current?.submitting && <button className="btn btn-outline" onClick={() => startCompatPlay(currentIndex, true)}>Phát sau khi chuyển mã</button>}
               </div></>
             ) : onlineProgress && onlineProgress.vid && (!current || current.vid === onlineProgress.vid) ? (
               <>
@@ -1951,6 +1952,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       </div>
 
       <div className="player-footer" hidden={actionsHidden}>
+        <CastPanel seriesId={activeSeriesId} episode={current} title={detail?.series_title} videoRef={videoRef} />
         {/^[0-9]{6,30}$/.test(String(activeSeriesId)) ? (
           <CommunityPanel seriesId={activeSeriesId} episodeId={current?.vid} title={detail?.series_title || ''} cover={detail?.cover || ''}
             trailingAction={<NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />}>

@@ -82,7 +82,7 @@ function mount(rows, storage = new Map()) {
   vm.runInNewContext(source, {
     module,
     exports: module.exports,
-    require: name => name === 'react' ? react : name === './icons' ? { Play: Icon, RefreshCw: Icon, Clock: Icon } : {},
+    require: name => name === './historyGroups.mjs' ? require('../src/components/historyGroups.mjs') : name === 'react' ? react : name === './icons' ? { Play: Icon, RefreshCw: Icon, Clock: Icon } : {},
     window: { electronAPI: api, localStorage: {
       getItem: key => storage.get(key) ?? null,
       setItem: (key, value) => storage.set(key, value),
@@ -155,7 +155,7 @@ const button = (ui, label) => {
     const result = [];
     const visit = node => {
       if (!node || typeof node !== 'object') return;
-      if (node.props?.className === 'history-name') result.push(text(node));
+      if (node.props?.className === 'history-name') result.push(text(node).replace(/^已看完 · /, ''));
       node.children?.forEach(visit);
     };
     visit(ui.find(node => node.props?.className === 'history-list'));
@@ -177,7 +177,7 @@ const button = (ui, label) => {
   const display = ui.find(node => node.type === 'input' && node.props.type === 'checkbox');
   assert.ok(display, 'list display needs a native keyboard-operable checkbox');
   assert.notEqual(display.props.tabIndex, -1);
-  assert.ok(ui.find(node => node.type === 'label' && (text(node).includes('隐藏同剧低季') || text(node).includes('Ẩn phần cũ cùng bộ phim'))));
+  assert.ok(ui.find(node => node.type === 'label' && (text(node).includes('折叠同剧低季') || text(node).includes('Thu gọn phần cũ cùng bộ phim') || text(node).includes('Ẩn phần cũ cùng bộ phim'))));
   display.props.onChange({ target: { checked: true } });
   await ui.flush();
 

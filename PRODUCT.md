@@ -1,6 +1,8 @@
 # Phim Ngắn Hồng Quả (Hongguo Drama)
 
-Phiên bản chính thức hiện tại: **5.3**.
+Phiên bản chính thức hiện tại: **5.4**. Khôi phục chữ ký yêu cầu nguồn phát, thêm đăng nhập web chính thức dự phòng, dọn dẹp bộ nhớ đệm theo phim, phân nhóm lịch sử xem và truyền phát DLNA từng tập lên TV. Xem tại [docs/release-5.4.md](docs/release-5.4.md).
+
+Phiên bản chính thức trước đó: **5.3**.
 
 Bản 5.3 (nội bộ `5.3.0`) đã chính thức phát hành ngày 01-11-2026 lúc 10:07 (Asia/Shanghai), gắn thẻ `v5.3`, mã nguồn đóng băng `4be719b775b4cc92233bde9e9f7790462ba87e2d`. Bổ sung tính năng tải xuống NAS, lưu ảnh bìa/tóm tắt/NFO cùng cấp, chuẩn hóa quy tắc đặt tên tập phim và tái sử dụng/bổ sung thông tin còn thiếu. 16 tệp đính kèm trên cả 3 nền tảng đều khớp SHA256 và dung lượng từ xa; cả 2 bản Mac App và DMG đều vượt qua kiểm tra chứng thực Apple Notarization Accepted, ký tên/staple, gắn kết DMG chỉ đọc và khôi phục cập nhật ZIP. CI mã nguồn 41262056747 và CI Windows 41262074332 đã vượt qua 215 bài kiểm tra đơn vị và 100 kiểm tra nền tảng; bản di động Windows vượt qua 11 hạng mục, bản cài đặt/cài lại/nâng cấp từ 1.80 giữ nguyên dữ liệu vượt qua 9 hạng mục, tệp EXE chưa ký số. Bản arm64 chính thức đã vượt qua kiểm tra tải 2 tập thực tế xuống NAS, 7 tệp cùng cấp, mở thư mục gốc và phát video tắt tiếng khoảng 10 giây; bản x64 khởi động giao diện qua Rosetta và thoát bình thường thành công.
 
