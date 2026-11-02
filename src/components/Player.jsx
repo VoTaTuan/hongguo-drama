@@ -1543,7 +1543,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                       {s.cover ? <img src={s.cover} alt="" loading="lazy" /> : <Film size={14} />}
                     </div>
                     <div className="series-row-body">
-                      <div className="series-row-title">{s.series_title}</div>
+                      <DramaTitle title={s.series_title} as="div" className="series-row-title" showOriginal={true}>{s.series_title}</DramaTitle>
                       <div className="series-row-sub">
                         {dl && dl.completed > 0 ? `Đã tải ${dl.completed}/${dl.total} tập` : `Tổng ${(s.episodes || []).length} tập · Chưa tải`}
                       </div>
@@ -1638,7 +1638,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       {/* Khu vực phát */}
       <div className="player-floating-slot" ref={floatingPlayer.attachSlot}>
         {floatingPlayer.floating && <div className="player-floating-placeholder" role="status">
-          <p>Đang phát《{detail?.series_title}》trong cửa sổ nổi</p>
+          <p>Đang phát <DramaTitle title={detail?.series_title} as="span" showOriginal={false}>{`《${detail?.series_title || ''}》`}</DramaTitle> trong cửa sổ nổi</p>
           <button className="btn btn-outline" onClick={floatingPlayer.toggle}>Trở về cửa sổ chính</button>
         </div>}
       </div>
@@ -1855,7 +1855,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       {current && (
         <div className="player-now">
           <span className="player-now-title">
-            《{detail ? detail.series_title : ''}》Tập {current.vid_index}
+            <DramaTitle title={detail?.series_title} as="span" showOriginal={false}>{detail ? `《${detail.series_title}》` : ''}</DramaTitle> Tập {current.vid_index}
           </span>
           {current.title && <span className="player-now-sub">{current.title}</span>}
           <span className={`player-now-status status-${current.status}`}>

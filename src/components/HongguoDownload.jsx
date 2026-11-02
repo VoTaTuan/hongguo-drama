@@ -5,7 +5,8 @@ import SearchPanel from './SearchPanel';
 import useMediaSources from './useMediaSources';
 import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { isSubmitKey, parseEpisodeRange } from './episodeRange';
-import { getTranslationConfig, getCachedTranslation } from '../services/translator';
+import { getTranslationConfig, getCachedTranslation, translateText } from '../services/translator';
+import { DramaTitle } from './TranslatedText';
 
 
 function HongguoDownload({ onNavigate, active = true }) {
@@ -105,6 +106,7 @@ function HongguoDownload({ onNavigate, active = true }) {
     setTab('input');
     setSeriesData(data);
     clearTextExport();
+    if (data?.series_title) translateText(data.series_title).catch(() => {});
     setSelectedVids(new Set(data.episodes.filter((ep) => !ep.locked).map((ep) => ep.vid)));
     setSuccessMsg(`Đã chọn《${data.series_title}》tổng cộng ${data.total} tập, có thể phát trực tiếp hoặc gửi tải về`);
     document.querySelector('.main-content:not([hidden])')?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -133,6 +135,7 @@ function HongguoDownload({ onNavigate, active = true }) {
       if (request !== resolveRequest.current) return;
       if (res?.success && res.data) {
         setSeriesData(res.data);
+        if (res.data.series_title) translateText(res.data.series_title).catch(() => {});
         // Mặc định chọn tất cả, các tập mà trang web chưa cung cấp sẽ tự động thử nguồn App.
         const allVids = new Set(res.data.episodes.filter((ep) => !ep.locked).map((ep) => ep.vid));
         setSelectedVids(allVids);
@@ -394,7 +397,7 @@ function HongguoDownload({ onNavigate, active = true }) {
                 </div>
               )}
               <div className="series-meta">
-                <h3 className="series-title">《{seriesData.series_title}》</h3>
+                <DramaTitle title={seriesData.series_title} as="h3" className="series-title">{seriesData.series_title}</DramaTitle>
                 <div className="series-tags">
                   <span className="badge">{mediaSourceLabel(seriesData.series_id, mediaSources)}</span>
                   <span className="badge">Tổng cộng {seriesData.total} tập</span>

@@ -251,7 +251,7 @@ function DramaFeed({ active = true, onNavigate }) {
         </div>
         {upcoming.length > 0 ? <div className="drama-feed-upcoming"><h4>Xem tiếp theo</h4><div className="drama-feed-upcoming-list">
           {upcoming.map((item, offset) => <button key={item.series_id} className="drama-feed-next" disabled={resolving} onClick={() => selectItem(index + offset + 1)}>
-            <DramaPoster item={item} /><span><strong>{item.series_title}</strong><small>{ranking && item.rank > 0 ? `Hạng ${item.rank} BXH` : `Phim thứ ${index + offset + 2} trong danh sách`}</small></span>
+            <DramaPoster item={item} /><span><DramaTitle title={item.series_title} as="strong" showOriginal={false}>{item.series_title}</DramaTitle><small>{ranking && item.rank > 0 ? `Hạng ${item.rank} BXH` : `Phim thứ ${index + offset + 2} trong danh sách`}</small></span>
           </button>)}
         </div></div> : <p className="drama-feed-hint">Đã đến cuối danh sách phim lần này, hãy đổi nguồn hoặc lắc ngẫu nhiên để khám phá câu chuyện mới.</p>}
         <p className="drama-feed-source">{ranking ? `BXH đến từ ${catalogChannel === 'app' ? 'danh mục Hồng Quả App' : 'trang web công khai Hồng Quả'}, không phải gợi ý cá nhân hóa của tài khoản.` : `Danh sách phim đến từ danh mục hiện tại của ${sourceLabel}, không đại diện cho xếp hạng độ hot; việc phát tùy thuộc vào các tập khả dụng thực tế của nguồn.`}</p>

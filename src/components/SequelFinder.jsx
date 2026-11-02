@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { DramaTitle } from './TranslatedText';
 
 export default function SequelFinder({ seriesId, active = true, timeoutMs = 25000 }) {
   const [open, setOpen] = useState(false);
@@ -105,7 +106,7 @@ export default function SequelFinder({ seriesId, active = true, timeoutMs = 2500
       {!loading && !results.length && <p role="status">{error || partial ? 'Tìm kiếm chưa hoàn tất, tạm thời chưa xác định được phần tiếp theo.' : 'Chưa tìm thấy phần tiếp theo, bạn có thể kiểm tra lại sau.'}</p>}
       {!!results.length && <ul className="sequel-finder-list">{results.map(sequel => <li key={sequel.series_id}>
         <button type="button" className="btn btn-outline btn-sm" onClick={() => play(sequel)} disabled={!!opening}
-          aria-label={`Phát phần tiếp theo "${sequel.series_title}"`}>{sequel.series_title}{opening === sequel.series_id ? ' · Đang mở…' : ''}</button>
+          aria-label={`Phát phần tiếp theo "${sequel.series_title}"`}><DramaTitle title={sequel.series_title} as="span" showOriginal={false}>{sequel.series_title}</DramaTitle>{opening === sequel.series_id ? ' · Đang mở…' : ''}</button>
       </li>)}</ul>}
     </div>}
   </section>;

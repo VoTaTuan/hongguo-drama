@@ -71,3 +71,50 @@ export function DramaDescription({ description, children, className = '' }) {
     </div>
   );
 }
+
+/**
+ * Component hiển thị tiêu đề tác vụ tải về (Quản lý tải về) tự động dịch tên phim sang tiếng Việt
+ */
+export function DownloadTaskTitle({ task, className = '' }) {
+  const rawTitle = task?.title || task?.filename || '';
+  let seriesTitle = task?.hongguoInfo?.series_title || '';
+  let epSuffix = '';
+
+  if (!seriesTitle && rawTitle) {
+    const match = rawTitle.match(/^《(.*?)》(.*)$/);
+    if (match) {
+      seriesTitle = match[1];
+      epSuffix = match[2];
+    }
+  } else if (seriesTitle) {
+    if (rawTitle.startsWith(`《${seriesTitle}》`)) {
+      epSuffix = rawTitle.slice(`《${seriesTitle}》`.length);
+    } else {
+      const epIndexStr = task.hongguoInfo?.vid_index != null ? String(task.hongguoInfo.vid_index).padStart(3, '0') : '';
+      epSuffix = ` Tập ${epIndexStr}${task.hongguoInfo?.ep_title ? ' ' + task.hongguoInfo.ep_title : ''}`;
+    }
+  }
+
+  const { translated, original, isTranslated } = useTranslatedText(seriesTitle || rawTitle);
+
+  if (seriesTitle) {
+    return (
+      <div className={`drama-title-wrap ${className}`} style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>
+        <span className="drama-title-main">《{translated}》{epSuffix}</span>
+        {isTranslated && (
+          <span className="drama-title-sub" title={original}>《{original}》{epSuffix}</span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`drama-title-wrap ${className}`} style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>
+      <span className="drama-title-main">{translated || rawTitle}</span>
+      {isTranslated && (
+        <span className="drama-title-sub" title={original}>{original}</span>
+      )}
+    </div>
+  );
+}
+

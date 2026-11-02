@@ -342,9 +342,9 @@
 .dm-task-title {
   font-weight: 600;
   font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .dm-task-meta {

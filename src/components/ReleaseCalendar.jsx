@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { publicDateKey, readLocalLibrary, removeLocalSeries, saveLocalSeries, subscribeLocalLibrary } from '../localLibrary';
 import './ReleaseCalendar.css';
+import { DramaTitle } from './TranslatedText';
 
 export default function ReleaseCalendar({ onPlay, opening = '', active = true }) {
   const [library, setLibrary] = useState(readLocalLibrary);
@@ -27,7 +28,7 @@ export default function ReleaseCalendar({ onPlay, opening = '', active = true })
   const favoritesCount = rows.filter(item => item.favorite).length;
   const row = item => <li key={item.id} className="release-row">
     <div className="release-poster" aria-hidden="true"><span>Chưa có poster</span>{item.cover && <img key={item.cover} src={item.cover} alt="" loading="lazy" onError={event => { event.currentTarget.style.display = 'none'; }} />}</div>
-    <div className="release-title"><strong>{item.title}</strong><span>{item.date ? `Công chiếu ${item.date}` : 'Chưa có ngày công chiếu'}</span></div>
+    <div className="release-title"><DramaTitle title={item.title} as="strong" showOriginal={true}>{item.title}</DramaTitle><span>{item.date ? `Công chiếu ${item.date}` : 'Chưa có ngày công chiếu'}</span></div>
     <div className="release-row-actions">
       <button type="button" className="btn btn-sm btn-outline" aria-label={`${item.favorite ? 'Bỏ yêu thích' : 'Yêu thích'} "${item.title}"`} aria-pressed={item.favorite} onClick={() => setLibrary(saveLocalSeries({ id: item.id, title: item.title, favorite: !item.favorite }))}>{item.favorite ? 'Đã thích' : 'Yêu thích'}</button>
       <button type="button" className="btn btn-sm btn-outline" aria-label={`Xóa "${item.title}"`} title="Chỉ xóa khỏi danh sách yêu thích và lịch trên máy, không xóa tệp video" onClick={() => setLibrary(removeLocalSeries(item.id))}>Xóa</button>

@@ -8,7 +8,7 @@ import { isSubmitKey, parseEpisodeRange } from './episodeRange';
 import { rememberCatalogTitles } from '../searchHistory';
 import { translateGenre } from './genreMap';
 import { DramaTitle, DramaDescription } from './TranslatedText';
-import { getCachedTranslation, saveCustomOverride, removeCustomOverride, getTranslationConfig } from '../services/translator';
+import { getCachedTranslation, saveCustomOverride, removeCustomOverride, getTranslationConfig, translateText } from '../services/translator';
 
 const PAGE_CACHE_TTL_MS = 60_000;
 const LIST_TIMEOUT_MS = 25_000;

@@ -2,6 +2,9 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Play, RefreshCw, Clock } from './icons';
 import './WatchHistory.css';
 import { groupHistory } from './historyGroups.mjs';
+import { DramaTitle } from './TranslatedText';
+
+const SafeDramaTitle = typeof DramaTitle === 'function' ? DramaTitle : null;
 
 const PREFERENCES_KEY = 'hongguo:watch-history-preferences';
 
@@ -196,7 +199,7 @@ export default function WatchHistory({ active = true, onNavigate }) {
       <button className="history-resume" onClick={() => resume(row)} disabled={!active || !!opening || !!removing} aria-label={`Tiếp tục xem ${row.series_title} tập ${row.vid_index}${row.hasUpdates ? `, có cập nhật${row.unreadEpisodes ? `, thêm ${row.unreadEpisodes} tập mới` : ', phát hiện nghi là phần tiếp theo'}` : ''}`}>
         {row.cover ? <img className="history-cover" src={row.cover} alt="" loading="lazy" /> : <span className="history-cover history-cover-empty"><Play size={20} /></span>}
         <span className="history-copy">
-          <span className="history-name">{row.completed && <span className="history-completed">Đã xem xong · </span>}{row.hasUpdates && <span className="history-dot" role="img" aria-label="Có cập nhật" />}{row.series_title}</span>
+          <span className="history-name">{row.completed && <span className="history-completed">Đã xem xong · </span>}{row.hasUpdates && <span className="history-dot" role="img" aria-label="Có cập nhật" />}{SafeDramaTitle ? <SafeDramaTitle title={row.series_title} as="span" style={{ display: 'inline' }} showOriginal={true}>{row.series_title}</SafeDramaTitle> : row.series_title}</span>
           <span className="history-progress">Xem đến tập {row.vid_index} / Tổng {row.total} tập · {Math.floor((row.currentTime || 0) / 60)}:{String(Math.floor((row.currentTime || 0) % 60)).padStart(2, '0')}</span>
           <span className="history-time">Xem gần đây {new Date(row.updatedAt).toLocaleString('vi-VN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
           {row.unreadEpisodes > 0 && <span className="history-update">Thêm {row.unreadEpisodes} tập mới</span>}
@@ -213,10 +216,10 @@ export default function WatchHistory({ active = true, onNavigate }) {
         <button type="button" className="btn btn-outline btn-sm history-remove" disabled={!!removing || !!opening || !!checkingRow} aria-label={`Xóa lịch sử xem《${row.series_title}》`} title="Chỉ xóa lịch sử xem, không xóa tệp video" onClick={() => remove(row)}>{removing === row.series_id ? 'Đang xóa…' : 'Xóa'}</button>
       </div>
       </div>
-      {!!row.sequels?.length && <div className="history-sequels"><span>Nghi là phần tiếp theo</span>{row.sequels.map(sequel => <button key={sequel.series_id} className="btn btn-outline btn-sm" disabled={!active || !!opening || !!removing} onClick={() => resume(row, sequel)}>{sequel.series_title}</button>)}</div>}
+      {!!row.sequels?.length && <div className="history-sequels"><span>Nghi là phần tiếp theo</span>{row.sequels.map(sequel => <button key={sequel.series_id} className="btn btn-outline btn-sm" disabled={!active || !!opening || !!removing} onClick={() => resume(row, sequel)}>{SafeDramaTitle ? <SafeDramaTitle title={sequel.series_title} as="span" showOriginal={false}>{sequel.series_title}</SafeDramaTitle> : sequel.series_title}</button>)}</div>}
       {!!row.similarSeries?.length && <div className="history-sequels" title="Tên tương tự, chỉ để đối chiếu; không dùng để ẩn phần cũ hoặc gộp nhóm hàng loạt">
-        <span>Nghi cùng bộ phim (Chỉ gợi ý)</span>{row.similarSeries.map(candidate => <button key={candidate.series_id} className="btn btn-outline btn-sm" disabled={!active || !!opening || !!removing} onClick={() => resume(row, candidate)}>{candidate.series_title}</button>)}
-        {row.similarSeries.filter(candidate => rows.some(item => item.series_id === candidate.series_id)).map(candidate => <button key={`group:${candidate.series_id}`} className="btn btn-outline btn-sm" onClick={() => decide(candidate.series_id, row.series_id)}>Xác nhận《{candidate.series_title}》cùng bộ phim</button>)}
+        <span>Nghi cùng bộ phim (Chỉ gợi ý)</span>{row.similarSeries.map(candidate => <button key={candidate.series_id} className="btn btn-outline btn-sm" disabled={!active || !!opening || !!removing} onClick={() => resume(row, candidate)}>{SafeDramaTitle ? <SafeDramaTitle title={candidate.series_title} as="span" showOriginal={false}>{candidate.series_title}</SafeDramaTitle> : candidate.series_title}</button>)}
+        {row.similarSeries.filter(candidate => rows.some(item => item.series_id === candidate.series_id)).map(candidate => <button key={`group:${candidate.series_id}`} className="btn btn-outline btn-sm" onClick={() => decide(candidate.series_id, row.series_id)}>Xác nhận《{SafeDramaTitle ? <SafeDramaTitle title={candidate.series_title} as="span" showOriginal={false}>{candidate.series_title}</SafeDramaTitle> : candidate.series_title}》cùng bộ phim</button>)}
       </div>}
       {row.lastEpisodeCheckError && <p className="history-check-error">Kiểm tra cập nhật tập chưa hoàn thành: {row.lastEpisodeCheckError}</p>}
       {row.lastSequelCheckError && <p className="history-check-error">Kiểm tra phần tiếp theo chưa hoàn thành: {row.lastSequelCheckError}</p>}

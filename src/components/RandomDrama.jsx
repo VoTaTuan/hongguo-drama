@@ -5,6 +5,7 @@ import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { loadRandomPool, pickRandomDrama, playRecommendedDrama } from './randomDramaModel.mjs';
 import { translateGenre } from './genreMap';
 import './RandomDrama.css';
+import { DramaTitle } from './TranslatedText';
 
 export function DramaPoster({ item, className = '' }) {
   const [failed, setFailed] = useState(false);
@@ -116,7 +117,7 @@ export default function RandomDrama({ active, refreshKey = 0, onNavigate }) {
       {selected && <div className="random-drama-result" aria-live="polite">
         <DramaPoster item={selected} />
         <div className="random-drama-result-copy"><p className="drama-source-label">{sourceLabel(selected.source)} · Quay ngẫu nhiên</p>
-          <h3>{selected.series_title}</h3>
+          <DramaTitle title={selected.series_title} as="h3" showOriginal={true}>{selected.series_title}</DramaTitle>
           {selected.episode_count > 0 && <p>Tổng {selected.episode_count} tập</p>}
           {selected.tags?.length > 0 && <p className="random-drama-tags">{selected.tags.map(translateGenre).join(' · ')}</p>}
           <div className="random-drama-actions">

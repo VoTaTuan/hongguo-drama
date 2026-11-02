@@ -2,6 +2,12 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import useDialogKeyboard from './useDialogKeyboard';
 import './DownloadManager.css';
 import { Download, Trash2, RefreshCw, X, Film, Square, Folder, Zap, CheckSquare, Play, Pause, Layers } from './icons';
+import { DownloadTaskTitle, DramaTitle } from './TranslatedText';
+import { getCachedTranslation } from '../services/translator';
+
+const TaskTitleComponent = typeof DownloadTaskTitle === 'function' ? DownloadTaskTitle : ({ task, className }) => <div className={className}>{task?.title || task?.filename}</div>;
+const DramaTitleComponent = typeof DramaTitle === 'function' ? DramaTitle : ({ children, title }) => <span>{title || children}</span>;
+const safeGetCachedTranslation = typeof getCachedTranslation === 'function' ? getCachedTranslation : () => null;
 
 const STATUS_TEXT = {
   pending: 'Đang chờ',
@@ -548,11 +554,14 @@ function DownloadManager({ onNavigate, active = true }) {
               onChange={(e) => setMergeSeriesId(e.target.value)}
               title="Chọn phim ngắn cần ghép"
             >
-              {seriesList.map((s) => (
-                <option key={s.series_id} value={String(s.series_id)}>
-                  {s.series_title}
-                </option>
-              ))}
+              {seriesList.map((s) => {
+                const vi = safeGetCachedTranslation(s.series_title);
+                return (
+                  <option key={s.series_id} value={String(s.series_id)}>
+                    {vi && vi !== s.series_title ? `${vi} (${s.series_title})` : s.series_title}
+                  </option>
+                );
+              })}
             </select>
             <button className="btn btn-outline" onClick={openMergeDialog} disabled={merging} title="Ghép các tập đã tải của phim này thành một tệp mp4 duy nhất">
               <Layers size={15} />
@@ -578,7 +587,7 @@ function DownloadManager({ onNavigate, active = true }) {
               <Layers size={16} />
               <div className="merge-body">
                 <div className="merge-title">
-                  Ghép《{m.seriesTitle}》· {m.done || 0}/{m.total} tập
+                  Ghép《<DramaTitleComponent title={m.seriesTitle}>{m.seriesTitle}</DramaTitleComponent>》· {m.done || 0}/{m.total} tập
                 </div>
                 <div className="merge-sub">
                   {m.status === 'running' && <>{m.stageText || 'Đang ghép'}{m.method && m.method !== m.stageText ? ` · ${m.method}` : ''}</>}
@@ -706,7 +715,7 @@ function DownloadManager({ onNavigate, active = true }) {
                   )}
                 </div>
                 <div className="dm-task-body">
-                  <div className="dm-task-title">{task.title || task.filename}</div>
+                  <TaskTitleComponent task={task} className="dm-task-title" />
                   <div className="dm-task-meta">
                     <span className={`status-tag status-${waitingRetry ? 'pending' : task.status}`}>{waitingRetry ? 'Chờ thử lại' : STATUS_TEXT[task.status] || task.status}</span>
                     {waitingRetry && <span className="dm-size">Tự động thử lại {task.sourceRetries}/3 · Xếp hàng sau {new Date(task.retryAt).toLocaleTimeString('vi-VN', { hour12: false })}</span>}
