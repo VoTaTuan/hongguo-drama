@@ -27,6 +27,72 @@
   gap: 10px;
 }
 
+.dm-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+.dm-subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dm-subtab-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-hover, var(--border-color));
+}
+
+.dm-subtab-btn.active {
+  color: #fff;
+  background: var(--primary-color, #e53e3e);
+  border-color: var(--primary-color, #e53e3e);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.25);
+}
+
+.dm-subtab-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.15);
+  color: inherit;
+}
+
+.dm-subtab-btn.active .dm-subtab-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.dm-merge-control-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.dm-merge-control-box h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
 .stat {
   padding: 3px 8px;
   border-radius: 5px;
@@ -471,3 +537,442 @@
 
 .dm-selection-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .dm-merge-hint { margin-top: 12px; }
+
+/* Clickable stats & active filter */
+.stat.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.stat.clickable:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+.stat.active-filter {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  font-weight: 700;
+}
+
+/* Filter tabs */
+.dm-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0 16px;
+}
+.dm-filter-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.dm-filter-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-hover, var(--border));
+}
+.dm-filter-tab.active {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Status notices */
+.dm-status-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  font-size: 13.5px;
+  animation: fadeIn 0.3s ease;
+}
+.dm-status-notice-warning {
+  background: rgba(234, 88, 12, 0.12);
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  color: #ea580c;
+}
+[data-theme="dark"] .dm-status-notice-warning {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.4);
+  color: #fb923c;
+}
+.dm-status-notice-info {
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #0284c7;
+}
+[data-theme="dark"] .dm-status-notice-info {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+.dm-notice-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.dm-notice-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   SYSTEM DASHBOARD & VIEW TOGGLES (V5.5+)
+   ========================================================================== */
+
+.dm-system-dashboard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg, 12px);
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  flex-wrap: wrap;
+}
+
+.dm-dash-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dm-dash-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset, rgba(0, 0, 0, 0.04));
+  color: var(--accent, #e53e3e);
+  flex-shrink: 0;
+}
+
+.dm-dash-icon.pulse {
+  background: rgba(229, 62, 62, 0.12);
+  animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.dm-dash-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.dm-dash-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.dm-dash-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dm-dash-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.dm-view-toggle {
+  display: inline-flex;
+  background: var(--bg-inset, rgba(0, 0, 0, 0.06));
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.dm-view-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dm-view-btn:hover {
+  color: var(--text-primary);
+}
+
+.dm-view-btn.active {
+  background: var(--bg-card, #fff);
+  color: var(--accent, #e53e3e);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================================================
+   SERIES CARD VIEW (GOM NHÓM THEO BỘ PHIM)
+   ========================================================================== */
+
+.dm-series-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dm-series-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: var(--shadow-sm, 0 2px 6px rgba(0, 0, 0, 0.04));
+}
+
+.dm-series-card:hover {
+  border-color: var(--border-hover, rgba(229, 62, 62, 0.3));
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
+}
+
+.dm-series-card.is-complete {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.dm-series-header {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(to right, var(--bg-card), var(--bg-inset));
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dm-series-cover-wrapper {
+  position: relative;
+  width: 90px;
+  height: 125px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-inset);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dm-series-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.dm-series-card:hover .dm-series-cover {
+  transform: scale(1.04);
+}
+
+.dm-series-done-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #16a34a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dm-series-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.dm-series-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dm-series-title-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dm-series-title {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dm-series-progress-box {
+  margin: 10px 0;
+}
+
+.dm-series-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12.5px;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.dm-series-ep-count {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dm-series-progress-pct {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--accent, #e53e3e);
+}
+
+.dm-series-progress-bar {
+  height: 7px;
+  background: var(--bg-inset, rgba(0, 0, 0, 0.08));
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dm-series-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e53e3e, #f87171);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.dm-series-progress-fill.fill-done {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+}
+
+.dm-series-progress-sub {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--text-tertiary, var(--text-secondary));
+  margin-top: 4px;
+}
+
+.dm-series-live-speed {
+  color: #0284c7;
+  font-weight: 600;
+}
+
+.dm-series-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.dm-series-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dm-badge-pill {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  background: var(--bg-inset);
+  color: var(--text-secondary);
+}
+
+.dm-badge-pill.active {
+  background: rgba(2, 132, 199, 0.12);
+  color: #0284c7;
+}
+
+.dm-badge-pill.stopped {
+  background: rgba(234, 88, 12, 0.12);
+  color: #ea580c;
+}
+
+.dm-series-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dm-series-episodes-list {
+  background: var(--bg-body, var(--bg-inset));
+  border-top: 1px solid var(--border-color);
+  padding: 10px 14px 14px;
+  animation: fadeIn 0.25s ease;
+}
+
+.dm-series-episodes-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px dashed var(--border-color);
+  margin-bottom: 10px;
+}
+
+.dm-series-episodes-hint {
+  font-size: 11px;
+  color: var(--text-tertiary, #888);
+  font-weight: normal;
+}
+
+.dm-series-episodes-list .dm-task {
+  margin-bottom: 6px;
+  background: var(--bg-card);
+}
+
+.btn-collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: var(--accent, #e53e3e);
+}
+
+.btn-collapse-toggle:hover {
+  background: rgba(229, 62, 62, 0.08);
+}
+

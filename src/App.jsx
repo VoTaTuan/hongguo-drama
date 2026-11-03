@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { Film, Download, Settings, Play, Home, Search, Clock, User } from './components/icons';
+import { Film, Download, Settings, Play, Home, Search, Clock, User, Key, Shield } from './components/icons';
 import HongguoDownload from './components/HongguoDownload';
 import DownloadManager from './components/DownloadManager';
 import SettingsPage from './components/Settings';
@@ -15,6 +15,7 @@ import AnnouncementNotice from './components/AnnouncementNotice';
 import DramaFeed from './components/DramaFeed';
 import ReleaseCalendar from './components/ReleaseCalendar';
 import AccountManagement from './components/AccountManagement';
+import LicenseAuthModal from './components/LicenseAuthModal';
 
 const MENU = [
   { id: 'browse', label: 'Khám phá phim', icon: Home },
@@ -55,6 +56,29 @@ export default function App() {
     // Giữ timestamp lệnh để tránh lặp khởi tạo; khi mount lại chỉ khôi phục theo điểm dừng mới nhất của series hiện tại.
     setPlayerTarget(target => ({ seriesId, resume: true, autoplay: false, ts: target?.ts }));
   }, []);
+
+  // Trạng thái bản quyền V2.1.0
+  const [licenseInfo, setLicenseInfo] = useState(null);
+  const [licenseChecked, setLicenseChecked] = useState(false);
+  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
+
+  const refreshLicense = useCallback(() => {
+    if (window.electronAPI?.getLicenseInfo) {
+      window.electronAPI.getLicenseInfo().then((info) => {
+        setLicenseInfo(info);
+        setLicenseChecked(true);
+      }).catch(() => setLicenseChecked(true));
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshLicense();
+    if (window.electronAPI?.onLicenseStatusChanged) {
+      return window.electronAPI.onLicenseStatusChanged(() => {
+        refreshLicense();
+      });
+    }
+  }, [refreshLicense]);
 
   useEffect(() => {
     window.electronAPI.getWindowLayout?.().then(setLayout);
@@ -200,6 +224,16 @@ export default function App() {
               }}>{actionsHidden || borderless && layout === 'portrait' ? 'Hiện nút' : 'Ẩn nút'}</button>}
             {page === 'player' && layout === 'portrait' && <button className="btn btn-outline btn-sm borderless-toggle" aria-pressed={borderless}
               onClick={() => setBorderless(value => !value)}>{borderless ? 'Hiện viền' : 'Ẩn viền'}</button>}
+            {/* Nút Bản Quyền V2.1.0 */}
+            <button
+              className={`btn btn-sm ${licenseInfo?.is_active ? 'btn-outline' : 'btn-primary'}`}
+              style={!licenseInfo?.is_active ? { background: 'linear-gradient(135deg, #e53e3e, #f59e0b)', border: 'none', color: '#fff', fontWeight: 'bold' } : {}}
+              onClick={() => setLicenseModalOpen(true)}
+              title={licenseInfo?.is_active ? `Bản quyền: ${licenseInfo.features || 'Hợp lệ'} (HSD: ${licenseInfo.expiresAt || 'Vĩnh viễn'})` : 'Chưa kích hoạt bản quyền - Nhấn để nhập key'}
+            >
+              <Key size={14} />
+              <span>{licenseInfo?.is_active ? 'Bản quyền' : 'Kích hoạt'}</span>
+            </button>
             <button className="btn btn-outline btn-sm pin-toggle" aria-pressed={alwaysOnTop} disabled={pinBusy}
               aria-label={alwaysOnTop ? 'Bỏ ghim' : 'Ghim trên cùng'} title={alwaysOnTop ? 'Bỏ ghim' : 'Ghim trên cùng'}
               onClick={async () => {
@@ -232,6 +266,17 @@ export default function App() {
         {stealthError && <div className="app-storage-error" role="alert">{stealthError}</div>}
         {storageError && <div className="app-storage-error" role="alert"><span>{storageError}</span><button className="btn btn-outline btn-sm" onClick={() => setStorageError('')}>Đóng thông báo</button></div>}
         {visited.map((id) => <main className="main-content" data-page={id} hidden={page !== id} key={id}>{renderPage(id)}</main>)}
+
+        {/* Modal Quản lý Bản Quyền V2.1.0 */}
+        <LicenseAuthModal
+          isOpen={licenseModalOpen || (!licenseInfo?.is_active && licenseChecked)}
+          canClose={!!licenseInfo?.is_active}
+          onClose={() => setLicenseModalOpen(false)}
+          onSuccess={() => {
+            refreshLicense();
+            setLicenseModalOpen(false);
+          }}
+        />
       </div>
     </div>
   );

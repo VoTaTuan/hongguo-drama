@@ -243,6 +243,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   pauseAll: () => ipcRenderer.invoke('pause-all'),
   resumeAll: () => ipcRenderer.invoke('resume-all'),
   getQueueStatus: () => ipcRenderer.invoke('get-queue-status'),
+  getDownloadSystemStats: () => ipcRenderer.invoke('get-download-system-stats'),
+  cleanDownloadTempFiles: () => ipcRenderer.invoke('clean-download-temp-files'),
 
   // Dịch thuật AI & Google Dịch (chạy trong Main process tránh CORS)
   translateText: (text, config) => ipcRenderer.invoke('translate-text', text, config),
@@ -278,4 +280,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('download-queue-changed', listener);
     return () => ipcRenderer.removeListener('download-queue-changed', listener);
   },
+
+  // Quản lý Bản quyền & Tài khoản V2.1.0 (HD)
+  getLicenseInfo: () => ipcRenderer.invoke('license-get-info'),
+  validateLicenseKey: (key) => ipcRenderer.invoke('license-validate-key', key),
+  loginLicenseAccount: (user, pass) => ipcRenderer.invoke('license-login-account', user, pass),
+  registerLicenseAccount: (data) => ipcRenderer.invoke('license-register-account', data),
+  claimLicenseTrial: (username) => ipcRenderer.invoke('license-claim-trial', username),
+  forgotLicensePassword: (data) => ipcRenderer.invoke('license-forgot-password', data),
+  verifyLicenseOtp: (token) => ipcRenderer.invoke('license-verify-otp', token),
+  resetLicensePassword: (data) => ipcRenderer.invoke('license-reset-password', data),
+  logoutLicense: () => ipcRenderer.invoke('license-logout'),
+  onLicenseStatusChanged: (cb) => {
+    const listener = (_e, data) => cb(data);
+    ipcRenderer.on('license-status-changed', listener);
+    return () => ipcRenderer.removeListener('license-status-changed', listener);
+  },
 });
+

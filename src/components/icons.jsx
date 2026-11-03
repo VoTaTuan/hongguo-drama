@@ -165,6 +165,12 @@ export const ChevronDown = (p) => (
   </svg>
 );
 
+export const ChevronUp = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <polyline points="18 15 12 9 6 15" />
+  </svg>
+);
+
 export const ExternalLink = (p) => (
   <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -390,3 +396,12 @@ export const Square = (p) => (
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
   </svg>
 );
+
+export const Key = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <path d="m21 2-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1.5-1.5L8 9" />
+    <circle cx="7.5" cy="15.5" r="5.5" />
+  </svg>
+);
+
+

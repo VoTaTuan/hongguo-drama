@@ -388,7 +388,8 @@ async function fetchAppPlayUrl(vid, options = {}) {
                 catch (_) { /* Keep the previously registered identity for the alternate route. */ }
             }
             if (deadline - Date.now() < 500) throw error;
-            await new Promise(resolve => setTimeout(resolve, 300));
+            const waitMs = Math.min(600, Math.max(300, deadline - Date.now() - 500));
+            await new Promise(resolve => setTimeout(resolve, waitMs));
         }
     }
     if (Number(response.Code || response.code || 0) !== 0) throw Object.assign(new Error('Giao diện App tạm thời chưa cung cấp thông tin phát tập này'), { code: 'BUSINESS_REJECTED' });

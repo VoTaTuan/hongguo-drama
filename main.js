@@ -58,6 +58,8 @@ const { createAnnouncementService } = require('./src/native/app-announcements');
 const { fetchPublicDetails } = require('./src/native/public-details');
 const { fetchEpisodeComments } = require('./src/native/episode-comments');
 const { fetchDanmaku, setDeviceIdentityFile } = require('./src/native/danmaku');
+const LicenseManager = require('./src/native/license-manager');
+const licenseManager = new LicenseManager();
 const { exportSeriesText } = require('./src/native/text-export');
 const { prepareNasExport, inspectNasEpisode, copyNasEpisode, nasEpisodeFilename, checkNasDirectory } = require('./src/native/nas-export');
 const mediaAccess = require('./src/native/media-access').createMediaAccess(process.env.VITE_DEV_SERVER_URL);
@@ -231,6 +233,7 @@ function getDefaultSettings() {
     // Mẫu đặt tên tệp: Các biến khả dụng series_title (Tên phim), vid_index (Tập), ep_title (Tiêu đề)
     name_format: 'series_title vid_index',
     max_concurrent: 3,
+    download_resolve_interval: 500,
     ui_zoom: 1,
     download_quality: 'auto',
     custom_sources: [],
@@ -496,7 +499,9 @@ function getCurrentSettings() {
   // Đảm bảo số tác vụ đồng thời hợp lệ
   const mc = parseInt(merged.max_concurrent, 10);
   MAX_CONCURRENT_DOWNLOADS = Number.isInteger(mc) && mc >= 1 && mc <= 10 ? mc : 3;
-  return normalizeProxySettings({ ...merged, max_concurrent: MAX_CONCURRENT_DOWNLOADS });
+  const interval = parseInt(merged.download_resolve_interval, 10);
+  const resolveInterval = Number.isInteger(interval) && interval >= 0 && interval <= 5000 ? interval : 500;
+  return normalizeProxySettings({ ...merged, max_concurrent: MAX_CONCURRENT_DOWNLOADS, download_resolve_interval: resolveInterval });
 }
 
 // Làm sạch tên thư mục/tệp (loại bỏ ký tự không hợp lệ, dấu chấm và khoảng trắng ở cuối, tên dành riêng của Windows)
@@ -1042,7 +1047,7 @@ async function executeHongguoDownload(task) {
         cached.lastUsed = Date.now();
       }
     }
-    if (!reusedCache) await withMediaRecovery(vid, hongguoInfo?.series_id, { playInfo: checkedPlayInfo, quality, allowLowerQuality, force: true, cancelToken: source.token }, async playInfo => {
+    if (!reusedCache) await withMediaRecovery(vid, hongguoInfo?.series_id, { playInfo: checkedPlayInfo, quality, allowLowerQuality, force: true, cancelToken: source.token, forDownload: true }, async playInfo => {
       source.token.throwIfRequested();
       notifyQuality(Math.min(Number(playInfo.width), Number(playInfo.height)));
       task.progress = 0; task.receivedBytes = 0; task.totalBytes = 0;
@@ -1800,7 +1805,26 @@ ipcMain.handle('search-series-more', async (event, keyword, options = {}) => {
 });
 
 ipcMain.handle('find-series-sequels', async (_event, seriesId, options = {}) => {
-  const entry = seriesRegistry.find(item => String(item.series_id) === String(seriesId));
+  let entry = seriesRegistry.find(item => String(item.series_id) === String(seriesId));
+  if (!entry) {
+    const title = options?.series_title || options?.title;
+    if (title && String(seriesId)) {
+      entry = {
+        series_id: String(seriesId),
+        series_title: String(title),
+        cover: options?.cover || '',
+        episodes: []
+      };
+    } else if (String(seriesId) && /^\d{6,30}$/.test(String(seriesId))) {
+      try {
+        const data = await hongguo.fetchEpisodeList(String(seriesId));
+        if (data && data.series_id) {
+          upsertSeriesRegistry(data);
+          entry = seriesRegistry.find(item => String(item.series_id) === String(seriesId));
+        }
+      } catch (_) {}
+    }
+  }
   if (!entry) return { success: false, results: [], error: 'Không tìm thấy hồ sơ phim này, vui lòng mở chi tiết phim trước.' };
   const deadline = Date.now() + 22000;
   return seriesSearch.findSeriesSequels(entry, seriesRegistry.filter(item => !item.forgotten),
@@ -2678,6 +2702,52 @@ function awaitMediaOperation(promise, signal, timeout = 0) {
   });
 }
 
+let activeResolvePromise = null;
+let lastDownloadResolveAt = 0;
+
+function throttleDownloadResolve(action, signal) {
+  if (signal?.aborted) return Promise.reject(Object.assign(new Error('Đã hủy yêu cầu media'), { code: 'ERR_CANCELED' }));
+  const interval = getCurrentSettings().download_resolve_interval;
+  const isIdle = !activeResolvePromise && (!Number.isInteger(interval) || interval <= 0 || Date.now() - lastDownloadResolveAt >= interval);
+  if (isIdle) {
+    let promise;
+    try {
+      const callResult = action();
+      promise = Promise.resolve(callResult).finally(() => {
+        lastDownloadResolveAt = Date.now();
+        if (activeResolvePromise === promise) activeResolvePromise = null;
+      });
+      activeResolvePromise = promise;
+      return promise;
+    } catch (error) {
+      lastDownloadResolveAt = Date.now();
+      return Promise.reject(error);
+    }
+  }
+  const run = async () => {
+    if (signal?.aborted) throw Object.assign(new Error('Đã hủy yêu cầu media'), { code: 'ERR_CANCELED' });
+    const currentInterval = getCurrentSettings().download_resolve_interval;
+    if (Number.isInteger(currentInterval) && currentInterval > 0) {
+      const elapsed = Date.now() - lastDownloadResolveAt;
+      if (elapsed < currentInterval) {
+        await new Promise(resolve => setTimeout(resolve, currentInterval - elapsed));
+      }
+    }
+    if (signal?.aborted) throw Object.assign(new Error('Đã hủy yêu cầu media'), { code: 'ERR_CANCELED' });
+    try {
+      return await action();
+    } finally {
+      lastDownloadResolveAt = Date.now();
+    }
+  };
+  const waiter = (activeResolvePromise || Promise.resolve()).then(run, run);
+  const chained = waiter.finally(() => {
+    if (activeResolvePromise === chained) activeResolvePromise = null;
+  });
+  activeResolvePromise = chained.catch(() => {});
+  return waiter;
+}
+
 /** Retry the complete operation so a broken body never counts as a successful download. */
 async function withMediaRecovery(vid, seriesId, options, consume) {
   const controller = new AbortController();
@@ -2699,14 +2769,17 @@ async function withMediaRecovery(vid, seriesId, options, consume) {
       cancelled();
       if (round) {
         let timer;
-        try { await awaitMediaOperation(new Promise(resolve => { timer = setTimeout(resolve, round * 500); }), controller.signal); }
+        const hasEmptyResponse = (lastError?.sources || []).some(s => s.code === 'EMPTY_RESPONSE');
+        const delay = hasEmptyResponse ? Math.max(round * 1500, 1500) : round * 500;
+        try { await awaitMediaOperation(new Promise(resolve => { timer = setTimeout(resolve, delay); }), controller.signal); }
         finally { clearTimeout(timer); }
       }
       cancelled();
       let info;
       try {
-        info = !round && options.playInfo || await awaitMediaOperation(hongguo.fetchPlayUrlSingle(vid, seriesId,
+        const resolveFn = () => awaitMediaOperation(hongguo.fetchPlayUrlSingle(vid, seriesId,
           { quality: options.quality, allowLowerQuality: options.allowLowerQuality, force: options.force || round > 0 }), controller.signal, 30000);
+        info = !round && options.playInfo || (options.forDownload ? await throttleDownloadResolve(resolveFn, controller.signal) : await resolveFn());
       } catch (error) {
         cancelled();
         if (!recoverable(error)) throw error;
@@ -4327,7 +4400,7 @@ ipcMain.handle('select-folder', async () => {
   return result.filePaths[0];
 });
 
-const SETTINGS_KEYS = ['root', 'name_format', 'max_concurrent', 'download_quality', 'export_text', 'auto_delete_watched', 'compat_mode', 'cache_next_episode', 'picture_in_picture_mode', 'show_danmaku_controls', 'app_updates_enabled', 'watch_updates_enabled', 'watch_sequels_enabled', 'watch_notifications_enabled', 'search_app_enabled', 'proxy_enabled', 'proxy_mode', 'proxy_host', 'proxy_port', 'proxy_username', 'proxy_password'];
+const SETTINGS_KEYS = ['root', 'name_format', 'max_concurrent', 'download_resolve_interval', 'download_quality', 'export_text', 'auto_delete_watched', 'compat_mode', 'cache_next_episode', 'picture_in_picture_mode', 'show_danmaku_controls', 'app_updates_enabled', 'watch_updates_enabled', 'watch_sequels_enabled', 'watch_notifications_enabled', 'search_app_enabled', 'proxy_enabled', 'proxy_mode', 'proxy_host', 'proxy_port', 'proxy_username', 'proxy_password'];
 
 function normalizeTextExportKinds(value) {
   return { danmaku: value?.danmaku === true, comments: value?.comments === true, reviews: value?.reviews === true };
@@ -4867,6 +4940,88 @@ ipcMain.handle('get-queue-status', async () => ({
   maxConcurrent: MAX_CONCURRENT_DOWNLOADS,
 }));
 
+ipcMain.handle('get-download-system-stats', async () => {
+  let totalSpeed = 0;
+  for (const task of downloadTasks) {
+    if (task.status === 'downloading' && Number.isFinite(task.speed) && task.speed > 0) {
+      totalSpeed += task.speed;
+    }
+  }
+  let freeBytes = null;
+  try {
+    const root = (getCurrentSettings().root && String(getCurrentSettings().root).trim()) || app.getPath('downloads');
+    if (fs.statfs) {
+      const stats = await fsp.statfs(root);
+      freeBytes = stats.bavail * stats.bsize;
+    }
+  } catch (_) {}
+  return {
+    totalSpeed,
+    activeDownloads,
+    queuedCount: downloadQueue.length,
+    freeBytes,
+  };
+});
+
+// --- HỆ THỐNG BẢN QUYỀN & TÀI KHOẢN V2.1.0 ---
+ipcMain.handle('license-get-info', async () => {
+  await licenseManager.fetchAuthConfig().catch(() => {});
+  return licenseManager.getLicenseInfo();
+});
+ipcMain.handle('license-validate-key', async (_event, key) => licenseManager.validate(key));
+ipcMain.handle('license-login-account', async (_event, user, pass) => licenseManager.authAccount(user, pass));
+ipcMain.handle('license-register-account', async (_event, payload) => {
+  const { username, email, phone, fullname, password } = payload || {};
+  return licenseManager.registerAccount(username, email, phone, fullname, password);
+});
+ipcMain.handle('license-claim-trial', async (_event, username) => licenseManager.claimTrial14Days(username));
+ipcMain.handle('license-forgot-password', async (_event, payload) => {
+  const { username, email } = payload || {};
+  return licenseManager.forgotPassword(username, email);
+});
+ipcMain.handle('license-verify-otp', async (_event, token) => licenseManager.verifyOtp(token));
+ipcMain.handle('license-reset-password', async (_event, payload) => {
+  const { token, newPassword } = payload || {};
+  return licenseManager.resetPassword(token, newPassword);
+});
+ipcMain.handle('license-logout', async () => licenseManager.logout());
+
+ipcMain.handle('clean-download-temp-files', async () => {
+  try {
+    const root = (getCurrentSettings().root && String(getCurrentSettings().root).trim()) || app.getPath('downloads');
+    if (!fs.existsSync(root)) return { success: true, count: 0, freed: 0 };
+    let freed = 0;
+    let count = 0;
+    const runningPaths = new Set(runningDownloadPaths);
+    async function scanAndClean(dir, depth = 0) {
+      if (depth > 2) return;
+      let entries = [];
+      try { entries = await fsp.readdir(dir, { withFileTypes: true }); } catch (_) { return; }
+      for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          await scanAndClean(full, depth + 1);
+        } else if (entry.isFile()) {
+          if (/\.(enc\.tmp|tmp|decoded)$/i.test(entry.name)) {
+            if (!runningPaths.has(full) && !runningPaths.has(full.replace(/\.(enc\.tmp|tmp|decoded)$/i, ''))) {
+              try {
+                const stat = await fsp.stat(full);
+                await fsp.unlink(full);
+                freed += stat.size;
+                count++;
+              } catch (_) {}
+            }
+          }
+        }
+      }
+    }
+    await scanAndClean(root);
+    return { success: true, count, freed };
+  } catch (error) {
+    return { success: false, error: error.message || 'Dọn dẹp tệp tạm thất bại' };
+  }
+});
+
 ipcMain.handle('open-folder', async (event, taskId) => {
   const task = downloadTasks.find((t) => t.id === taskId);
   if (!task) return { success: false, error: 'Tác vụ không tồn tại' };
@@ -5376,18 +5531,40 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
 
     bossKey.start();
 
+    // Tự động kiểm tra bản quyền ngầm khi khởi động
+    licenseManager.validateOnStartup().catch(() => {});
+    licenseManager.onStatusChange((event) => {
+      try {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('license-status-changed', event);
+        }
+      } catch (_) {}
+    });
+
     // Proxy phải có hiệu lực trước khi tạo cửa sổ và gửi bất kỳ yêu cầu nào
     startupStage = 'Khởi tạo mạng';
     const proxyStartup = await applyProxyForStartup(settings);
     proxyStartupFallback = proxyStartup.fallback;
     if (proxyStartup.fallback) console.warn('[Proxy] Proxy khởi động không khả dụng, tạm thời kết nối trực tiếp:', proxyStartup.reason);
     else {
-      // Sau khi khởi động tự động tiếp tục chạy các tác vụ "đang chờ" (hàng đợi chưa tải xong lần trước), không cần nhấn khởi động thủ công
-      // Automatic source retries scheduled before the app closed continue on the same schedule.
+      // Tự động khôi phục các tác vụ đang tải dở bị dừng khi đóng ứng dụng
+      let autoResumed = 0;
+      for (const task of downloadTasks) {
+        if (task.status === 'stopped' && (!task.error || task.error === 'Đã tạm dừng thủ công' || task.error === 'Tác vụ bị ngắt khi đóng ứng dụng')) {
+          repairTaskDestination(task);
+          task.status = 'pending';
+          task.cancelled = false;
+          delete task.error;
+          delete task.cancelSource;
+          delete task.writer;
+          if (!downloadQueue.some(t => t.id === task.id)) downloadQueue.push(task);
+          autoResumed++;
+        }
+      }
       for (const task of downloadTasks) if (task.status === 'failed' && task.retryAt) armSourceRetry(task);
       const resumed = enqueuePendingTasks();
-      if (resumed > 0) {
-        console.log(`[Queue] Khởi động tự động tiếp tục ${resumed} tác vụ đang chờ, đồng thời ${MAX_CONCURRENT_DOWNLOADS}`);
+      if (resumed > 0 || autoResumed > 0) {
+        console.log(`[Queue] Khởi động tự động tiếp tục ${resumed + autoResumed} tác vụ, đồng thời ${MAX_CONCURRENT_DOWNLOADS}`);
         pumpQueue();
       }
     }

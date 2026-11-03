@@ -1,0 +1,376 @@
+/* DramaHoverCard.css - Thẻ xem nhanh thông tin phim khi hover */
+
+.drama-hover-portal {
+  position: fixed;
+  z-index: 99999;
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  background: var(--bg-card, #232220);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  color: var(--text-primary, #f0eee9);
+  padding: 14px;
+  animation: dramaHoverFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+  user-select: text;
+}
+
+.drama-hover-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-tertiary, #8f8b82);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  transition: all 0.15s ease;
+  z-index: 2;
+}
+
+.drama-hover-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--text-primary, #f0eee9);
+}
+
+@keyframes dramaHoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.drama-hover-portal.is-dragging {
+  cursor: grabbing !important;
+  user-select: none !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+  transition: none !important;
+}
+
+.drama-hover-portal.is-pinned {
+  border-color: rgba(99, 179, 237, 0.35);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 179, 237, 0.2);
+}
+
+.drama-hover-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  margin: -10px -10px 10px -10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px 10px 0 0;
+  cursor: grab;
+  user-select: none;
+  font-size: 11px;
+  color: var(--text-tertiary, #8f8b82);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.drama-hover-drag-handle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary, #c7c3b9);
+}
+
+.drama-hover-drag-handle:active {
+  cursor: grabbing;
+}
+
+.drama-hover-drag-grip {
+  font-size: 13px;
+  letter-spacing: -1px;
+  opacity: 0.7;
+}
+
+.drama-hover-drag-tip {
+  font-size: 10.5px;
+  opacity: 0.8;
+}
+
+.drama-hover-pinned-tag {
+  font-size: 10px;
+  color: #63b3ed;
+  background: rgba(49, 130, 206, 0.18);
+  border: 1px solid rgba(49, 130, 206, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.drama-hover-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  cursor: grab;
+  user-select: none;
+}
+
+.drama-hover-header:active {
+  cursor: grabbing;
+}
+
+.drama-hover-cover {
+  width: 72px;
+  height: 96px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-inset, rgba(0, 0, 0, 0.2));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.drama-hover-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.drama-hover-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text-primary, #f0eee9);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.drama-hover-orig-title {
+  font-size: 11.5px;
+  color: var(--text-tertiary, #8f8b82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drama-hover-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.drama-hover-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--bg-inset, rgba(255, 255, 255, 0.08));
+  color: var(--text-secondary, #b5b1a7);
+}
+
+.drama-hover-badge.status-completed {
+  background: rgba(46, 160, 67, 0.18);
+  color: #3fb950;
+  border: 1px solid rgba(46, 160, 67, 0.3);
+}
+
+.drama-hover-badge.status-ongoing {
+  background: rgba(210, 153, 34, 0.18);
+  color: #e3b341;
+  border: 1px solid rgba(210, 153, 34, 0.3);
+}
+
+.drama-hover-badge.badge-heat {
+  color: #ff7b72;
+  background: rgba(255, 123, 114, 0.12);
+}
+
+.drama-hover-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.drama-hover-tag {
+  font-size: 11px;
+  color: var(--text-secondary, #b5b1a7);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.drama-hover-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary, #c7c3b9);
+  max-height: 80px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  scrollbar-width: thin;
+}
+
+.drama-hover-desc .drama-desc-wrap {
+  margin-top: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.drama-hover-desc .drama-desc-content {
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: var(--text-secondary, #c7c3b9);
+}
+
+.drama-hover-desc .drama-desc-actions {
+  margin-top: 4px;
+  gap: 6px;
+}
+
+.drama-hover-desc .drama-desc-toggle {
+  padding: 1px 6px;
+  font-size: 10.5px;
+}
+
+.drama-hover-desc.empty {
+  font-style: italic;
+  color: var(--text-tertiary, #8f8b82);
+}
+
+.drama-desc-loading {
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--text-tertiary, #8f8b82);
+}
+
+/* Phần tìm phần mới */
+.drama-hover-sequels {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.drama-hover-sequels-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent, #e53e3e);
+  margin-bottom: 6px;
+}
+
+.drama-hover-sequel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.drama-hover-sequel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--bg-inset, rgba(0, 0, 0, 0.2));
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.drama-hover-sequel-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drama-hover-sequel-btns {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.drama-hover-sequel-btns button {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+/* Action Buttons */
+.drama-hover-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.drama-hover-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  background: var(--bg-inset, rgba(255, 255, 255, 0.06));
+  color: var(--text-primary, #f0eee9);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.drama-hover-btn:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.12));
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.drama-hover-btn.btn-play {
+  background: var(--primary-color, #e53e3e);
+  border-color: var(--primary-color, #e53e3e);
+  color: #fff;
+  font-weight: 600;
+  flex: 1.2;
+}
+
+.drama-hover-btn.btn-play:hover {
+  background: #c53030;
+}
+
+.drama-hover-btn.active-favorite {
+  background: rgba(229, 62, 62, 0.16);
+  border-color: rgba(229, 62, 62, 0.4);
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.drama-hover-btn.active-followed {
+  background: rgba(49, 130, 206, 0.16);
+  border-color: rgba(49, 130, 206, 0.4);
+  color: #63b3ed;
+  font-weight: 600;
+}

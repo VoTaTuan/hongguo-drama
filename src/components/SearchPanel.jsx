@@ -8,6 +8,7 @@ import useMediaSources from './useMediaSources';
 import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { rankSearchResults } from './searchRanking.mjs';
 import { DramaTitle } from './TranslatedText';
+import DramaHoverCard from './DramaHoverCard';
 import { translateQueryToChinese, hasChinese } from '../services/translator';
 
 const SEARCH_SAFETY_TIMEOUT_MS = 25000;
@@ -40,6 +41,44 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
   const [moreError, setMoreError] = useState('');
   const moreRequest = useRef(null);
   const [pickingId, setPickingId] = useState('');
+  const [hoveredDrama, setHoveredDrama] = useState(null);
+  const hoverTimerRef = useRef(null);
+
+  const clearHoverTimer = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+  };
+
+  const handleCardMouseEnter = (e, item) => {
+    clearHoverTimer();
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (hoveredDrama && String(hoveredDrama.item?.series_id) === String(item?.series_id)) {
+      return;
+    }
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredDrama({ item, targetRect: rect });
+    }, 180);
+  };
+
+  const handleCardMouseLeave = () => {
+    clearHoverTimer();
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredDrama(null);
+    }, 2500);
+  };
+
+  const handlePopupMouseEnter = () => {
+    clearHoverTimer();
+  };
+
+  const handlePopupMouseLeave = () => {
+    clearHoverTimer();
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredDrama(null);
+    }, 2500);
+  };
   const cancelMore = () => {
     clearTimeout(moreRequest.current?.timer);
     moreRequest.current = null;
@@ -431,6 +470,8 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
                 key={`${item.source}:${item.series_id}`}
                 className={`search-card ${pickingId === item.series_id ? 'picking' : ''}`}
                 onClick={() => pickingId === '' && pick(item)}
+                onMouseEnter={(e) => handleCardMouseEnter(e, item)}
+                onMouseLeave={handleCardMouseLeave}
                 title={`Nhấn để xem và tải về: ${item.series_title}`}
               >
                 <div className="search-cover">
@@ -466,6 +507,39 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
             </div>
           )}
         </>
+      )}
+
+      {hoveredDrama && (
+        <DramaHoverCard
+          item={hoveredDrama.item}
+          targetRect={hoveredDrama.targetRect}
+          onClose={() => {
+            clearHoverTimer();
+            setHoveredDrama(null);
+          }}
+          onMouseEnter={handlePopupMouseEnter}
+          onMouseLeave={handlePopupMouseLeave}
+          onPlay={async (it) => {
+            clearHoverTimer();
+            try {
+              const res = await window.electronAPI.playSeries({ seriesId: it.series_id, vidIndex: 1 });
+              if (!res?.success) alert(res?.error || 'Mở trình phát thất bại');
+              setHoveredDrama(null);
+            } catch (e) {
+              alert('Mở trình phát thất bại: ' + e.message);
+            }
+          }}
+          onDownload={(it) => {
+            clearHoverTimer();
+            setHoveredDrama(null);
+            pick(it);
+          }}
+          onSelectSeries={(it) => {
+            clearHoverTimer();
+            setHoveredDrama(null);
+            pick(it);
+          }}
+        />
       )}
     </div>
   );

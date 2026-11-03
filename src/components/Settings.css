@@ -8,12 +8,58 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .settings-header h2 {
   font-size: 22px;
   font-weight: 700;
+}
+
+.settings-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.settings-subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.settings-subtab-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-hover, var(--border-color));
+}
+
+.settings-subtab-btn.active {
+  color: #fff;
+  background: var(--primary-color, #e53e3e);
+  border-color: var(--primary-color, #e53e3e);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.25);
+}
+
+.settings-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .settings-card {

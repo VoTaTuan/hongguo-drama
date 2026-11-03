@@ -29,4 +29,41 @@
 .release-empty p { margin-top: 12px; line-height: 1.8; color: var(--text-secondary); }
 .release-error { color: var(--danger); margin-top: 16px; line-height: 1.7; overflow-wrap: anywhere; }
 .release-error .btn { margin-top: 8px; }
+.release-title-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.release-tags {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.release-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.tag-favorite {
+  background: rgba(229, 62, 62, 0.12);
+  color: #e53e3e;
+}
+
+.tag-followed {
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+}
+
+.btn-followed-active {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #d97706 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  font-weight: 600;
+}
+
 @media (max-width: 650px) { .release-day { grid-template-columns: 42px minmax(0, 1fr); gap: 12px; } .release-row { flex-wrap: wrap; gap: 10px; } .release-row-actions { margin-left: auto; } }
+

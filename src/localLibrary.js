@@ -6,17 +6,18 @@ export const validPublishedAt = value => typeof value === 'number' && Number.isF
 export function readLocalLibrary() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    const items = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(items) || items.some(item => !item || typeof item.id !== 'string' || !item.id || typeof item.title !== 'string' || typeof item.favorite !== 'boolean' || (item.published_at !== null && !validPublishedAt(item.published_at)))) {
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed) || parsed.some(item => !item || typeof item.id !== 'string' || !item.id || typeof item.title !== 'string' || typeof item.favorite !== 'boolean' || (item.followed != null && typeof item.followed !== 'boolean') || (item.published_at !== null && !validPublishedAt(item.published_at)))) {
       throw new Error('Định dạng dữ liệu đã lưu không đúng');
     }
+    const items = parsed.map(item => ({ ...item, followed: typeof item.followed === 'boolean' ? item.followed : false }));
     return { items, error: '' };
   } catch (error) {
     return { items: [], error: `Không thể đọc dữ liệu yêu thích và lịch trên máy: ${error.message}. Dữ liệu gốc không thay đổi.` };
   }
 }
 
-export function saveLocalSeries({ id, title, published_at, favorite, cover }) {
+export function saveLocalSeries({ id, title, published_at, favorite, cover, followed }) {
   const current = readLocalLibrary();
   if (current.error) return current;
   const seriesId = String(id || '').trim();
@@ -27,12 +28,20 @@ export function saveLocalSeries({ id, title, published_at, favorite, cover }) {
     title: String(title).trim(),
     published_at: validPublishedAt(published_at) ? published_at : previous?.published_at ?? null,
     favorite: typeof favorite === 'boolean' ? favorite : previous?.favorite ?? false,
+    followed: typeof followed === 'boolean' ? followed : previous?.followed ?? false,
     cover: typeof cover === 'string' && /^https?:\/\//i.test(cover) ? cover : previous?.cover || '',
   };
   const items = [...current.items.filter(item => item.id !== seriesId), next];
   try {
-    // Persist public metadata and the local favorite flag, never reviews.
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(item => ({ id: item.id, title: item.title, published_at: item.published_at, favorite: item.favorite, cover: item.cover || '' }))));
+    // Persist public metadata and the local favorite / followed flags, never reviews.
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(item => ({
+      id: item.id,
+      title: item.title,
+      published_at: item.published_at,
+      favorite: item.favorite,
+      followed: item.followed ?? false,
+      cover: item.cover || '',
+    }))));
     window.dispatchEvent(new Event(CHANGE_EVENT));
     return { items, error: '' };
   } catch (error) {

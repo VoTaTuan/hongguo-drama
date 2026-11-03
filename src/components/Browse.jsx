@@ -8,6 +8,7 @@ import { isSubmitKey, parseEpisodeRange } from './episodeRange';
 import { rememberCatalogTitles } from '../searchHistory';
 import { translateGenre } from './genreMap';
 import { DramaTitle, DramaDescription } from './TranslatedText';
+import DramaHoverCard from './DramaHoverCard';
 import { getCachedTranslation, saveCustomOverride, removeCustomOverride, getTranslationConfig, translateText } from '../services/translator';
 
 const PAGE_CACHE_TTL_MS = 60_000;
@@ -79,6 +80,44 @@ function Browse({ onNavigate, active = true }) {
   const [rangeError, setRangeError] = useState('');
   const [selectedIdx, setSelectedIdx] = useState(new Set());
   const [submitting, setSubmitting] = useState(false);
+  const [hoveredDrama, setHoveredDrama] = useState(null);
+  const hoverTimerRef = useRef(null);
+
+  const clearHoverTimer = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+  };
+
+  const handleCardMouseEnter = (e, item) => {
+    clearHoverTimer();
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (hoveredDrama && String(hoveredDrama.item?.series_id) === String(item?.series_id)) {
+      return;
+    }
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredDrama({ item, targetRect: rect });
+    }, 180);
+  };
+
+  const handleCardMouseLeave = () => {
+    clearHoverTimer();
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredDrama(null);
+    }, 2500);
+  };
+
+  const handlePopupMouseEnter = () => {
+    clearHoverTimer();
+  };
+
+  const handlePopupMouseLeave = () => {
+    clearHoverTimer();
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredDrama(null);
+    }, 2500);
+  };
   const detailRequest = useRef(0);
   const listRequest = useRef(0);
   const loadingRequest = useRef(0);
@@ -745,6 +784,8 @@ function Browse({ onNavigate, active = true }) {
                 key={item.series_id}
                 className="browse-card"
                 onClick={() => openSeries(item)}
+                onMouseEnter={(e) => handleCardMouseEnter(e, item)}
+                onMouseLeave={handleCardMouseLeave}
                 title={item.series_title}
               >
                 <div className="browse-cover">
@@ -1052,6 +1093,39 @@ function Browse({ onNavigate, active = true }) {
         <div className={`dm-toast dm-toast-${toast.type}`} onClick={() => setToast(null)}>
           {toast.text}
         </div>
+      )}
+
+      {hoveredDrama && (
+        <DramaHoverCard
+          item={hoveredDrama.item}
+          targetRect={hoveredDrama.targetRect}
+          onClose={() => {
+            clearHoverTimer();
+            setHoveredDrama(null);
+          }}
+          onMouseEnter={handlePopupMouseEnter}
+          onMouseLeave={handlePopupMouseLeave}
+          onPlay={async (it) => {
+            clearHoverTimer();
+            try {
+              const res = await window.electronAPI.playSeries({ seriesId: it.series_id, vidIndex: 1 });
+              if (!res?.success) showToast(res?.error || 'Mở trình phát thất bại', 'error');
+              setHoveredDrama(null);
+            } catch (e) {
+              showToast('Mở trình phát thất bại: ' + e.message, 'error');
+            }
+          }}
+          onDownload={(it) => {
+            clearHoverTimer();
+            setHoveredDrama(null);
+            openSeries(it);
+          }}
+          onSelectSeries={(it) => {
+            clearHoverTimer();
+            setHoveredDrama(null);
+            openSeries(it);
+          }}
+        />
       )}
     </div>
   );
