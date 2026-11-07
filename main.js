@@ -637,9 +637,6 @@ function restoreQueueTasks(snapshot) {
     Object.assign(task, previous);
   }
   downloadQueue = snapshot.previousQueue;
-  for (const { task } of snapshot.snapshots) {
-    if (task.status === 'failed' && task.retryAt) armSourceRetry(task);
-  }
   sendToRenderer('download-queue-changed', {});
 }
 
@@ -720,6 +717,7 @@ async function runTask(task) {
   } finally {
     activeDownloads--;
     runningDownloads.delete(task.id);
+    speedLastBytes.delete(task.id);
     runningDownloadPaths.delete(destination);
     downloadRuns.delete(task.id);
     pumpQueue();
@@ -731,69 +729,19 @@ function processDownloadQueue() {
   pumpQueue();
 }
 
-/** Đưa các tác vụ đang chờ trở lại hàng đợi (dùng khi khởi động tự động tiếp tục / một chạm bắt đầu) */
-function enqueuePendingTasks() {
-  const pending = downloadTasks.filter(
-    (t) => t.status === 'pending' && !downloadQueue.some((q) => q.id === t.id)
-  );
-  for (const t of pending) downloadQueue.push(t);
-  return pending.length;
-}
-
-// Give temporary source/transport failures a bounded recovery window.
-const SOURCE_RETRY_DELAYS = [3, 8, 15].map(minutes => minutes * 60000);
-const TRANSFER_RETRY_DELAYS = [10, 30, 60].map(seconds => seconds * 1000);
-const sourceRetryTimers = new Map();
-
+/** Lỗi nguồn có thể là tạm thời; chỉ dùng để chọn thông báo và làm mới nguồn phát, không bao giờ để tự tải lại. */
 function sourceFailureIsTransient(error) {
   const sources = Array.isArray(error?.sources) ? error.sources : [];
   return sources.some(item =>
     (item.source === 'web' && /^HTTP_(?:404|410)$/.test(item.code))
-    || /^(?:TIMEOUT|NETWORK_ERROR|HTTP_(?:408|5\d\d))$/.test(item.code));
+    || /^(?:TIMEOUT|NETWORK_ERROR|HTTP_(?:408|5dd))$/.test(item.code));
 }
 
-function isDeferrableSourceError(task, error) {
-  if (!/^\d{1,30}$/.test(String(task.hongguoInfo?.vid || ''))) return false;
-  if (error?.code === 'EMPTY_RESPONSE') return false;
-  if (error?.code === 'SOURCE_UNAVAILABLE') {
-    const sources = Array.isArray(error.sources) ? error.sources : [];
-    return !sources.some(item => item.code === 'SECURITY_BLOCKED') && sourceFailureIsTransient(error);
-  }
-  if (error?.mediaStatus === 408 || error?.mediaStatus >= 500 && error?.mediaStatus <= 599) return true;
-  if (['ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'EPIPE', 'ERR_BAD_RESPONSE', 'ERR_STREAM_PREMATURE_CLOSE', 'EAI_AGAIN',
-    'ENOTFOUND', 'ENETUNREACH', 'EHOSTUNREACH', 'ECONNREFUSED', 'ERR_NETWORK', 'MEDIA_TRANSFER_ERROR'].includes(error?.code)) return true;
-  return [404, 410].includes(error?.mediaStatus) && normalizeDownloadQuality(task.downloadQuality) === 'auto';
-}
+// QUY TẮC: Không bao giờ tự tải. Mọi lượt tải, tiếp tục hoặc thử lại chỉ bắt đầu khi người dùng bấm.
+// Khởi động lại ứng dụng, lỗi mạng hoặc lỗi nguồn không được phép tự đưa tác vụ vào hàng đợi.
 
-function armSourceRetry(task) {
-  clearTimeout(sourceRetryTimers.get(task.id));
-  const at = task.retryAt;
-  sourceRetryTimers.set(task.id, setTimeout(() => {
-    sourceRetryTimers.delete(task.id);
-    if (task.status !== 'failed' || task.retryAt !== at || !downloadTasks.includes(task)) return;
-    repairTaskDestination(task);
-    // Keep the plan durable while waiting for a free download slot.
-    task.status = 'pending'; task.progress = 0; task.receivedBytes = 0; task.totalBytes = 0; task.cancelled = false;
-    delete task.error;
-    if (!downloadQueue.some((t) => t.id === task.id)) downloadQueue.push(task);
-    try { saveDownloadTasks(); }
-    catch (error) {
-      // store reports storage-error; keep the plan for manual retry or the next launch.
-      task.status = 'failed'; task.error = storageError?.error || error.message;
-      delete task.retryAt;
-      downloadQueue = downloadQueue.filter(t => t.id !== task.id);
-      sendToRenderer('download-queue-changed', {});
-      return;
-    }
-    sendToRenderer('download-queue-changed', {});
-    pumpQueue();
-  }, Math.max(1000, at - Date.now())));
-}
-
-/** Manual retry, pause and resume take over from any scheduled automatic retry. */
+/** Dọn dấu vết lịch tự thử lại còn sót trong dữ liệu cũ; hiện không còn tự thử lại. */
 function clearSourceRetry(task) {
-  clearTimeout(sourceRetryTimers.get(task.id));
-  sourceRetryTimers.delete(task.id);
   delete task.retryAt;
   delete task.sourceRetries;
 }
@@ -801,7 +749,7 @@ function clearSourceRetry(task) {
 function cancelScheduledRetries(tasks) {
   let changed = false;
   for (const task of tasks) {
-    if (task.status !== 'failed' || (!task.retryAt && !sourceRetryTimers.has(task.id))) continue;
+    if (task.status !== 'failed' || !task.retryAt) continue;
     clearSourceRetry(task);
     const reason = String(task.error || '').replace(/(?: 将在 .*后自动重试（\d+\/\d+）。| sẽ tự động thử lại sau .* \(\d+\/\d+\)\.)$/, '');
     task.error = `${reason ? reason + '; ' : ''}Đã hủy tự động thử lại, vui lòng thử lại thủ công`;
@@ -882,6 +830,23 @@ function resumeAllTasks() {
 }
 
 // ===== Phân phối tải xuống =====
+/** Thông lượng tải thời gian thực (B/s): tổng byte nhận được của mọi tập trong 2 giây gần nhất; chỉ lưu trong bộ nhớ. */
+const SPEED_WINDOW_MS = 2000;
+let speedSamples = [];
+const speedLastBytes = new Map();
+function trackDownloadSpeed(task, received) {
+  const now = Date.now();
+  const last = speedLastBytes.get(task.id) || 0;
+  if (received > last) speedSamples.push({ t: now, n: received - last });
+  speedLastBytes.set(task.id, received);
+  while (speedSamples.length && now - speedSamples[0].t > SPEED_WINDOW_MS) speedSamples.shift();
+}
+function currentTotalSpeed() {
+  const cutoff = Date.now() - SPEED_WINDOW_MS;
+  speedSamples = speedSamples.filter(s => s.t >= cutoff);
+  return speedSamples.reduce((sum, s) => sum + s.n, 0) * 1000 / SPEED_WINDOW_MS;
+}
+
 async function executeDownload(task) {
   if (task.type === 'hongguo') {
     await executeHongguoDownload(task);
@@ -1050,10 +1015,10 @@ async function executeHongguoDownload(task) {
     if (!reusedCache) await withMediaRecovery(vid, hongguoInfo?.series_id, { playInfo: checkedPlayInfo, quality, allowLowerQuality, force: true, cancelToken: source.token, forDownload: true }, async playInfo => {
       source.token.throwIfRequested();
       notifyQuality(Math.min(Number(playInfo.width), Number(playInfo.height)));
-      task.progress = 0; task.receivedBytes = 0; task.totalBytes = 0;
+      task.progress = 0; task.receivedBytes = 0; task.totalBytes = 0; speedLastBytes.delete(id);
       sendToRenderer('download-progress', { id, progress: 0, receivedBytes: 0, totalBytes: 0 });
       if (playInfo.format === 'hls') {
-        await prepareHlsFile(playInfo,tmpPath,{cancelToken:source.token,onProgress:received => { task.receivedBytes = received; sendToRenderer('download-progress',{id,progress:0,receivedBytes:received,totalBytes:0}); }});
+        await prepareHlsFile(playInfo,tmpPath,{cancelToken:source.token,onProgress:received => { task.receivedBytes = received; trackDownloadSpeed(task, received); sendToRenderer('download-progress',{id,progress:0,receivedBytes:received,totalBytes:0}); }});
         task.actualQuality = await verifyReceived(tmpPath);
         source.token.throwIfRequested(); checkCustomAccess(vid);
         publishDownloadFile(tmpPath,finalPath);
@@ -1066,7 +1031,7 @@ async function executeHongguoDownload(task) {
       writer = fs.createWriteStream(tmpPath); task.writer = writer;
       let received = 0, lastProgress = 0;
       response.data.on('data', chunk => {
-        received += chunk.length; task.receivedBytes = received;
+        received += chunk.length; task.receivedBytes = received; trackDownloadSpeed(task, received);
         task.progress = totalLength ? Math.min(99, Math.floor(received / totalLength * 100)) : 0;
         if (Date.now() - lastProgress >= 150 || received === totalLength) {
           sendToRenderer('download-progress', { id, progress: task.progress, receivedBytes: received, totalBytes: totalLength });
@@ -1121,18 +1086,8 @@ async function executeHongguoDownload(task) {
         sendToRenderer('download-stopped', { id, qualityNotice: '' });
       }
     } else {
-      const retries = task.sourceRetries || 0;
       task.status = 'failed'; task.error = error.message; task.endTime = Date.now();
-      if (retries < SOURCE_RETRY_DELAYS.length && isDeferrableSourceError(task, error)) {
-        const delays = error.code === 'SOURCE_UNAVAILABLE' || [404, 410].includes(error.mediaStatus)
-          ? SOURCE_RETRY_DELAYS : TRANSFER_RETRY_DELAYS;
-        const delay = delays[retries];
-        task.sourceRetries = retries + 1; task.retryAt = Date.now() + delay;
-        const wait = delays === SOURCE_RETRY_DELAYS ? `${delay / 60000} phút` : `${delay / 1000} giây`;
-        task.error = `${error.message} Sẽ tự động thử lại sau ${wait} (${retries + 1}/${SOURCE_RETRY_DELAYS.length}).`;
-        armSourceRetry(task);
-      }
-      sendToRenderer('download-failed', { id, error: task.error, retryAt: task.retryAt || null, sourceRetries: task.sourceRetries || 0, qualityNotice: '' });
+      sendToRenderer('download-failed', { id, error: task.error, retryAt: null, sourceRetries: 0, qualityNotice: '' });
     }
     saveDownloadTasks();
   } finally {
@@ -4941,12 +4896,7 @@ ipcMain.handle('get-queue-status', async () => ({
 }));
 
 ipcMain.handle('get-download-system-stats', async () => {
-  let totalSpeed = 0;
-  for (const task of downloadTasks) {
-    if (task.status === 'downloading' && Number.isFinite(task.speed) && task.speed > 0) {
-      totalSpeed += task.speed;
-    }
-  }
+  const totalSpeed = currentTotalSpeed();
   let freeBytes = null;
   try {
     const root = (getCurrentSettings().root && String(getCurrentSettings().root).trim()) || app.getPath('downloads');
@@ -5102,7 +5052,7 @@ function getAppUpdateInstaller() {
       isEnabled: () => !IS_PREVIEW && getCurrentSettings().app_updates_enabled !== false,
       installBlocker: () => {
         if (pendingUpdateOperations) return 'Đang xử lý tác vụ hoặc lưu cài đặt, vui lòng cài đặt bản cập nhật sau.';
-        if (downloadRuns.size || downloadQueue.length || sourceRetryTimers.size) return 'Vẫn còn tác vụ đang tải hoặc đang chờ thử lại, vui lòng tạm dừng tất cả tác vụ trong Quản lý tải xuống trước khi cài đặt cập nhật.';
+        if (downloadRuns.size || downloadQueue.length) return 'Vẫn còn tác vụ đang tải hoặc đang chờ, vui lòng tạm dừng tất cả tác vụ trong Quản lý tải xuống trước khi cài đặt cập nhật.';
         if (mergeTasks.some(task => task.status === 'running') || compatPreparing.size || onlinePreparing.size) return 'Đang gộp hoặc chuẩn bị video, vui lòng đợi hoàn thành hoặc hủy trước khi cài đặt cập nhật.';
         if (storageError) return 'Lưu trữ dữ liệu cục bộ gặp sự cố, vui lòng xử lý vấn đề lưu trữ trước khi cài đặt cập nhật.';
         return '';
@@ -5547,26 +5497,17 @@ if (hasSingleInstanceLock) app.whenReady().then(async () => {
     proxyStartupFallback = proxyStartup.fallback;
     if (proxyStartup.fallback) console.warn('[Proxy] Proxy khởi động không khả dụng, tạm thời kết nối trực tiếp:', proxyStartup.reason);
     else {
-      // Tự động khôi phục các tác vụ đang tải dở bị dừng khi đóng ứng dụng
-      let autoResumed = 0;
+      // Không tự tải khi khởi động: tác vụ dở dang giữ nguyên trạng thái dừng/lỗi, chờ người dùng bấm Tiếp tục hoặc Thử lại.
+      const held = cancelScheduledRetries(downloadTasks);
       for (const task of downloadTasks) {
-        if (task.status === 'stopped' && (!task.error || task.error === 'Đã tạm dừng thủ công' || task.error === 'Tác vụ bị ngắt khi đóng ứng dụng')) {
-          repairTaskDestination(task);
-          task.status = 'pending';
-          task.cancelled = false;
-          delete task.error;
-          delete task.cancelSource;
-          delete task.writer;
-          if (!downloadQueue.some(t => t.id === task.id)) downloadQueue.push(task);
-          autoResumed++;
+        if (task.status === 'pending') {
+          task.status = 'stopped';
+          task.error = 'Chưa tải: đang chờ bạn cho phép tải';
         }
       }
-      for (const task of downloadTasks) if (task.status === 'failed' && task.retryAt) armSourceRetry(task);
-      const resumed = enqueuePendingTasks();
-      if (resumed > 0 || autoResumed > 0) {
-        console.log(`[Queue] Khởi động tự động tiếp tục ${resumed + autoResumed} tác vụ, đồng thời ${MAX_CONCURRENT_DOWNLOADS}`);
-        pumpQueue();
-      }
+      downloadQueue = [];
+      try { saveDownloadTasks(); } catch (_) { /* store đã báo lỗi lưu trữ */ }
+      if (held) console.log('[Queue] Đã hủy lịch tự thử lại cũ, không tự tải khi khởi động');
     }
 
     app.on('activate', () => {
@@ -5659,7 +5600,7 @@ app.on('before-quit', event => {
   const pending = [...jobs.map(job => job.promise), ...onlineJobs.map(job => job.promise), ...mergeRuns.values(), ...downloadRuns.values()];
   if (compatClearing) pending.push(compatClearing);
   if (mergeTempCleanup) pending.push(mergeTempCleanup);
-  const downloading = downloadRuns.size || downloadQueue.length || sourceRetryTimers.size;
+  const downloading = downloadRuns.size || downloadQueue.length;
   if (!pending.length && !downloading) { quitReady = true; return; }
   event.preventDefault();
   if (downloading) {

@@ -27,7 +27,10 @@ async function mount(file, api, props = {}, storage = null) {
   const requestRender = () => { queued = true; };
   const scheduleEffect = (fn, deps) => { const i = cursor++; if (changed(slots[i], deps)) { slots[i] = deps; effects.push(() => { cleanups[i]?.(); cleanups[i] = fn(); }); } };
   const react = {
-    createElement: (type, props, ...children) => ({ type, props: props || {}, children: children.flat(Infinity) }),
+    // The shared drawer is a child component of Browse; expand it inline so tests can drive its dialog.
+    createElement: (type, props, ...children) => typeof type === 'function' && type.name === 'SeriesDownloadDrawer'
+      ? type({ ...(props || {}), children: children.flat(Infinity) })
+      : { type, props: props || {}, children: children.flat(Infinity) },
     Fragment: 'fragment',
     useState: initial => {
       const i = cursor++;

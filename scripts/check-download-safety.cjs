@@ -240,10 +240,10 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
       const store = { getSettings: () => ({}), saveTasks: () => { if (rejectSave) throw new Error('fixture storage full'); } };
       const h = load({}, { './src/store': store });
       const retry = { ...task('retry', h.dir, 'failed'), retryAt: Date.now() + 60000, sourceRetries: 1 };
-      h.set('downloadTasks', [retry]); h.context.armSourceRetry(retry);
+      h.set('downloadTasks', [retry]);
       try {
         const result = await h.handlers[channel]({}, channel === 'delete-task' ? 'retry' : ['retry'], { deleteFiles: false });
-        assert.equal(result.success, !rejectSave); assert.equal(h.run('sourceRetryTimers.size'), 0);
+        assert.equal(result.success, !rejectSave);
         assert.equal(retry.retryAt, undefined); assert.equal(retry.sourceRetries, undefined);
         if (rejectSave) assert.equal(h.run('downloadTasks.length'), 1);
       } finally { h.context.clearSourceRetry(retry); }
@@ -353,11 +353,10 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
         const timers = new Map(), callbacks = [];
         h.context.setTimeout = fn => { const id = callbacks.length; callbacks.push(fn); timers.set(id, fn); return id; };
         h.context.clearTimeout = id => timers.delete(id);
-        h.context.armSourceRetry(own);
         const target = channel === 'delete-task' ? 'one' : channel === 'delete-tasks' ? ['one'] : 'S';
         const options = channel === 'delete-task' || channel === 'delete-tasks' ? { deleteFiles: true } : 1;
         const result = await h.handlers[channel]({}, target, options);
-        assert.equal(h.run('sourceRetryTimers.size'), 0, outcome); assert.equal(timers.size, 0, outcome);
+        assert.equal(timers.size, 0, outcome);
         assert.equal(own.retryAt, undefined, outcome); assert.match(own.error, /来源暂不可用.*(?:已取消自动重试|Đã hủy tự động thử lại)/, outcome); assert.doesNotMatch(own.error, /将在/);
         for (const callback of callbacks) callback();
         assert.equal(h.run('downloadQueue.length'), 0, 'an already queued timer callback must not resurrect the task');
@@ -374,9 +373,7 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
       const other = { ...task('other', h.dir, 'failed'), retryAt: own.retryAt, hongguoInfo: { ...own.hongguoInfo, series_id: 'OTHER' } };
       h.set('downloadTasks', [own, other]); if (merging) h.set('mergeTasks', [{ seriesId: 'S', status: 'running' }]);
       h.context.setTimeout = () => ({}); h.context.clearTimeout = () => {};
-      h.context.armSourceRetry(own); h.context.armSourceRetry(other);
       await h.handlers[channel]({}, 'S', 1);
-      assert.equal(h.run('sourceRetryTimers.size'), merging ? 2 : 1);
       assert.equal(!!own.retryAt, merging); assert.ok(other.retryAt);
     }
   });
@@ -389,11 +386,11 @@ async function check(name, run) { try { await run(); console.log('PASS ' + name)
       file(own.savePath); h.set('downloadTasks', [own]);
       h.set('mergeTasks', [{ seriesId: 'OTHER', output: { invalid: true }, status: 'completed' }]);
       h.context.setTimeout = () => ({}); h.context.clearTimeout = () => {};
-      h.context.armSourceRetry(own); const before = JSON.stringify(own);
+      const before = JSON.stringify(own);
       const result = await h.handlers[channel]({}, 'S', 1);
       assert.equal(result.success, false); assert.ok(result.error);
       assert.equal(JSON.stringify(own), before, 'failed scanning must not partially cancel retry state');
-      assert.equal(h.run('sourceRetryTimers.size'), 1); assert.equal(saves, 0);
+      assert.equal(saves, 0);
       assert.equal(fs.existsSync(own.savePath), true);
     });
   }

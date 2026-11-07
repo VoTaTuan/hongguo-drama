@@ -123,7 +123,7 @@ test('idle player avoids repeated directory scans while download events and page
   assert.equal(listeners.size, 0);
 });
 
-test('oversized prepare and protocol errors remain visible while automatic download recovery stays available', async () => {
+test('oversized prepare and protocol errors remain visible and nothing downloads automatically', async () => {
   let downloads = 0, progress;
   const tooLarge = { success: false, code: 'MEDIA_TOO_LARGE', error: '本集过大，请下载后播放' };
   const ui = mount({ prepare: async () => tooLarge, props: { target: { seriesId: 'A', vidIndex: 1, ts: 1 } },
@@ -131,7 +131,7 @@ test('oversized prepare and protocol errors remain visible while automatic downl
   const text = node => typeof node === 'string' ? node : node?.children?.map(text).join('') || '';
   try {
     await ui.flush(); assert.match(text(ui.find(n => n.props.className?.includes('dm-toast'))), /本集过大，请下载后播放/);
-    assert.equal(downloads, 1); assert.ok(ui.button('取消等待'));
+    assert.equal(downloads, 0, 'an oversized episode is reported, never downloaded without the user'); assert.equal(ui.button('取消等待'), undefined);
   }
   finally { ui.unmount(); }
   const streaming = mount({ props: { target: { seriesId: 'A', vidIndex: 1, ts: 1 } }, apiOverrides: {

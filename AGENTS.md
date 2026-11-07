@@ -67,3 +67,9 @@
 
 - Yêu cầu mô hình phát được ký theo host cuối cùng, query, body POST và dấu thời gian; tính lại chữ ký sau khi thử lại hoặc cập nhật thiết bị.
 - Bản 5.4 đã chính thức phát hành; xác minh tải về/giải mã thực tế, xử lý lỗi gián đoạn và phát hành đa nền tảng xem tại `docs/release-5.4.md`.
+
+## Quy tắc không tự tải
+
+- Người dùng yêu cầu rõ ràng (3-11-2026): cấm tải về nếu không được sự cho phép của người dùng. Mọi lượt tải, tiếp tục hoặc thử lại chỉ bắt đầu khi người dùng bấm.
+- Không tự thử lại sau lỗi, không tự tiếp tục khi khởi động lại ứng dụng, không tự đưa tập vào hàng đợi khi phát trực tuyến lỗi. Tác vụ lỗi hoặc dở dang giữ trạng thái dừng/lỗi chờ người dùng.
+- Kiểm tra bằng scripts/check-source-retry.cjs, check-player-fallback.cjs và check-player-online-quality.cjs.

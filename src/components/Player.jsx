@@ -350,27 +350,16 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       const latest = data?.episodes.find(item => item.vid_index === intent.vidIndex && item.vid === intent.vid);
       if (!latest || latest.locked) throw new Error(latest?.locked ? 'Tập này đã bị khóa, vui lòng kiểm tra trên nền tảng nguồn' : 'Không thể làm mới trạng thái tập này, vui lòng thử lại');
       if (usableLocal(latest, intent.seriesId)) { resumeLocal(latest, intent.seekTo, intent.autoplay); return; }
-      const key = `${intent.selection}:${intent.seriesId}:${intent.vid}`;
       if (latest.taskId && ['pending', 'downloading'].includes(latest.status)) {
         intent.submitting = false;
         setPlaybackError(''); setWaitingFor(intent.vidIndex);
         return;
       }
-      if (fallbackAttemptRef.current === key) throw new Error(latest.taskId
-        ? 'Tập này đã có tác vụ tải, vui lòng kiểm tra trong Quản lý tải về hoặc thử tải lại thủ công'
-        : 'Không thể thêm tập này vào danh sách tải, vui lòng nhấn "Thử lại tập này" hoặc "Tải tập này" để thử lại');
-      const settings = stateRef.current.qualityLoading ? await window.electronAPI.getSettings() : null;
-      if (!isCurrentFallback(intent)) return;
-      let quality = stateRef.current.onlineQuality === 'compat' ? 'auto' : stateRef.current.onlineQuality !== 'auto' ? stateRef.current.onlineQuality : stateRef.current.qualityLoading
-        ? (['1080p', '720p'].includes(settings?.download_quality) ? settings.download_quality : 'auto') : stateRef.current.downloadQuality;
-      if (quality === 'auto' && stateRef.current.onlineQuality !== 'compat' && !/^(xifan|hema|custom):/.test(intent.seriesId)) quality = '1080p';
-      fallbackAttemptRef.current = key;
-      setPlaybackError(''); setWaitingFor(intent.vidIndex);
-      // Enqueue validates quality and reuses an existing task; cancelling playback never stops that shared download.
-      const result = await window.electronAPI.downloadSingleEpisode(intent.seriesId, intent.vidIndex, quality);
-      if (!isCurrentFallback(intent)) return;
-      if (!result?.success) throw new Error(result?.error || 'Thêm vào danh sách tải thất bại');
+      // Không tự tải: phát trực tuyến lỗi chỉ báo lỗi. Người dùng tự bấm "Tải tập này" nếu đồng ý tải về.
       intent.submitting = false;
+      fallbackRef.current = null;
+      setWaitingFor(null);
+      setPlaybackError(`${message}; ứng dụng sẽ không tự tải về. Nếu muốn xem tiếp, hãy bấm "Tải tập này".`);
     } catch (error) {
       if (!isCurrentFallback(intent)) return;
       intent.submitting = false;

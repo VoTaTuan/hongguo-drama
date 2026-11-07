@@ -72,7 +72,7 @@ if (process.argv[2] !== 'main') {
       assert.equal(ui.transcodes.length, 1, 'H.264 must play directly');
     } finally { ui.unmount(); }
   });
-  await check('old computer conversion failure is bounded and downloads with compatible quality', async () => {
+  await check('old computer conversion failure is bounded and never starts a download on its own', async () => {
     const downloads = [];
     const ui = mount({ storage: new Map([['hongguo:online-quality', 'compat']]),
       props: { target: { seriesId: 'A', vidIndex: 1, ts: 1 } },
@@ -82,7 +82,7 @@ if (process.argv[2] !== 'main') {
     try {
       await ui.flush(); await ui.flush();
       assert.equal(ui.transcodes.length, 2, 'one original and one refreshed source, then stop');
-      assert.equal(ui.prepares.length, 2); assert.deepEqual(downloads, [['A', 1, 'auto']]);
+      assert.equal(ui.prepares.length, 2); assert.deepEqual(downloads, [], 'playback failure must not enqueue a download without the user');
       assert.ok(alert(ui));
     } finally { ui.unmount(); }
   });
@@ -123,7 +123,7 @@ if (process.argv[2] !== 'main') {
       ui.error(code); await ui.flush(); assert.equal(ui.prepares.at(-1).quality, 'auto');
       ui.metadata(); assert.equal(ui.media.currentTime, 31); assert.equal(ui.media.paused, true);
       assert.deepEqual(ui.prepares.map(p => p.quality), ['1080p', '720p', 'auto']);
-      if (code !== 3) { ui.error(code); await ui.flush(); assert.equal(downloads.length, 1); }
+      if (code !== 3) { ui.error(code); await ui.flush(); assert.equal(downloads.length, 0, 'exhaustion must not download without the user'); }
       assert.equal(ui.prepares.length, 3, 'exhaustion must not restart the 1080 ladder');
     } finally { ui.unmount(); }
   });
@@ -140,17 +140,17 @@ if (process.argv[2] !== 'main') {
       assert.equal(ui.prepares.at(-1).quality, '1080p');
     } finally { ui.unmount(); }
   });
-  await check('automatic exhaustion submits one 1080-priority download and explicit retry restarts at 1080', async () => {
+  await check('automatic exhaustion never downloads on its own and explicit retry restarts at 1080', async () => {
     const downloads = [];
     const ui = mount({ props: { target: { seriesId: 'A', vidIndex: 1, ts: 1 } },
       prepare: async () => ({ success: false, error: 'No source' }),
       apiOverrides: { downloadSingleEpisode: async (...args) => { downloads.push(args); return { success: false, error: 'No download' }; } } });
     try {
       await ui.flush(); assert.deepEqual(ui.prepares.map(p => p.quality), ['1080p', '720p', 'auto']);
-      assert.equal(downloads.length, 1); assert.equal(downloads[0][2], '1080p');
+      assert.equal(downloads.length, 0, 'no download may start without the user');
       await ui.button('重试本集').props.onClick(); await ui.flush();
       assert.deepEqual(ui.prepares.slice(3).map(p => p.quality), ['1080p', '720p', 'auto']);
-      assert.equal(downloads.length, 2);
+      assert.equal(downloads.length, 0);
     } finally { ui.unmount(); }
   });
   await check('automatic quality handoff retains autoplay and restarting an episode prefers 1080 again', async () => {
@@ -175,7 +175,7 @@ if (process.argv[2] !== 'main') {
       assert.deepEqual(ui.prepares.map(p => p.quality), ['1080p', '720p']);
     } finally { ui.unmount(); }
   });
-  await check('decoder exhaustion reaches one download after all automatic quality steps', async () => {
+  await check('decoder exhaustion stops after all automatic quality steps without downloading', async () => {
     let downloads = 0;
     const ui = mount({ props: { target: { seriesId: 'A', vidIndex: 1, ts: 1 } }, settings: { cache_next_episode: false },
       transcode: async () => ({ success: false, error: 'decoder unavailable' }),
@@ -184,7 +184,7 @@ if (process.argv[2] !== 'main') {
       await ui.flush();
       for (let i = 0; i < 3; i++) { ui.metadata(); ui.error(3); await ui.flush(); }
       assert.deepEqual(ui.prepares.map(p => p.quality), ['1080p', '720p', 'auto']);
-      assert.equal(downloads, 1); assert(alert(ui));
+      assert.equal(downloads, 0, 'no download without the user'); assert(alert(ui));
     } finally { ui.unmount(); }
   });
   await check('automatic 1080 decoding can retain quality through compatibility before downgrading', async () => {
@@ -212,17 +212,15 @@ if (process.argv[2] !== 'main') {
     try { await ui.flush(); assert.deepEqual(ui.prepares.map(p => p.quality), ['auto']); }
     finally { ui.unmount(); }
   });
-  await check('scheduled source retry stays waiting and terminal error remains visible', async () => {
-    let status = 'missing', retryAt = null, error = '';
-    let failed;
+  await check('failed online playback never queues a download or a waiting state by itself', async () => {
+    let queued = 0;
     const ui = mount({ props: {target:{seriesId:'A',vidIndex:1,ts:1}}, prepare: async()=>({success:false,error:'取源失败'}),
-      apiOverrides: { onDownloadFailed: fn => { failed = fn; return () => {}; },
-        getSeriesEpisodes: async()=>({success:true,data:{series_id:'A',episodes:[{vid:'v1',vid_index:1,status,retryAt,error}]}}),
-        downloadSingleEpisode: async()=>{status='pending';return {success:true};} } });
-    await ui.flush(); status='failed'; retryAt=Date.now()+5000; error='官网限流，等待自动重试'; failed?.({id:'t1'}); await poll(ui);
-    assert(ui.button('取消等待'), 'scheduled retry must retain playback intent');
-    retryAt=null; error='当前片源没有 1080P，未自动降级'; failed?.({id:'t1'}); await poll(ui);
-    assert.equal(ui.button('取消等待'),undefined); assert.match(text(alert(ui)),/当前片源没有 1080P/); ui.unmount();
+      apiOverrides: { getSeriesEpisodes: async()=>({success:true,data:{series_id:'A',episodes:[{vid:'v1',vid_index:1,status:'missing'}]}}),
+        downloadSingleEpisode: async()=>{queued++;return {success:true};} } });
+    await ui.flush(); await poll(ui);
+    assert.equal(queued, 0, 'the app must not download without the user');
+    assert.equal(ui.button('取消等待'), undefined, 'nothing is waiting for a download the user never requested');
+    assert(alert(ui)); ui.unmount();
   });
   await check('online selection preserves time through prefetch, reconnect, transcode and episode switch', async()=>{
     const ui=mount({local:true}); await ui.flush(); ui.metadata(); ui.media.currentTime=24;
@@ -235,14 +233,14 @@ if (process.argv[2] !== 'main') {
     ui.metadata(); ui.error(3); await ui.flush(); assert.equal(ui.transcodes.at(-1).quality,'1080p'); assert.equal(ui.transcodes.at(-1).filePath,null);
     ui.episode(2); await ui.flush(); assert.equal(ui.prepares.at(-1).quality,'1080p'); ui.unmount();
   });
-  await check('online fallback keeps explicit quality independent of download selection',async()=>{
+  await check('online fallback never downloads and explicit quality stays independent of download selection',async()=>{
     const downloads=[];
     const ui=mount({props:{target:{seriesId:'A',vidIndex:1,ts:1}},prepare:async()=>({success:false,error:'取源失败'}),settings:{download_quality:'720p'},
       apiOverrides:{downloadSingleEpisode:async(...p)=>{downloads.push(p);return {success:false,error:'片源不足1080P'};}}});
-    await ui.flush(); assert.equal(downloads.at(-1)?.[2],'720p', 'automatic playback fallback uses the download default');
+    await ui.flush(); assert.equal(downloads.length,0,'automatic playback fallback must not download');
     assert(select(ui)); select(ui).props.onChange({target:{value:'1080p'}}); await ui.flush();
     assert.equal(ui.prepares.at(-1)?.quality,'1080p');
-    assert.equal(downloads.at(-1)[2],'1080p'); assert.match(text(alert(ui)),/片源不足1080P/); ui.unmount();
+    assert.equal(downloads.length,0,'changing quality must not download either'); ui.unmount();
   });
   await check('quality switching preserves files until the ended episode is cleaned',async()=>{
     const cleaned=[];

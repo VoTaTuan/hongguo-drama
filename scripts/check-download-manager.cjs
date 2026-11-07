@@ -54,8 +54,10 @@ function mount(api = {}, props = {}) {
     unmount: () => cleanups.forEach(fn => fn?.()),
   };
 }
-const task = (i, status = 'downloading') => ({ id: `t${i}`, title: `第${i}集`, status, progress: 0, startTime: i, hongguoInfo: { series_id: 'A', vid_index: i } });
-const rows = ui => ui.nodes().filter(n => /^dm-task(?: selected)?$/.test((n.props.className || '').trim()));
+const task = (i, status = 'downloading', series = 'A') => ({ id: `t${i}`, title: `第${i}集`, status, progress: 0, startTime: i, hongguoInfo: { series_id: series, series_title: `Phim ${series}`, vid_index: i } });
+// The manager lists one card per series; tasks are selected through the card's checkbox.
+const rows = ui => ui.nodes().filter(n => /^dm-film-card(?: |$)/.test((n.props.className || '').trim()));
+const pick = (ui, index) => ui.nodes().filter(n => n.props.className === 'dm-film-select')[index].props.onClick();
 const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, progress: 0, seriesTitle: 'A', startTime: Date.now() });
 
 (async () => {
@@ -113,7 +115,7 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
     list = [{ series_id: 'A', series_title: 'Downloaded' }];
     ui.emit('onDownloadCompleted', { id: 't1' }); ui.advance(250); await ui.flush();
     assert.ok(ui.button('合并整部剧'), 'completed downloads must appear immediately');
-    rows(ui)[0].props.onClick(); ui.render(); ui.button('删除已选').props.onClick(); ui.render();
+    pick(ui, 0); ui.render(); ui.button('删除已选').props.onClick(); ui.render();
     ui.find(n => n.props.className === 'dm-confirm-check').children.find(n => n.type === 'input').props.onChange({ target: { checked: true } }); ui.render();
     await ui.button('删除任务和文件').props.onClick(); await ui.flush();
     assert.equal(ui.button('合并整部剧'), undefined, 'last deleted episode must remove its merge option');
@@ -157,13 +159,13 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
     assert.equal(ui.writes() - before, 1); assert.ok(ui.text().includes('80%')); ui.unmount();
   });
   await test('select-all covers every page and clears every selection', async () => {
-    const ui = mount({ getDownloadTasks: async () => Array.from({ length: 205 }, (_, i) => task(i + 1, 'completed')) }); await ui.flush();
+    const ui = mount({ getDownloadTasks: async () => Array.from({ length: 53 }, (_, i) => task(i + 1, 'completed', `S${i + 1}`)) }); await ui.flush();
     const all = ui.button('全选'); assert.ok(all, 'select-all must be visible beside task counts'); all.props.onClick(); ui.render();
-    assert.ok(ui.text().includes('已选 205 项') || ui.text().includes('205')); assert.ok(rows(ui).every(r => r.props.className.includes('selected')));
+    assert.ok(ui.text().includes('53') && ui.text().includes('Đã chọn 53')); assert.ok(rows(ui).every(r => r.props.className.includes('selected')));
     ui.button('下一页').props.onClick(); ui.render(); ui.button('下一页').props.onClick(); ui.render();
     assert.equal(rows(ui).length, 5); assert.ok(rows(ui).every(r => r.props.className.includes('selected')));
     ui.button('取消全选').props.onClick(); ui.render(); assert.ok(rows(ui).every(r => !r.props.className.includes('selected'))); assert.equal(ui.button('删除已选').props.disabled, true);
-    rows(ui)[0].props.onClick(); ui.render(); ui.button('全选').props.onClick(); ui.render(); assert.ok(ui.text().includes('已选 205 项') || ui.text().includes('205')); ui.unmount();
+    pick(ui, 0); ui.render(); ui.button('全选').props.onClick(); ui.render(); assert.ok(ui.text().includes('Đã chọn 53')); ui.unmount();
   });
   await test('whole-series merge needs no checked tasks and identifies its series', async () => {
     let sent;
@@ -252,23 +254,33 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
     assert.ok(ui.button('高质量分辨率合并'), 'late success from a closed dialog must not close the new dialog');
     ui.unmount();
   });
-  await test('task list pages at 100 while global totals and cross-page selections persist', async () => {
-    const ui = mount({ getDownloadTasks: async () => Array.from({ length: 205 }, (_, i) => task(i + 1, 'completed')) }); await ui.flush();
-    assert.equal(rows(ui).length, 100); assert.ok(ui.text().includes('已完成 205') || ui.text().includes('Đã hoàn thành 205'));
-    rows(ui)[0].props.onClick(); ui.render(); ui.button('下一页').props.onClick(); ui.render(); assert.equal(rows(ui).length, 100);
-    rows(ui)[0].props.onClick(); ui.render(); ui.button('删除已选').props.onClick(); ui.render(); assert.ok(ui.text().includes('共 2 个任务') || ui.text().includes('Tổng cộng 2 tác vụ'));
+  await test('movie cards page at 24 while global totals and cross-page selections persist', async () => {
+    const ui = mount({ getDownloadTasks: async () => Array.from({ length: 53 }, (_, i) => task(i + 1, 'completed', `S${i + 1}`)) }); await ui.flush();
+    assert.equal(rows(ui).length, 24); assert.ok(ui.text().includes('Đã hoàn thành 53'));
+    pick(ui, 0); ui.render(); ui.button('下一页').props.onClick(); ui.render(); assert.equal(rows(ui).length, 24);
+    pick(ui, 0); ui.render(); ui.button('删除已选').props.onClick(); ui.render(); assert.ok(ui.text().includes('Tổng cộng 2 tác vụ'));
     ui.button('取消').props.onClick(); ui.render(); ui.button('下一页').props.onClick(); ui.render(); assert.equal(rows(ui).length, 5); ui.unmount();
+  });
+  await test('a card describes the whole movie and its download button opens the shared drawer', async () => {
+    const tasks = [task(1, 'completed', '123'), task(2, 'downloading', '123'), task(3, 'failed', '123')];
+    tasks.forEach(t => { t.hongguoInfo.total_episodes = 10; t.downloadQuality = '1080p'; t.totalBytes = 1048576; });
+    const ui = mount({ getDownloadTasks: async () => tasks }); await ui.flush();
+    assert.equal(rows(ui).length, 1, 'all episodes of one movie share one card');
+    const text = ui.text(); assert.ok(text.includes('Phim 123') && text.includes('/10 tập') && text.includes('1080P'));
+    const drawer = ui.find(n => n.props.item !== undefined && n.props.onQueued); assert.ok(drawer, 'shared drawer is mounted'); assert.equal(drawer.props.item, null);
+    ui.nodes().find(n => n.type === 'button' && n.children.some(c => typeof c === 'object' && c.type === 'span') === false && /Tải/.test(n.children.map(c => c?.children?.join?.('') ?? c).join(''))).props.onClick(); ui.render();
+    assert.equal(ui.find(n => n.props.item !== undefined && n.props.onQueued).props.item.series_id, '123'); ui.unmount();
   });
   for (const rejected of [false, true]) await test(`delete ${rejected ? 'rejection' : 'failure response'} is visible and preserves selection`, async () => {
     const ui = mount({ getDownloadTasks: async () => [task(1, 'completed')], deleteTasksWithFiles: async () => { if (rejected) throw new Error('删除失败示例'); return { success: false, error: '删除失败示例' }; } });
-    await ui.flush(); rows(ui)[0].props.onClick(); ui.render(); ui.button('删除已选').props.onClick(); ui.render();
+    await ui.flush(); pick(ui, 0); ui.render(); ui.button('删除已选').props.onClick(); ui.render();
     await assert.doesNotReject(() => ui.button('仅删除记录').props.onClick(), 'delete rejection must become visible feedback'); await ui.flush();
     assert.ok(ui.text().includes('删除失败示例')); assert.ok(rows(ui)[0].props.className.includes('selected')); ui.unmount();
   });
   for (const deleteFiles of [false, true]) await test(`delete persistence failure shows actual released bytes and retained records: files=${deleteFiles}`, async () => {
     const ui = mount({ getDownloadTasks: async () => [task(1, 'completed')], deleteTasksWithFiles: async () => ({ success: false, count: 0, freed: deleteFiles ? 1024 : 0, failed: 0, error: '任务记录保存失败，原记录已保留' }) });
     try {
-      await ui.flush(); rows(ui)[0].props.onClick(); ui.render(); ui.button('删除已选').props.onClick(); ui.render();
+      await ui.flush(); pick(ui, 0); ui.render(); ui.button('删除已选').props.onClick(); ui.render();
       if (deleteFiles) { ui.find(n => n.props.className === 'dm-confirm-check').children.find(n => n.type === 'input').props.onChange({ target: { checked: true } }); ui.render(); }
       await ui.button(deleteFiles ? '删除任务和文件' : '仅删除记录').props.onClick(); await ui.flush();
       assert.match(ui.text(), /(?:已移除 0 个任务记录|Đã xóa 0 bản ghi tác vụ|Đã xóa 0 tác vụ|Đã xóa 0 tệp)/i);

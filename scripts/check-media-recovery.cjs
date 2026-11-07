@@ -189,7 +189,6 @@ function load(fetchPlayUrlSingle, overrides = {}) {
   });
   for(const h of harnesses) {
     h.context.clearOnlineCache();
-    h.run('for (const timer of sourceRetryTimers.values()) clearTimeout(timer); sourceRetryTimers.clear();');
   }
   server.closeAllConnections(); await new Promise(r=>server.close(r));
   assert.equal(failures,0,`${failures} recovery regressions`);

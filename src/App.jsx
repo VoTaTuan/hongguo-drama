@@ -10,7 +10,6 @@ import WatchHistory from './components/WatchHistory';
 import { initializeTheme } from './theme';
 import useStealthWindow from './components/useStealthWindow';
 import './components/StealthWindow.css';
-import AppUpdateNotice from './components/AppUpdateNotice';
 import AnnouncementNotice from './components/AnnouncementNotice';
 import DramaFeed from './components/DramaFeed';
 import ReleaseCalendar from './components/ReleaseCalendar';
@@ -260,7 +259,6 @@ export default function App() {
               onClick={() => navigate(item.id)} title={item.label}><Icon size={18} /><span>{item.label}</span></button>;
           })}
         </nav>
-        {!appInfo?.preview && <AppUpdateNotice />}
         {!appInfo?.preview && <AnnouncementNotice />}
         {stealthMode && <div className="stealth-toolbar"><span>Rê ra ngoài để tạm dừng/ẩn · Rê lại để tiếp tục</span><button className="btn btn-outline btn-sm" onClick={() => toggleStealth(false)}>Thoát cửa sổ nhỏ</button></div>}
         {stealthError && <div className="app-storage-error" role="alert">{stealthError}</div>}

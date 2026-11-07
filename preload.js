@@ -234,6 +234,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getStorageUsage: () => ipcRenderer.invoke('get-storage-usage'),
   deleteAllDownloaded: () => ipcRenderer.invoke('delete-all-downloaded'),
   stopDownload: (taskId) => ipcRenderer.invoke('stop-download', taskId),
+  pauseTask: (taskId) => ipcRenderer.invoke('stop-download', taskId),
   retryTask: (taskId) => ipcRenderer.invoke('retry-task', taskId),
   retryTasks: (taskIds) => ipcRenderer.invoke('retry-tasks', taskIds),
   openFolder: (taskId) => ipcRenderer.invoke('open-folder', taskId),

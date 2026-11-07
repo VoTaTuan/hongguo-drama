@@ -15,7 +15,7 @@ const descendants = node => [node, ...(node?.children || []).filter(child => chi
 async function main() {
   const deleted = [];
   const ui = mount({
-    getDownloadTasks: async () => Array.from({ length: 205 }, (_, index) => task(index + 1, 'completed')),
+    getDownloadTasks: async () => Array.from({ length: 205 }, (_, index) => task(index + 1, 'completed', `S${index + 1}`)),
     deleteTasksWithFiles: async (ids, files) => { deleted.push({ ids, files }); return { success: false, error: '测试保留选择' }; },
   });
   await ui.flush();
@@ -29,9 +29,8 @@ async function main() {
   ui.button('全选').props.onClick(); ui.render();
   assert.ok(text(visibleDelete()) === '删除已选（205项）' || text(visibleDelete()) === 'Xóa mục đã chọn (205 mục)');
   assert.equal(visibleDelete().props.disabled, false);
-  ui.button('下一页').props.onClick(); ui.render();
-  ui.button('下一页').props.onClick(); ui.render();
-  assert.equal(rows(ui).length, 5);
+  for (let page = 0; page < 8; page++) { ui.button('下一页').props.onClick(); ui.render(); }
+  assert.equal(rows(ui).length, 13);
   assert.ok(text(visibleDelete()) === '删除已选（205项）' || text(visibleDelete()) === 'Xóa mục đã chọn (205 mục)', '跨页数量包含所有选中任务');
   await visibleDelete().props.onClick(); ui.render();
   assert.equal(deleted.length, 0, '点击入口只能弹确认，不得立即删除');

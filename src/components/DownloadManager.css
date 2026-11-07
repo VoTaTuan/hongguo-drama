@@ -734,245 +734,207 @@
 }
 
 /* ==========================================================================
-   SERIES CARD VIEW (GOM NHÓM THEO BỘ PHIM)
+   LƯỚI THẺ PHIM (Quản lý tải về) — mỗi thẻ là một bộ phim, nút Tải mở ngăn thông tin
    ========================================================================== */
 
-.dm-series-grid {
-  display: flex;
-  flex-direction: column;
+.dm-film-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
   gap: 16px;
   margin-bottom: 20px;
 }
 
-.dm-series-card {
+.dm-film-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg, 12px);
-  overflow: hidden;
-  transition: all 0.25s ease;
   box-shadow: var(--shadow-sm, 0 2px 6px rgba(0, 0, 0, 0.04));
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  min-width: 0;
 }
 
-.dm-series-card:hover {
+.dm-film-card:hover {
   border-color: var(--border-hover, rgba(229, 62, 62, 0.3));
   box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
+  transform: translateY(-2px);
 }
 
-.dm-series-card.is-complete {
-  border-color: rgba(34, 197, 94, 0.3);
-}
+.dm-film-card.selected { border-color: var(--accent, #e53e3e); box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.25); }
+.dm-film-card.is-completed { border-color: rgba(34, 197, 94, 0.35); }
+.dm-film-card.has-stopped { border-color: rgba(234, 88, 12, 0.4); }
+.dm-film-card.is-active { border-color: rgba(2, 132, 199, 0.4); }
 
-.dm-series-header {
-  display: flex;
-  align-items: stretch;
-  gap: 16px;
-  padding: 16px;
-  background: linear-gradient(to right, var(--bg-card), var(--bg-inset));
-  border-bottom: 1px solid var(--border-color);
-}
-
-.dm-series-cover-wrapper {
+.dm-film-cover {
   position: relative;
-  width: 90px;
-  height: 125px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 3 / 4;
   background: var(--bg-inset);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
 }
 
-.dm-series-cover {
+.dm-film-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
   transition: transform 0.3s ease;
 }
 
-.dm-series-card:hover .dm-series-cover {
-  transform: scale(1.04);
-}
+.dm-film-card:hover .dm-film-cover img { transform: scale(1.04); }
 
-.dm-series-done-badge {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  background: #16a34a;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.dm-series-meta {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-width: 0;
-}
-
-.dm-series-title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.dm-series-title-left {
+.dm-film-cover-empty {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
+  justify-content: center;
+  color: var(--text-tertiary, var(--text-secondary));
 }
 
-.dm-series-title {
-  margin: 0;
-  font-size: 16.5px;
+.dm-film-done,
+.dm-film-quality {
+  position: absolute;
+  bottom: 8px;
+  font-size: 10.5px;
   font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #fff;
 }
 
-.dm-series-progress-box {
-  margin: 10px 0;
-}
+.dm-film-done { left: 8px; background: #16a34a; }
+.dm-film-quality { right: 8px; background: rgba(0, 0, 0, 0.6); }
 
-.dm-series-progress-info {
+.dm-film-select {
+  position: absolute;
+  top: 8px;
+  left: 8px;
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 12.5px;
-  margin-bottom: 6px;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+
+.dm-film-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px;
+}
+
+.dm-film-title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+
+.dm-film-title .drama-title-main,
+.dm-film-title .drama-title-sub {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dm-film-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 12px;
   color: var(--text-secondary);
 }
 
-.dm-series-ep-count {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.dm-series-progress-pct {
+.dm-film-eps {
+  background: var(--accent, #e53e3e);
+  color: #fff;
   font-weight: 700;
-  font-size: 13.5px;
-  color: var(--accent, #e53e3e);
+  font-size: 11.5px;
+  padding: 2px 7px;
+  border-radius: 5px;
 }
 
-.dm-series-progress-bar {
-  height: 7px;
+.dm-film-date { font-size: 11.5px; color: var(--text-tertiary, var(--text-secondary)); }
+.dm-film-speed { color: #0284c7; font-weight: 600; }
+
+.dm-film-progress {
+  height: 5px;
   background: var(--bg-inset, rgba(0, 0, 0, 0.08));
   border-radius: 4px;
   overflow: hidden;
 }
 
-.dm-series-progress-fill {
+.dm-film-progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #e53e3e, #f87171);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
 
-.dm-series-progress-fill.fill-done {
-  background: linear-gradient(90deg, #16a34a, #4ade80);
-}
+.dm-film-progress-fill.fill-done { background: linear-gradient(90deg, #16a34a, #4ade80); }
 
-.dm-series-progress-sub {
-  display: flex;
-  justify-content: space-between;
+.dm-film-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.dm-film-badges:empty { display: none; }
+
+.dm-film-body .dm-error,
+.dm-film-body .dm-retry-hint {
   font-size: 11.5px;
-  color: var(--text-tertiary, var(--text-secondary));
-  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.dm-series-live-speed {
-  color: #0284c7;
-  font-weight: 600;
-}
+.dm-film-now { font-size: 12px; font-weight: 600; color: #0284c7; }
 
-.dm-series-actions-row {
+.dm-film-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   flex-wrap: wrap;
-  margin-top: 4px;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: 4px;
 }
 
-.dm-series-badges {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+.dm-film-download {
+  flex: 1 1 100%;
+  justify-content: center;
+  margin-bottom: 4px;
 }
 
-.dm-badge-pill {
+@media (max-width: 520px) {
+  .dm-film-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.status-badge {
+  display: inline-block;
   font-size: 11px;
+  font-weight: 600;
   padding: 2px 7px;
   border-radius: 4px;
-  font-weight: 600;
   background: var(--bg-inset);
   color: var(--text-secondary);
 }
-
-.dm-badge-pill.active {
-  background: rgba(2, 132, 199, 0.12);
-  color: #0284c7;
-}
-
-.dm-badge-pill.stopped {
-  background: rgba(234, 88, 12, 0.12);
-  color: #ea580c;
-}
-
-.dm-series-btn-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.dm-series-episodes-list {
-  background: var(--bg-body, var(--bg-inset));
-  border-top: 1px solid var(--border-color);
-  padding: 10px 14px 14px;
-  animation: fadeIn 0.25s ease;
-}
-
-.dm-series-episodes-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 4px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  border-bottom: 1px dashed var(--border-color);
-  margin-bottom: 10px;
-}
-
-.dm-series-episodes-hint {
-  font-size: 11px;
-  color: var(--text-tertiary, #888);
-  font-weight: normal;
-}
-
-.dm-series-episodes-list .dm-task {
-  margin-bottom: 6px;
-  background: var(--bg-card);
-}
-
-.btn-collapse-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 600;
+.status-badge.status-downloading { background: rgba(2, 132, 199, 0.12); color: #0284c7; }
+.status-badge.status-stopped, .status-badge.status-failed { background: rgba(234, 88, 12, 0.12); color: #ea580c; }
+.status-badge.status-completed { background: rgba(22, 163, 74, 0.12); color: #16a34a; }
+.dm-badge-quality {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(229, 62, 62, 0.1);
   color: var(--accent, #e53e3e);
-}
-
-.btn-collapse-toggle:hover {
-  background: rgba(229, 62, 62, 0.08);
 }
 

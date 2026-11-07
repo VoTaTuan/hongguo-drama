@@ -93,15 +93,15 @@ const checks = [
     const partial = path.join(h.root, 'ep.enc.tmp'); fs.writeFileSync(partial, 'partial');
     h.context.activeTask = { id: 'download', status: 'downloading', cancelSource: { cancel() { cancelled = true; } }, writer: { destroy() { closed = true; } } };
     h.context.downloadPromise = new Promise(resolve => { release = () => { fs.rmSync(partial, { force: true }); h.run("downloadRuns.delete('download')"); resolve(); }; });
-    h.run("downloadTasks=[activeTask,{id:'queued',status:'pending'},{id:'retry',status:'failed',retryAt:Date.now()+600000}]; downloadQueue=[downloadTasks[1]]; downloadRuns.set('download',downloadPromise); armSourceRetry(downloadTasks[2]);");
+    h.run("downloadTasks=[activeTask,{id:'queued',status:'pending'},{id:'retry',status:'failed',retryAt:Date.now()+600000}]; downloadQueue=[downloadTasks[1]]; downloadRuns.set('download',downloadPromise);");
     try {
       let prevented = false; h.app.emit('before-quit', { preventDefault: () => prevented = true });
       assert.equal(prevented, true); assert.ok(cancelled && closed);
-      assert.equal(h.run('sourceRetryTimers.size'), 0); assert.equal(h.run('downloadQueue.length'), 0);
+      assert.equal(h.run('downloadQueue.length'), 0);
       assert.equal(h.run('downloadTasks[1].status'), 'stopped'); assert.equal(h.run('downloadTasks[2].status'), 'stopped');
       assert.equal(h.state.quits, 0); release(); await flush();
       assert.equal(h.state.quits, 1); assert.equal(fs.existsSync(partial), false);
-    } finally { h.run('for (const timer of sourceRetryTimers.values()) clearTimeout(timer);'); release(); }
+    } finally { release(); }
   }],
   ['compat rejects non-positive, fractional and path episode indices through both IPC entries', async () => {
     const h = fixture();
@@ -164,10 +164,9 @@ const checks = [
       assert.ok(h.state.requests.length <= 2);
     }
   }],
-  ['delete waiting retry releases timer and update blocker immediately', async () => {
-    const h = fixture(); h.run("downloadTasks=[{id:'retry',status:'failed',retryAt:Date.now()+600000}]; armSourceRetry(downloadTasks[0]);");
-    try { await h.handlers['delete-task']({}, 'retry'); assert.equal(h.run('sourceRetryTimers.size'), 0); }
-    finally { h.run('for (const timer of sourceRetryTimers.values()) clearTimeout(timer);'); }
+  ['deleting a task with a legacy retry plan leaves nothing scheduled', async () => {
+    const h = fixture(); h.run("downloadTasks=[{id:'retry',status:'failed',retryAt:Date.now()+600000}];");
+    await h.handlers['delete-task']({}, 'retry'); assert.equal(h.run('downloadTasks.length'), 0); assert.equal(h.run('downloadQueue.length'), 0);
   }],
   ['quit waits for compat and merge cleanup; closing a Mac window keeps merge alive', async () => {
     const h = fixture(), child = new EventEmitter(); let stopped = false, releaseCompat, releaseMerge;

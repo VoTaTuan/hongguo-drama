@@ -1,21 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import useDialogKeyboard from './useDialogKeyboard';
 import './DownloadManager.css';
-import { Download, Trash2, RefreshCw, X, Film, Square, Folder, Zap, CheckSquare, Play, Pause, Layers, ChevronDown, ChevronUp } from './icons';
-import { DownloadTaskTitle, DramaTitle } from './TranslatedText';
+import { Download, Trash2, RefreshCw, X, Film, Square, Folder, Zap, CheckSquare, Play, Pause, Layers } from './icons';
+import { DramaTitle } from './TranslatedText';
+import SeriesDownloadDrawer from './SeriesDownloadDrawer';
 import { getCachedTranslation } from '../services/translator';
 
-const TaskTitleComponent = typeof DownloadTaskTitle === 'function' ? DownloadTaskTitle : ({ task, className }) => <div className={className}>{task?.title || task?.filename}</div>;
 const DramaTitleComponent = typeof DramaTitle === 'function' ? DramaTitle : ({ children, title }) => <span>{title || children}</span>;
 const safeGetCachedTranslation = typeof getCachedTranslation === 'function' ? getCachedTranslation : () => null;
-
-const STATUS_TEXT = {
-  pending: 'Đang chờ',
-  downloading: 'Đang tải',
-  completed: 'Đã hoàn thành',
-  failed: 'Thất bại',
-  stopped: 'Đã dừng',
-};
 
 const STATUS_ORDER = {
   downloading: 0,
@@ -61,7 +53,7 @@ function fmtBytes(bytes) {
   return v.toFixed(v >= 100 || i === 0 ? 0 : 1) + ' ' + units[i];
 }
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 24; // số thẻ phim mỗi trang
 
 function DownloadManager({ onNavigate, active = true }) {
   const [subTab, setSubTab] = useState('downloads');
@@ -78,12 +70,12 @@ function DownloadManager({ onNavigate, active = true }) {
   const [mergeAsk, setMergeAsk] = useState(false);    // Lựa chọn định dạng ghép
   const [page, setPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('all');
-  const [viewMode, setViewMode] = useState('series');
-  const [collapsedSeries, setCollapsedSeries] = useState(new Set());
+  const [drawerItem, setDrawerItem] = useState(null); // phim đang mở trong bảng thông tin / chọn tập để tải
   const [systemStats, setSystemStats] = useState({ totalSpeed: 0, activeDownloads: 0, queuedCount: 0, freeBytes: null });
   const [orderVersion, setOrderVersion] = useState(0);
   const [loadError, setLoadError] = useState('');
   const toastTimerRef = useRef(null);
+  const lastSpeedRef = useRef({ value: 0, at: 0 });
   const moreActionsRef = useRef(null);
   const mergeRequestRef = useRef(false);
   const mergeDialogGenerationRef = useRef(0);
@@ -142,8 +134,13 @@ function DownloadManager({ onNavigate, active = true }) {
 
   const loadSystemStats = useCallback(async () => {
     try {
-      const stats = await window.electronAPI.getDownloadSystemStats?.();
-      if (stats && activeRef.current) setSystemStats(stats);
+      let stats = await window.electronAPI.getDownloadSystemStats?.();
+      if (stats && activeRef.current) {
+        // Giữ tốc độ gần nhất 5 giây để ô không nhấp nháy giữa các tập nhỏ.
+        if (stats.totalSpeed > 0) lastSpeedRef.current = { value: stats.totalSpeed, at: Date.now() };
+        else if (Date.now() - lastSpeedRef.current.at < 5000) stats = { ...stats, totalSpeed: lastSpeedRef.current.value };
+        setSystemStats(stats);
+      }
     } catch (_) {}
   }, []);
 
@@ -251,6 +248,7 @@ function DownloadManager({ onNavigate, active = true }) {
         showToast('Ghép thất bại: ' + (data.error || 'Lỗi không xác định'), 'error');
       }),
     ];
+    const speedTimer = setInterval(loadSystemStats, 1000);
     const timer = setInterval(() => {
       loadQueue();
       refresh();
@@ -260,17 +258,11 @@ function DownloadManager({ onNavigate, active = true }) {
     return () => {
       cleanups.forEach(cleanup => cleanup());
       clearInterval(timer);
+      clearInterval(speedTimer);
       clearTimeout(batchTimer);
       for (const key of Object.keys(requests.current)) requests.current[key]++;
     };
   }, [active, refresh, loadQueue, loadSeriesList, loadMergeTasks, showToast]);
-
-  const toggleSelect = (id) => {
-    const next = new Set(selected);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelected(next);
-  };
 
   const clearSelection = () => setSelected(new Set());
   const selectAll = () => setSelected(new Set(tasks.map((task) => task.id)));
@@ -464,9 +456,53 @@ function DownloadManager({ onNavigate, active = true }) {
   const sortedIds = useMemo(() => sortTasks(displayTasks).map(task => task.id), [displayTasks, orderVersion]);
   const taskById = useMemo(() => new Map(tasks.map(task => [task.id, task])), [tasks]);
   taskIndex.current = taskById;
-  const pageCount = Math.max(1, Math.ceil(sortedIds.length / PAGE_SIZE));
+  // Nhóm theo phim trên toàn bộ danh sách đã lọc rồi mới phân trang theo thẻ phim.
+  const coverBySeries = useMemo(() => new Map(seriesList.map(series => [String(series.series_id), series])), [seriesList]);
+  const seriesGroups = useMemo(() => {
+    const map = new Map();
+    for (const id of sortedIds) {
+      const task = taskById.get(id);
+      if (!task) continue;
+      const sid = String(task.hongguoInfo?.series_id || task.batchId || 'unknown');
+      if (!map.has(sid)) {
+        const registered = coverBySeries.get(sid);
+        map.set(sid, {
+          seriesId: sid,
+          seriesTitle: task.hongguoInfo?.series_title || registered?.series_title || task.videoInfo?.author || task.title || 'Phim ngắn',
+          cover: task.videoInfo?.cover || task.batchInfo?.avatar || registered?.cover || '',
+          totalEpisodes: Number(registered?.total) || 0,
+          quality: '',
+          latestTime: 0,
+          tasks: [],
+          totalBytes: 0,
+          completedCount: 0,
+          downloadingCount: 0,
+          pendingCount: 0,
+          stoppedCount: 0,
+          failedCount: 0,
+          speed: 0,
+        });
+      }
+      const group = map.get(sid);
+      group.tasks.push(task);
+      group.totalEpisodes = Math.max(group.totalEpisodes, Number(task.hongguoInfo?.total_episodes) || 0);
+      group.quality ||= task.downloadQuality || '';
+      group.latestTime = Math.max(group.latestTime, Number(task.startTime) || 0);
+      group.totalBytes += task.status === 'completed' ? (task.totalBytes || 0) : (task.receivedBytes || 0);
+      if (task.status === 'completed') group.completedCount++;
+      else if (task.status === 'downloading') {
+        group.downloadingCount++;
+        if (task.speed) group.speed += task.speed;
+      }
+      else if (task.status === 'pending') group.pendingCount++;
+      else if (task.status === 'stopped') group.stoppedCount++;
+      else if (task.status === 'failed') group.failedCount++;
+    }
+    return Array.from(map.values());
+  }, [sortedIds, taskById, coverBySeries]);
+  const pageCount = Math.max(1, Math.ceil(seriesGroups.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
-  const visibleTasks = sortedIds.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map(id => taskById.get(id)).filter(Boolean);
+  const visibleGroups = seriesGroups.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Các tác vụ có thể tạm dừng: Đang tải xuống, đang chờ, đã dừng (tất cả các tác vụ chưa chạy xong)
   const pausableCount = useMemo(
@@ -484,49 +520,6 @@ function DownloadManager({ onNavigate, active = true }) {
     [selected, taskById]
   );
 
-  const seriesGroups = useMemo(() => {
-    const map = new Map();
-    for (const task of visibleTasks) {
-      const sid = String(task.hongguoInfo?.series_id || task.batchId || 'unknown');
-      if (!map.has(sid)) {
-        map.set(sid, {
-          seriesId: sid,
-          seriesTitle: task.hongguoInfo?.series_title || task.videoInfo?.author || task.title || 'Phim ngắn',
-          cover: task.videoInfo?.cover || task.batchInfo?.avatar || '',
-          tasks: [],
-          totalBytes: 0,
-          receivedBytes: 0,
-          completedCount: 0,
-          downloadingCount: 0,
-          stoppedCount: 0,
-          failedCount: 0,
-          speed: 0,
-        });
-      }
-      const group = map.get(sid);
-      group.tasks.push(task);
-      group.totalBytes += (task.totalBytes || 0);
-      group.receivedBytes += (task.receivedBytes || 0);
-      if (task.status === 'completed') group.completedCount++;
-      else if (task.status === 'downloading') {
-        group.downloadingCount++;
-        if (task.speed) group.speed += task.speed;
-      }
-      else if (task.status === 'stopped') group.stoppedCount++;
-      else if (task.status === 'failed') group.failedCount++;
-    }
-    return Array.from(map.values());
-  }, [visibleTasks]);
-
-  const toggleCollapseSeries = (sid) => {
-    setCollapsedSeries(prev => {
-      const next = new Set(prev);
-      if (next.has(sid)) next.delete(sid);
-      else next.add(sid);
-      return next;
-    });
-  };
-
   const resumeSeries = async (group) => {
     const ids = group.tasks.filter(needsManualRetry).map(t => t.id);
     if (!ids.length) return;
@@ -543,6 +536,25 @@ function DownloadManager({ onNavigate, active = true }) {
     }
     await refresh();
     showToast(`Đã tạm dừng các tập của «${group.seriesTitle}»`);
+  };
+
+  const retryNowSeries = async (group) => {
+    for (const task of group.tasks.filter(isWaitingRetry)) {
+      try {
+        const result = await window.electronAPI.retryTask(task.id);
+        if (!result?.success) throw new Error(result?.error || 'Thử lại thất bại');
+      } catch (error) { showToast(error.message || 'Thử lại thất bại', 'error'); }
+    }
+  };
+
+  const stopRetrySeries = async (group) => {
+    for (const task of group.tasks.filter(isWaitingRetry)) {
+      try {
+        const result = await window.electronAPI.stopDownload(task.id);
+        if (!result?.success) throw new Error(result?.error || 'Dừng thất bại');
+      } catch (error) { showToast(error.message || 'Dừng thất bại', 'error'); }
+    }
+    await refresh();
   };
 
   const toggleSelectSeries = (group) => {
@@ -584,131 +596,6 @@ function DownloadManager({ onNavigate, active = true }) {
     } catch (err) {
       showToast('Lỗi khi dọn dẹp: ' + err.message, 'error');
     }
-  };
-
-  const renderTaskRow = (task) => {
-    const selectedThis = selected.has(task.id);
-    const progressPct = task.progress || 0;
-    const isDone = task.status === 'completed';
-    const isFailed = task.status === 'failed';
-    const isDownloading = task.status === 'downloading';
-    const isStopped = task.status === 'stopped';
-    const waitingRetry = isWaitingRetry(task);
-    const canRetry = isFailed || isStopped;
-    const canPause = isDownloading || task.status === 'pending';
-
-    return (
-      <div
-        key={task.id}
-        className={`dm-task ${task.status} ${selectedThis ? 'selected' : ''}`}
-        onClick={() => toggleSelect(task.id)}
-      >
-        <button
-          type="button"
-          className="dm-checkbox-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleSelect(task.id);
-          }}
-          aria-label={`Chọn tác vụ tập ${task.hongguoInfo ? task.hongguoInfo.vid_index : ''}`}
-        >
-          {selectedThis ? <CheckSquare size={16} /> : <Square size={16} />}
-        </button>
-
-        <div className="dm-info">
-          <TaskTitleComponent task={task} className="dm-task-title" />
-          <div className="dm-meta">
-            <span className={`status-badge status-${task.status}`}>
-              {STATUS_TEXT[task.status] || task.status}
-            </span>
-            {task.hongguoInfo && (
-              <span>
-                Tập {task.hongguoInfo.vid_index} /{' '}
-                {task.hongguoInfo.total_episodes ? `${task.hongguoInfo.total_episodes} tập` : ''}
-              </span>
-            )}
-            {task.downloadQuality && (
-              <span className="dm-badge-quality">{task.downloadQuality.toUpperCase()}</span>
-            )}
-            {task.duration && (
-              <span>{Math.floor(task.duration / 60)}:{(task.duration % 60).toString().padStart(2, '0')}</span>
-            )}
-            {isDone && task.totalBytes ? <span>{fmtBytes(task.totalBytes)}</span> : null}
-            {isDownloading && task.speed ? <span>{fmtBytes(task.speed)}/s</span> : null}
-          </div>
-
-          {isDownloading && (
-            <div className="dm-progress">
-              <div
-                className="dm-progress-bar"
-                role="progressbar"
-                aria-label="Tiến độ tải xuống"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={progressPct}
-              >
-                <div className="dm-progress-fill" style={{ width: `${progressPct}%` }} />
-              </div>
-              <span className="dm-pct">{progressPct}%</span>
-            </div>
-          )}
-
-          {waitingRetry && (
-            <div className="dm-retry-hint" role="status">
-              Tự động thử lại {task.sourceRetries || 1}/3 sau {fmtElapsed((task.retryAt - Date.now()) / 1000)}: {task.error}
-            </div>
-          )}
-          {isFailed && !waitingRetry && task.error && (
-            <div className="dm-error" role="alert">{task.error}</div>
-          )}
-        </div>
-
-        <div className="dm-actions" onClick={(e) => e.stopPropagation()}>
-          {canPause && (
-            <button className="icon-btn" title="Tạm dừng" onClick={async () => {
-              try {
-                const result = await window.electronAPI.pauseTask(task.id);
-                if (!result?.success) throw new Error(result?.error || 'Tạm dừng thất bại');
-              } catch (error) { showToast(error.message || 'Tạm dừng thất bại', 'error'); }
-            }}>
-              <Pause size={16} />
-            </button>
-          )}
-          {waitingRetry && (
-            <button className="icon-btn" title="Dừng tự động thử lại" onClick={async () => {
-              try {
-                const result = await window.electronAPI.stopDownload(task.id);
-                if (!result?.success) throw new Error(result?.error || 'Dừng thất bại');
-              } catch (error) { showToast(error.message || 'Dừng thất bại', 'error'); }
-            }}>
-              <Pause size={16} />
-            </button>
-          )}
-          {canRetry && (
-            <button className="icon-btn" title={waitingRetry ? 'Thử lại ngay' : 'Thử lại'} onClick={async () => {
-              try {
-                const result = await window.electronAPI.retryTask(task.id);
-                if (!result?.success) throw new Error(result?.error || 'Thử lại thất bại');
-              } catch (error) { showToast(error.message || 'Thử lại thất bại', 'error'); }
-            }}>
-              <RefreshCw size={16} />
-            </button>
-          )}
-          <button className="icon-btn" title="Mở thư mục" onClick={() => window.electronAPI.openFolder(task.id)}>
-            <Folder size={16} />
-          </button>
-          <button
-            className="icon-btn icon-btn-danger"
-            title="Xóa tác vụ (tùy chọn xóa kèm tệp trên máy hay không)"
-            onClick={() => {
-              askDelete([task], `Xóa tác vụ tập ${task.hongguoInfo ? task.hongguoInfo.vid_index : ''} của《${task.hongguoInfo && task.hongguoInfo.series_title ? task.hongguoInfo.series_title : ''}》`);
-            }}
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      </div>
-    );
   };
 
   useDialogKeyboard(active && !!(confirmAsk || mergeAsk), () => { setConfirmAsk(null); closeMergeDialog(); }, '.dm-container .player-confirm');
@@ -754,7 +641,7 @@ function DownloadManager({ onNavigate, active = true }) {
       </div>
 
       <div className="dm-usage-notice" role="note" aria-label="Rủi ro tải về và khuyến cáo sử dụng">
-        <p><strong>Sự cố tạm thời sẽ tự động thử lại.</strong> Khi tải phim nguồn Hồng Quả gặp mất mạng, hết thời gian hoặc truyền tải không đầy đủ, sẽ tự động thử lại tối đa 3 lần với khoảng cách 10, 30, 60 giây; khi nguồn tạm thời không khả dụng sẽ chờ 3, 8, 15 phút. Trong thời gian chờ có thể dừng hoặc thử lại ngay. Lỗi quyền truy cập, lỗi ổ đĩa cần xử lý thủ công; các tác vụ vẫn thất bại sau khi thử lại sẽ được giữ nguyên.</p>
+        <p><strong>Ứng dụng không bao giờ tự tải.</strong> Mỗi lượt tải chỉ bắt đầu khi bạn bấm. Khi gặp mất mạng, hết thời gian hoặc nguồn lỗi, tác vụ dừng lại ở trạng thái thất bại và chờ bạn bấm Thử lại hoặc Tiếp tục; mở lại ứng dụng cũng không tự tải tiếp. Lỗi quyền truy cập, lỗi ổ đĩa cần xử lý thủ công.</p>
         <p>Phần mềm này phục vụ mục đích học tập và nghiên cứu, khuyến nghị tự xóa trong vòng 24 giờ sau khi trải nghiệm; vui lòng không mạo danh chính thức hoặc thu phí dưới danh nghĩa ủy quyền giả. Quyền và nghĩa vụ mã nguồn mở tuân theo GPLv3. Các khuyến cáo trên không đại diện cho việc được nền tảng hoặc chủ sở hữu bản quyền cấp phép, cũng như không tạo thành cam kết miễn trừ trách nhiệm.</p>
       </div>
 
@@ -926,7 +813,7 @@ function DownloadManager({ onNavigate, active = true }) {
           </div>
         )}
 
-        {activeCount > 0 && filterStatus === 'all' && !visibleTasks.some(t => t.status === 'downloading' || t.status === 'pending') && (
+        {activeCount > 0 && filterStatus === 'all' && !visibleGroups.some(group => group.tasks.some(t => t.status === 'downloading' || t.status === 'pending')) && (
           <div className="dm-status-notice dm-status-notice-info">
             <div className="dm-notice-body">
               <span>⚡ Đang tải và xử lý <b>{activeCount}</b> tập phim ở trang khác.</span>
@@ -945,7 +832,7 @@ function DownloadManager({ onNavigate, active = true }) {
             <span className="dm-dash-icon pulse"><Zap size={15} /></span>
             <div className="dm-dash-info">
               <span className="dm-dash-label">Tốc độ mạng</span>
-              <span className="dm-dash-value">{systemStats.totalSpeed > 0 ? `${fmtBytes(systemStats.totalSpeed)}/s` : (activeCount > 0 ? 'Đang tải…' : '0 B/s')}</span>
+              <span className="dm-dash-value">{systemStats.totalSpeed > 0 ? `${fmtBytes(systemStats.totalSpeed)}/s` : (activeCount > 0 ? 'Đang xử lý…' : '0 B/s')}</span>
             </div>
           </div>
           <div className="dm-dash-item">
@@ -971,24 +858,6 @@ function DownloadManager({ onNavigate, active = true }) {
             >
               <Trash2 size={13} /> Dọn tệp tạm (.tmp)
             </button>
-            <div className="dm-view-toggle">
-              <button
-                type="button"
-                className={`btn btn-sm ${viewMode === 'series' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setViewMode('series')}
-                title="Gom nhóm các tập theo từng bộ phim"
-              >
-                🗂️ Theo phim
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm ${viewMode === 'episodes' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setViewMode('episodes')}
-                title="Hiển thị danh sách chi tiết từng tập"
-              >
-                📋 Từng tập
-              </button>
-            </div>
           </div>
         </div>
 
@@ -1023,9 +892,9 @@ function DownloadManager({ onNavigate, active = true }) {
               title="Xóa các tác vụ đã chọn ở tất cả các trang, khi xác nhận có thể chọn xóa kèm tệp trên máy hay không">
               <Trash2 size={15} />Xóa mục đã chọn ({selected.size} mục)
             </button>
-          <span>Tổng cộng {tasks.length} mục{filterStatus !== 'all' ? ` (đang lọc ${displayTasks.length})` : ''} · Hiện tại {sortedIds.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, sortedIds.length)} mục{selected.size > 0 ? ` · Đã chọn ${selected.size} mục (giữ qua các trang)` : ''}</span>
+          <span>{seriesGroups.length} phim · {displayTasks.length} tập{filterStatus !== 'all' ? ` (đang lọc trong ${tasks.length} tập)` : ''}{selected.size > 0 ? ` · Đã chọn ${selected.size} tập (giữ qua các trang)` : ''}</span>
           </div>
-          <nav aria-label="Phân trang tác vụ tải về">
+          <nav aria-label="Phân trang phim đã tải">
             <button className="btn btn-outline btn-sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Trang trước</button>
             <span>Trang {currentPage} / {pageCount}</span>
             <button className="btn btn-outline btn-sm" disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)}>Trang sau</button>
@@ -1039,149 +908,134 @@ function DownloadManager({ onNavigate, active = true }) {
             <p className="dm-empty-sub">Tìm kiếm tên phim hoặc dán liên kết chia sẻ, chọn các tập bạn muốn lưu.</p>
             {onNavigate && <button className="btn btn-primary" onClick={() => onNavigate('download')}>Thêm bộ phim đầu tiên</button>}
           </div>
-        ) : visibleTasks.length === 0 ? (
+        ) : visibleGroups.length === 0 ? (
           <div className="dm-empty">
-            <p>Không có tác vụ nào ở mục này</p>
+            <p>Không có phim nào ở mục này</p>
             <button className="btn btn-outline btn-sm" onClick={() => { setFilterStatus('all'); setPage(1); }}>
-              Xem tất cả ({tasks.length} mục)
+              Xem tất cả ({seriesGroups.length} phim)
             </button>
           </div>
-        ) : viewMode === 'series' ? (
-          <div className="dm-series-grid">
-            {seriesGroups.map((group) => {
-              const isCollapsed = collapsedSeries.has(group.seriesId);
+        ) : (
+          <div className="dm-film-grid">
+            {visibleGroups.map((group) => {
               const allSelectedInSeries = group.tasks.length > 0 && group.tasks.every((t) => selected.has(t.id));
-              const hasErrorOrStopped = group.tasks.some(needsManualRetry);
+              const needsRetry = group.tasks.some(needsManualRetry);
+              const retrying = group.tasks.filter(isWaitingRetry).length;
               const isSeriesActive = group.tasks.some((t) => t.status === 'downloading' || t.status === 'pending');
-              const percent = group.tasks.length ? Math.round((group.completedCount / group.tasks.length) * 100) : 0;
+              const totalEpisodes = group.totalEpisodes || group.tasks.length;
+              const percent = totalEpisodes ? Math.min(100, Math.round((group.completedCount / totalEpisodes) * 100)) : 0;
+              const nowTask = group.tasks.find((t) => t.status === 'downloading');
+              const waitingTask = group.tasks.find(isWaitingRetry);
+              const firstError = group.tasks.find((t) => t.status === 'failed' && !isWaitingRetry(t) && t.error)?.error;
+              const canDownload = /^\d+$/.test(group.seriesId);
+              const stateClass = percent === 100 ? 'is-completed' : needsRetry ? 'has-stopped' : isSeriesActive ? 'is-active' : '';
 
               return (
-                <div key={group.seriesId} className={`dm-series-card ${hasErrorOrStopped ? 'has-stopped' : ''} ${isSeriesActive ? 'is-active' : ''} ${percent === 100 ? 'is-completed' : ''}`}>
-                  {/* Header Thẻ Phim */}
-                  <div className="dm-series-header">
-                    <div className="dm-series-cover-wrapper" onClick={() => toggleCollapseSeries(group.seriesId)}>
-                      {group.cover ? (
-                        <img src={group.cover} alt={group.seriesTitle} className="dm-series-cover" />
-                      ) : (
-                        <div className="dm-series-cover cover-placeholder"><Film size={24} /></div>
-                      )}
-                      {percent === 100 && <span className="dm-series-done-badge">✓ Xong</span>}
-                    </div>
-
-                    <div className="dm-series-meta">
-                      <div className="dm-series-title-row">
-                        <h3 className="dm-series-title" onClick={() => toggleCollapseSeries(group.seriesId)}>
-                          <DramaTitle title={group.seriesTitle} showOriginal={false} />
-                        </h3>
-                        {group.tasks[0]?.downloadQuality && (
-                          <span className="dm-badge-quality">{group.tasks[0].downloadQuality.toUpperCase()}</span>
-                        )}
-                      </div>
-
-                      {/* Progress Bar & Stats */}
-                      <div className="dm-series-progress-box">
-                        <div className="dm-series-progress-info">
-                          <span className="dm-series-count-text">
-                            Tiến độ: <b>{group.completedCount}</b> / {group.tasks.length} tập ({percent}%)
-                          </span>
-                          {group.speed > 0 && (
-                            <span className="dm-series-speed-text">⚡ {fmtBytes(group.speed)}/s</span>
-                          )}
-                          {group.totalBytes > 0 && (
-                            <span className="dm-series-size-text">{fmtBytes(group.totalBytes)}</span>
-                          )}
-                        </div>
-                        <div className="dm-series-progress-bar">
-                          <div className="dm-series-progress-fill" style={{ width: `${percent}%` }} />
-                        </div>
-                      </div>
-
-                      {/* Status Badges & Quick Action Controls */}
-                      <div className="dm-series-actions-row">
-                        <div className="dm-series-badges">
-                          {isSeriesActive && <span className="status-badge status-downloading">Đang tải ({group.downloadingCount})</span>}
-                          {hasErrorOrStopped && <span className="status-badge status-stopped">Dừng/Lỗi ({group.stoppedCount + group.failedCount})</span>}
-                          {percent === 100 && <span className="status-badge status-completed">Hoàn tất cả bộ</span>}
-                        </div>
-
-                        <div className="dm-series-btn-group">
-                          {hasErrorOrStopped && (
-                            <button
-                              type="button"
-                              className="btn btn-primary btn-sm"
-                              onClick={() => resumeSeries(group)}
-                              title="Tiếp tục tải các tập đang dừng/lỗi của bộ phim này"
-                            >
-                              <Play size={13} /> Tiếp tục tải
-                            </button>
-                          )}
-                          {isSeriesActive && (
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-sm"
-                              onClick={() => pauseSeries(group)}
-                              title="Tạm dừng tải các tập của bộ phim này"
-                            >
-                              <Pause size={13} /> Tạm dừng
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-sm"
-                            onClick={() => openSeriesFolder(group)}
-                            title="Mở thư mục chứa video trên máy tính"
-                          >
-                            <Folder size={13} /> Mở thư mục
-                          </button>
-                          {group.completedCount > 1 && (
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-sm"
-                              onClick={() => quickMergeSeries(group)}
-                              title="Ghép các tập phim đã tải thành 1 video duy nhất"
-                            >
-                              <Layers size={13} /> Ghép phim
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-sm btn-collapse-toggle"
-                            onClick={() => toggleCollapseSeries(group.seriesId)}
-                            title={isCollapsed ? 'Mở rộng danh sách tập' : 'Thu gọn danh sách tập'}
-                          >
-                            <span>{isCollapsed ? `Xem ${group.tasks.length} tập` : 'Thu gọn'}</span>
-                            {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                <article key={group.seriesId} className={`dm-film-card ${stateClass} ${allSelectedInSeries ? 'selected' : ''}`}>
+                  <div className="dm-film-cover">
+                    {group.cover ? (
+                      <img src={group.cover} alt="" loading="lazy" />
+                    ) : (
+                      <div className="dm-film-cover-empty"><Film size={36} /></div>
+                    )}
+                    {percent === 100 && <span className="dm-film-done">✓ Xong</span>}
+                    {group.quality && <span className="dm-film-quality">{group.quality.toUpperCase()}</span>}
+                    <button
+                      type="button"
+                      className="dm-film-select"
+                      aria-pressed={allSelectedInSeries}
+                      aria-label={`Chọn tất cả tập của ${group.seriesTitle}`}
+                      onClick={() => toggleSelectSeries(group)}
+                    >
+                      {allSelectedInSeries ? <CheckSquare size={16} /> : <Square size={16} />}
+                    </button>
                   </div>
 
-                  {/* Body: Danh sách tập bên trong Series Card */}
-                  {!isCollapsed && (
-                    <div className="dm-series-episodes-list">
-                      <div className="dm-series-episodes-toolbar">
-                        <button
-                          type="button"
-                          className="btn btn-outline btn-sm"
-                          onClick={() => toggleSelectSeries(group)}
-                        >
-                          <CheckSquare size={13} /> {allSelectedInSeries ? 'Bỏ chọn cả phim' : 'Chọn cả phim'}
-                        </button>
-                        <span className="dm-series-episodes-hint">Danh sách các tập của bộ phim:</span>
-                      </div>
-                      <div className="dm-list">
-                        {group.tasks.map((task) => renderTaskRow(task))}
-                      </div>
+                  <div className="dm-film-body">
+                    <DramaTitle title={group.seriesTitle} as="h3" className="dm-film-title">{group.seriesTitle}</DramaTitle>
+
+                    <div className="dm-film-facts">
+                      <span className="dm-film-eps" title="Số tập đã tải / tổng số tập">{group.completedCount}/{totalEpisodes} tập</span>
+                      {group.totalBytes > 0 && <span title="Dung lượng">{fmtBytes(group.totalBytes)}</span>}
+                      {group.speed > 0 && <span className="dm-film-speed">⚡ {fmtBytes(group.speed)}/s</span>}
                     </div>
-                  )}
-                </div>
+                    {group.latestTime > 0 && <div className="dm-film-date" title="Lần thêm tải gần nhất">[{new Date(group.latestTime).toLocaleString('vi-VN', { hour12: false })}]</div>}
+
+                    <div className="dm-film-progress" role="progressbar" aria-label="Tiến độ cả bộ phim" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+                      <div className={`dm-film-progress-fill ${percent === 100 ? 'fill-done' : ''}`} style={{ width: `${percent}%` }} />
+                    </div>
+
+                    <div className="dm-film-badges">
+                      {isSeriesActive && <span className="status-badge status-downloading">Đang tải ({group.downloadingCount + group.pendingCount})</span>}
+                      {retrying > 0 && <span className="status-badge status-failed">Chờ thử lại ({retrying})</span>}
+                      {group.stoppedCount + group.failedCount - retrying > 0 && (
+                        <span className="status-badge status-stopped">Dừng/Lỗi ({group.stoppedCount + group.failedCount - retrying})</span>
+                      )}
+                      {percent === 100 && <span className="status-badge status-completed">Hoàn tất</span>}
+                    </div>
+                    {nowTask && (
+                      <div className="dm-film-now">
+                        Đang tải{nowTask.hongguoInfo ? ` tập ${nowTask.hongguoInfo.vid_index}` : ''}: {nowTask.progress || 0}%
+                      </div>
+                    )}
+                    {waitingTask && (
+                      <div className="dm-retry-hint" role="status">
+                        Tự động thử lại {waitingTask.sourceRetries || 1}/3 sau {fmtElapsed((waitingTask.retryAt - Date.now()) / 1000)}: {waitingTask.error}
+                      </div>
+                    )}
+                    {firstError && <div className="dm-error" role="alert" title={firstError}>{firstError}</div>}
+
+                    <div className="dm-film-actions">
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm dm-film-download"
+                        disabled={!canDownload}
+                        onClick={() => setDrawerItem({ series_id: group.seriesId, series_title: group.seriesTitle, cover: group.cover })}
+                        title={canDownload ? 'Mở bảng thông tin phim để chọn tập và tải' : 'Phim này không có mã nguồn Hồng Quả nên không thể mở bảng tải'}
+                      >
+                        <Download size={13} /> Tải
+                      </button>
+                      {needsRetry && (
+                        <button type="button" className="icon-btn" title="Tiếp tục tải các tập đang dừng/lỗi của bộ phim này" onClick={() => resumeSeries(group)}>
+                          <Play size={16} />
+                        </button>
+                      )}
+                      {isSeriesActive && (
+                        <button type="button" className="icon-btn" title="Tạm dừng tải các tập của bộ phim này" onClick={() => pauseSeries(group)}>
+                          <Pause size={16} />
+                        </button>
+                      )}
+                      {retrying > 0 && (
+                        <>
+                          <button type="button" className="icon-btn" title="Thử lại ngay" onClick={() => retryNowSeries(group)}>
+                            <RefreshCw size={16} />
+                          </button>
+                          <button type="button" className="icon-btn" title="Dừng tự động thử lại" onClick={() => stopRetrySeries(group)}>
+                            <Pause size={16} />
+                          </button>
+                        </>
+                      )}
+                      <button type="button" className="icon-btn" title="Mở thư mục chứa video" onClick={() => openSeriesFolder(group)}>
+                        <Folder size={16} />
+                      </button>
+                      {group.completedCount > 1 && (
+                        <button type="button" className="icon-btn" title="Ghép các tập đã tải thành một video" onClick={() => quickMergeSeries(group)}>
+                          <Layers size={16} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="icon-btn icon-btn-danger"
+                        title="Xóa tác vụ của phim này (tùy chọn xóa kèm tệp trên máy hay không)"
+                        onClick={() => askDelete(group.tasks, `Xóa toàn bộ tác vụ của《${group.seriesTitle}》`)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </article>
               );
             })}
-          </div>
-        ) : (
-          <div className="dm-list">
-            {visibleTasks.map((task) => renderTaskRow(task))}
           </div>
         )}
       </div>
@@ -1300,133 +1154,13 @@ function DownloadManager({ onNavigate, active = true }) {
         )}
       </div>
 
-      {queue.active > 0 && (
-        <div className="dm-queue-bar">
-          <span className="dm-queue-running">
-            <span className="dm-queue-pulse" />
-            Đang tải đồng thời <b>{queue.active}</b> / {queue.maxConcurrent}
-            {queue.queued > 0 ? <> · Đang chờ trong hàng đợi <b>{queue.queued}</b></> : null}
-          </span>
-          <span className="dm-queue-hint">
-            Số luồng đồng thời có thể điều chỉnh tại "Cài đặt → Số lượt tải đồng thời tối đa"
-          </span>
-        </div>
-      )}
-
-      {retryableSelectedCount > 0 && (
-        <div className="dm-hint">
-          Đã chọn <b>{retryableSelectedCount}</b> mục thất bại, nhấn
-          <b>「Thử lại mục đã chọn」</b> để tải lại (không cần phân tích lại).
-        </div>
-      )}
-
-      {loadError && <div className="alert alert-error" role="alert">{loadError}<button className="btn btn-outline btn-sm" onClick={refresh}>Tải lại</button></div>}
-      {tasks.length > 0 && <div className="dm-pagination">
-        <div className="dm-selection-summary">
-          <button className="btn btn-outline btn-sm" onClick={allSelected ? clearSelection : selectAll}
-            title={allSelected ? 'Bỏ chọn ở tất cả các trang' : `Chọn tất cả ${tasks.length} mục, bao gồm cả các trang khác`}>
-            <CheckSquare size={15} />{allSelected ? 'Hủy chọn tất cả' : 'Chọn tất cả'}
-          </button>
-          <button className="btn btn-outline btn-sm" onClick={deleteSelected} disabled={selected.size === 0}
-            title="Xóa các tác vụ đã chọn ở tất cả các trang, khi xác nhận có thể chọn xóa kèm tệp trên máy hay không">
-            <Trash2 size={15} />Xóa mục đã chọn ({selected.size} mục)
-          </button>
-        <span>Tổng cộng {tasks.length} mục · Hiện tại {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, tasks.length)} mục{selected.size > 0 ? ` · Đã chọn ${selected.size} mục (giữ qua các trang)` : ''}</span>
-        </div>
-        <nav aria-label="Phân trang tác vụ tải về">
-          <button className="btn btn-outline btn-sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Trang trước</button>
-          <span>Trang {currentPage} / {pageCount}</span>
-          <button className="btn btn-outline btn-sm" disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)}>Trang sau</button>
-        </nav>
-      </div>}
-
-      {tasks.length === 0 ? (
-        <div className="dm-empty">
-          <Download size={40} />
-          <p>Chưa có tác vụ tải về</p>
-          <p className="dm-empty-sub">Tìm kiếm tên phim hoặc dán liên kết chia sẻ, chọn các tập bạn muốn lưu.</p>
-          {onNavigate && <button className="btn btn-primary" onClick={() => onNavigate('download')}>Thêm bộ phim đầu tiên</button>}
-        </div>
-      ) : (
-        <div className="dm-list">
-          {visibleTasks.map((task) => {
-
-            const isSel = selected.has(task.id);
-            const waitingRetry = isWaitingRetry(task);
-            const canStop = task.status === 'downloading' || task.status === 'pending' || waitingRetry;
-            const canRetry = task.status === 'failed' || task.status === 'stopped';
-            const pct = task.progress || 0;
-            return (
-              <div key={task.id} className={`dm-task ${isSel ? 'selected' : ''}`} onClick={() => toggleSelect(task.id)}>
-                <input className="dm-task-select" type="checkbox" aria-label={`Chọn ${task.title || task.filename}`} checked={isSel} onClick={(e) => e.stopPropagation()} onChange={() => toggleSelect(task.id)} />
-                <div className="dm-task-cover">
-                  {task.videoInfo && task.videoInfo.cover ? (
-                    <img src={task.videoInfo.cover} alt="" />
-                  ) : (
-                    <div className="cover-placeholder"><Film size={18} /></div>
-                  )}
-                </div>
-                <div className="dm-task-body">
-                  <TaskTitleComponent task={task} className="dm-task-title" />
-                  <div className="dm-task-meta">
-                    <span className={`status-tag status-${waitingRetry ? 'pending' : task.status}`}>{waitingRetry ? 'Chờ thử lại' : STATUS_TEXT[task.status] || task.status}</span>
-                    {waitingRetry && <span className="dm-size">Tự động thử lại {task.sourceRetries}/3 · Xếp hàng sau {new Date(task.retryAt).toLocaleTimeString('vi-VN', { hour12: false })}</span>}
-                    {task.status === 'downloading' && task.totalBytes > 0 && (
-                      <span className="dm-size">{fmtBytes(task.receivedBytes)} / {fmtBytes(task.totalBytes)}</span>
-                    )}
-                    {task.status === 'failed' && task.error && <span className="dm-error">{task.error}</span>}
-                  </div>
-                  {['downloading', 'completed'].includes(task.status) && task.qualityNotice && <div className="dm-quality-notice">{task.qualityNotice}</div>}
-                  {task.nasWarning && <div className="dm-error">{task.nasWarning}</div>}
-                  {(task.status === 'downloading' || task.status === 'pending') && (
-                    <div className="dm-progress">
-                      <div className="dm-progress-bar">
-                        <div className="dm-progress-fill" style={{ width: pct + '%' }}></div>
-                      </div>
-                      <span className="dm-pct">{pct}%</span>
-                    </div>
-                  )}
-                </div>
-                <div className="dm-task-actions" onClick={(e) => e.stopPropagation()}>
-                  {canStop && (
-                    <button className="icon-btn" title={waitingRetry ? 'Dừng tự động thử lại' : 'Dừng'} onClick={async () => {
-                      try {
-                        const result = await window.electronAPI.stopDownload(task.id);
-                        if (!result?.success) throw new Error(result?.error || 'Dừng thất bại');
-                        await refresh();
-                      } catch (error) { showToast(error.message || 'Dừng thất bại', 'error'); }
-                    }}>
-                      <Square size={16} />
-                    </button>
-                  )}
-                  {canRetry && (
-                    <button className="icon-btn" title={waitingRetry ? 'Thử lại ngay' : 'Thử lại'} onClick={async () => {
-                      try {
-                        const result = await window.electronAPI.retryTask(task.id);
-                        if (!result?.success) throw new Error(result?.error || 'Thử lại thất bại');
-                      } catch (error) { showToast(error.message || 'Thử lại thất bại', 'error'); }
-                    }}>
-                      <RefreshCw size={16} />
-                    </button>
-                  )}
-                  <button className="icon-btn" title="Mở thư mục" onClick={() => window.electronAPI.openFolder(task.id)}>
-                    <Folder size={16} />
-                  </button>
-                  <button
-                    className="icon-btn icon-btn-danger"
-                    title="Xóa tác vụ (tùy chọn xóa kèm tệp trên máy hay không)"
-                    onClick={() => {
-                      askDelete([task], `Xóa tác vụ tập ${task.hongguoInfo ? task.hongguoInfo.vid_index : ''} của《${task.hongguoInfo && task.hongguoInfo.series_title ? task.hongguoInfo.series_title : ''}》`);
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <SeriesDownloadDrawer
+        item={drawerItem}
+        active={active}
+        onClose={() => setDrawerItem(null)}
+        onQueued={() => { setDrawerItem(null); setFilterStatus('all'); setPage(1); refresh(); }}
+        showToast={showToast}
+      />
 
       {toast && (
         <div className={`dm-toast dm-toast-${toast.type}`} role={toast.type === 'error' ? 'alert' : 'status'} onClick={() => setToast(null)}>
