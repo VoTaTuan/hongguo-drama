@@ -25,15 +25,51 @@
 .divider { height: 16px; width: 1px; margin: 0 5px; background: var(--border); }
 .range-label { font-size: 12px; color: var(--text-secondary); }
 .range-input { width: 142px; height: 32px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--bg-elevated); padding: 0 10px; color: var(--text-primary); outline: none; }
-.episode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); gap: 8px; max-height: 460px; overflow: auto; padding: 3px; }
-.episode-card { display: flex; align-items: center; text-align: left; gap: 9px; padding: 11px; border: 1px solid var(--border); background: var(--bg-elevated); border-radius: 8px; }
+.episode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; max-height: 460px; overflow: auto; padding: 3px; }
+.episode-card { display: flex; align-items: center; text-align: left; gap: 9px; padding: 10px 11px; border: 1px solid var(--border); background: var(--bg-elevated); border-radius: 8px; position: relative; transition: all 0.15s ease; }
 .episode-card:hover { background: var(--bg-inset); }
 .episode-card.selected { background: var(--accent-soft); border-color: var(--accent-border); }
+.episode-card.is-completed {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+.episode-card.is-completed:hover {
+  background: rgba(34, 197, 94, 0.18);
+}
+.episode-card.is-completed.selected {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.episode-card.is-downloading {
+  background: rgba(14, 165, 233, 0.12);
+  border-color: rgba(14, 165, 233, 0.45);
+}
+.episode-card.is-downloading.selected {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
 .checkbox-icon { display: flex; }
 .icon-checked { color: var(--accent); } .icon-unchecked { color: var(--text-tertiary); }
-.episode-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.episode-info { min-width: 0; display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.episode-num-wrap { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .episode-num { font-weight: 600; font-size: 12px; }
 .episode-title { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ep-badge-status { font-size: 10px; font-weight: 600; line-height: 1; padding: 2px 4px; border-radius: 3px; white-space: nowrap; }
+.ep-badge-completed { background: rgba(34, 197, 94, 0.2); color: var(--success, #22c55e); border: 1px solid rgba(34, 197, 94, 0.4); }
+.ep-badge-downloading { background: rgba(14, 165, 233, 0.2); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.4); }
+
+.btn-chip.btn-chip-missing { color: var(--success, #22c55e); border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.1); font-weight: 600; }
+.btn-chip.btn-chip-missing:hover { background: rgba(34, 197, 94, 0.18); border-color: rgba(34, 197, 94, 0.7); }
+
+.episode-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-bottom: 12px; font-size: 12px; color: var(--text-secondary); padding: 0 2px; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border); }
+.legend-dot.legend-unpicked { background: var(--bg-elevated); }
+.legend-dot.legend-picked { background: var(--accent-soft); border-color: var(--accent-border); }
+.legend-dot.legend-completed { background: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.6); }
+.legend-dot.legend-downloading { background: rgba(14, 165, 233, 0.2); border-color: rgba(14, 165, 233, 0.6); }
 .search-loading { display: flex; gap: 10px; align-items: center; padding: 36px 0; color: var(--text-secondary); }
 .search-count { margin: 26px 0 14px; font-size: 12px; color: var(--text-secondary); }
 .search-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }

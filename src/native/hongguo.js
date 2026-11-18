@@ -679,6 +679,25 @@ function unavailableSources(sources, quality = 'auto') {
   return error;
 }
 
+async function probeOfficialPublicMedia(vid) {
+  if (!/^\d{1,30}$/.test(String(vid || ''))) return null;
+  for (const q of ['1080p.mp4', '720p.mp4', '360p.mp4']) {
+    const candidate = `${SITE_ORIGIN}/video/public/${encodeURIComponent(vid)}/${q}`;
+    if (!isPublicMediaUrl(candidate)) continue;
+    try {
+      const res = await axios.head(candidate, {
+        headers: { 'User-Agent': WEB_UA, Referer: WEB_REFERER },
+        timeout: 2500,
+        validateStatus: s => s === 200,
+      });
+      if (res.status === 200 && res.headers['content-type']?.includes('video/mp4')) {
+        return { url: candidate, spadeA: null, codec: '', source: 'web', vid: String(vid), userAgent: WEB_UA, referer: WEB_REFERER };
+      }
+    } catch (_) {}
+  }
+  return null;
+}
+
 async function fetchPlayUrlFresh(vid, sid, skipWeb = false) {
   const sources = [];
   const web = !skipWeb && await fetchPlayUrlFromWeb(vid, sid, error => sources.push(sourceFailure('web', error)));
@@ -709,6 +728,10 @@ async function fetchPlayUrlFresh(vid, sid, skipWeb = false) {
     const lastWeb = await fetchPlayUrlFromWeb(vid, sid, error => sources.push(sourceFailure('web', error)));
     if (lastWeb?.url) return lastWeb;
   }
+  // Cứu cánh cuối cùng: quét trực tiếp file media công khai trên CDN chính thức của Hồng Quả
+  const publicWeb = await probeOfficialPublicMedia(vid);
+  if (publicWeb) return publicWeb;
+
   throw unavailableSources(sources);
 }
 

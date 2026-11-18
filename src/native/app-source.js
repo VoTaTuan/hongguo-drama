@@ -8,11 +8,13 @@
 const crypto = require('node:crypto');
 const { getPlaybackDevice } = require('./playback-device');
 const sm3 = require('./sm3');
+const { signPlaybackV5 } = require('./playback-v5');
 const { normalizeDownloadQuality, meetsDownloadQuality } = require('./download-quality');
 const localId = () => String(1000000000000000n + BigInt('0x' + crypto.randomBytes(6).toString('hex')));
 const PROCESS_NONCE = crypto.randomBytes(18).toString('base64url');
 const PROCESS_STARTED = Date.now();
 const VIDEO_API = 'https://api5-normal-sinfonlineb.fqnovel.com/novel/player/multi_video_model/v1/';
+const PLAYER_API = 'https://api5-normal-sinfonlineb.fqnovel.com/novel/player/multi_video_model/player/v1';
 const SEARCH_API = 'https://api5-normal-sinfonlinea.fqnovel.com/reading/bookapi/search/tab/v';
 const VIDEO_UA = 'com.phoenix.read/71332 (Linux; U; Android 16; zh_CN; 25053RT47C; Build/BP2A.250605.031.A3; Cronet/TTNetVersion:04657795 2026-01-23 QuicVersion:c67e9834 2025-09-08)';
 const PLAYBACK_UA = 'com.phoenix.read/71532 (Linux; U; Android 9; SM-N9860; Build/PQ3A.190705.10241111;tt-ok/3.12.13.20)';
@@ -154,7 +156,21 @@ function playbackRequest(payload, identity, host = new URL(VIDEO_API).hostname) 
         'x-ladon': be32(khronos).toString('base64'), 'x-argus': le32(khronos).toString('base64'),
         'x-helios': helios(khronos), 'x-medusa': buildMedusa(url, body, khronos, device), 'x-tt-dt': '',
         'x-tt-store-region': 'cn', 'x-tt-store-region-src': 'did',
+        'x-ss-stub': md5(body),
     } };
+}
+
+// 7.5: yêu cầu phát chính thức dùng chữ ký Android v5 (ký theo query cuối và thân gzip thực tế).
+function playbackRequestV5(payload, identity, alternate = false) {
+    const body = require('node:zlib').gzipSync(Buffer.from(payload));
+    const signed = signPlaybackV5({ base: alternate ? PLAYER_API.replace('sinfonlineb.', 'sinfonlinea.') : PLAYER_API,
+        values: { aid: '8662', app_name: 'novelread', version_code: '74332', version_name: '7.4.3.32',
+            channel: 'vivo_8662_64', device_platform: 'android', device_type: 'PGT-AN10', os_version: '12',
+            update_version_code: '74332', iid: identity.iid, cdid: identity.cdid, device_id: identity.device_id },
+        body, now: Date.now() });
+    return { ...signed, body, method: 'POST', headers: { ...signed.headers,
+        'User-Agent': 'com.phoenix.read/73932 (Linux; U; Android 12; zh_CN_#Hans; PGT-AN10; Build/V417IR;tt-ok/3.12.13.20)',
+        Accept: 'application/json', 'Content-Type': 'application/json; charset=utf-8', 'Content-Encoding': 'gzip' } };
 }
 
 function parseSearchInteger(value) {
@@ -366,8 +382,9 @@ async function fetchAppPlayUrl(vid, options = {}) {
     vid = String(vid || '');
     if (!/^\d{1,30}$/.test(vid)) throw new Error('Mã tập phim không hợp lệ');
     const payload = JSON.stringify({
-        biz_param: { detail_page_version: 0, device_level: 3, disable_digg_stat: false, need_all_video_definition: true, need_mp4_align: false, use_os_player: false, use_server_dns: false, video_platform: 1024 },
+        biz_param: { detail_page_version: 0, device_level: 3, disable_digg_stat: false, disable_video_relate_book: false, need_all_video_definition: true, need_mp4_align: false, use_os_player: false, use_server_dns: false, video_platform: 1024 },
         mixed_video_id_map: { '1004': [vid] },
+        dr_scene: 'player',
     });
     let identity = await getPlaybackDevice(requestJson);
     // Registration has its own 8s budget; it must not consume the model request budget.
@@ -375,10 +392,17 @@ async function fetchAppPlayUrl(vid, options = {}) {
     const signal = AbortSignal.timeout(12000);
     let response;
     for (let attempt = 0; attempt < 2; attempt++) {
-        const signed = playbackRequest(payload, identity, attempt ? 'api5-normal-hl.fqnovel.com' : new URL(VIDEO_API).hostname);
+        // Lần 1: v5 (host chính, rồi host phụ nếu rỗng); lần 2: giao thức cũ làm dự phòng.
+        const signed = attempt ? playbackRequest(payload, identity, 'api5-normal-hl.fqnovel.com') : playbackRequestV5(payload, identity);
         if (attempt) signed.headers.Connection = 'close';
         try {
-            response = await requestJson(signed.url, { method: 'POST', headers: signed.headers, data: signed.body }, deadline, signal);
+            try {
+                response = await requestJson(signed.url, { method: 'POST', headers: signed.headers, data: signed.body }, deadline, signal);
+            } catch (error) {
+                if (attempt || error.code !== 'EMPTY_RESPONSE' || deadline - Date.now() < 1000) throw error;
+                const alt = playbackRequestV5(payload, identity, true);
+                response = await requestJson(alt.url, { method: 'POST', headers: alt.headers, data: alt.body }, deadline, signal);
+            }
             break;
         } catch (error) {
             if (attempt || error.code !== 'EMPTY_RESPONSE' || deadline - Date.now() < 1000) throw error;
@@ -393,7 +417,8 @@ async function fetchAppPlayUrl(vid, options = {}) {
         }
     }
     if (Number(response.Code || response.code || 0) !== 0) throw Object.assign(new Error('Giao diện App tạm thời chưa cung cấp thông tin phát tập này'), { code: 'BUSINESS_REJECTED' });
-    const entry = response.data?.[vid];
+    const entries = response.data?.['1004'] ?? response.data;
+    const entry = entries?.[vid];
     const model = typeof entry?.video_model === 'string' ? jsonBody(entry.video_model) : entry?.video_model;
     if (!model) throw Object.assign(new Error('Giao diện App không trả về tập đã chọn, đã dừng lấy địa chỉ'), { code: entry?.video_model ? 'INVALID_RESPONSE' : 'MISSING_MODEL' });
     const inline = Array.isArray(model.video_list) && model.video_list.length > 0;

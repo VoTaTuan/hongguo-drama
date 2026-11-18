@@ -19,6 +19,7 @@ function HongguoDownload({ onNavigate, active = true }) {
 
   // Kết quả phân tích phim ngắn
   const [seriesData, setSeriesData] = useState(null); // { series_id, series_title, cover, total, episodes: [...] }
+  const [downloadStatusMap, setDownloadStatusMap] = useState({});
   const [selectedVids, setSelectedVids] = useState(new Set());
   const [rangeInput, setRangeInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -88,6 +89,36 @@ function HongguoDownload({ onNavigate, active = true }) {
     setExportSettingsNote('');
   };
 
+  const fetchEpisodeStatus = async (targetSeriesId) => {
+    const sid = targetSeriesId || seriesData?.series_id;
+    if (!sid || !window.electronAPI?.getSeriesEpisodes) return null;
+    try {
+      const res = await window.electronAPI.getSeriesEpisodes(sid);
+      if (res?.success && res.data?.episodes) {
+        const map = {};
+        for (const ep of res.data.episodes) {
+          map[ep.vid_index] = ep;
+          if (ep.vid) map[ep.vid] = ep;
+        }
+        setDownloadStatusMap(map);
+        return map;
+      }
+    } catch (_) {}
+    return null;
+  };
+
+  useEffect(() => {
+    if (!active || !seriesData?.series_id) return;
+    const sid = String(seriesData.series_id);
+    fetchEpisodeStatus(sid);
+    const off = ['onDownloadTaskAdded', 'onDownloadCompleted', 'onDownloadFailed', 'onDownloadStopped', 'onDownloadQueueChanged']
+      .map((name) => window.electronAPI?.[name]?.(() => fetchEpisodeStatus(sid)))
+      .filter(Boolean);
+    return () => {
+      off.forEach((unsub) => unsub?.());
+    };
+  }, [active, seriesData?.series_id]);
+
   const switchTab = (next) => {
     if (next === tab) return;
     resolveRequest.current++;
@@ -97,7 +128,7 @@ function HongguoDownload({ onNavigate, active = true }) {
   };
 
   // Sau khi chọn một bộ phim từ tìm kiếm: Tái sử dụng giao diện chọn tập tải xuống hiện có
-  const handleSeriesFromSearch = (data) => {
+  const handleSeriesFromSearch = async (data) => {
     if (searchVersion !== resolveRequest.current) return;
     resolveRequest.current++;
     setLoading(false);
@@ -107,7 +138,21 @@ function HongguoDownload({ onNavigate, active = true }) {
     setSeriesData(data);
     clearTextExport();
     if (data?.series_title) translateText(data.series_title).catch(() => {});
-    setSelectedVids(new Set(data.episodes.filter((ep) => !ep.locked).map((ep) => ep.vid)));
+
+    let initialVids = new Set(data.episodes.filter((ep) => !ep.locked).map((ep) => ep.vid));
+    try {
+      const statusMap = await fetchEpisodeStatus(data.series_id);
+      if (statusMap) {
+        const missingVids = data.episodes
+          .filter((ep) => !ep.locked && statusMap[ep.vid_index]?.status !== 'completed' && statusMap[ep.vid]?.status !== 'completed')
+          .map((ep) => ep.vid);
+        if (missingVids.length > 0 && missingVids.length < data.episodes.length) {
+          initialVids = new Set(missingVids);
+        }
+      }
+    } catch (_) {}
+
+    setSelectedVids(initialVids);
     setSuccessMsg(`Đã chọn《${data.series_title}》tổng cộng ${data.total} tập, có thể phát trực tiếp hoặc gửi tải về`);
     document.querySelector('.main-content:not([hidden])')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -127,6 +172,7 @@ function HongguoDownload({ onNavigate, active = true }) {
     setErrorMsg('');
     setSuccessMsg('');
     setSeriesData(null);
+    setDownloadStatusMap({});
     clearTextExport();
     setSelectedVids(new Set());
 
@@ -136,9 +182,19 @@ function HongguoDownload({ onNavigate, active = true }) {
       if (res?.success && res.data) {
         setSeriesData(res.data);
         if (res.data.series_title) translateText(res.data.series_title).catch(() => {});
-        // Mặc định chọn tất cả, các tập mà trang web chưa cung cấp sẽ tự động thử nguồn App.
-        const allVids = new Set(res.data.episodes.filter((ep) => !ep.locked).map((ep) => ep.vid));
-        setSelectedVids(allVids);
+        let initialVids = new Set(res.data.episodes.filter((ep) => !ep.locked).map((ep) => ep.vid));
+        try {
+          const statusMap = await fetchEpisodeStatus(res.data.series_id);
+          if (statusMap) {
+            const missingVids = res.data.episodes
+              .filter((ep) => !ep.locked && statusMap[ep.vid_index]?.status !== 'completed' && statusMap[ep.vid]?.status !== 'completed')
+              .map((ep) => ep.vid);
+            if (missingVids.length > 0 && missingVids.length < res.data.episodes.length) {
+              initialVids = new Set(missingVids);
+            }
+          }
+        } catch (_) {}
+        setSelectedVids(initialVids);
         setSuccessMsg(`Phân tích thành công! Tìm thấy《${res.data.series_title}》tổng cộng ${res.data.total} tập`);
       } else {
         setErrorMsg(res?.error || 'Phân tích thất bại, vui lòng kiểm tra liên kết hoặc mạng');
@@ -167,6 +223,20 @@ function HongguoDownload({ onNavigate, active = true }) {
   const handleSelectAll = () => {
     if (!seriesData) return;
     setSelectedVids(new Set(seriesData.episodes.filter((ep) => !ep.locked).map((ep) => ep.vid)));
+  };
+
+  // Chỉ chọn các tập chưa tải về
+  const handleSelectMissing = () => {
+    if (!seriesData?.episodes) return;
+    const next = new Set();
+    for (const ep of seriesData.episodes) {
+      if (ep.locked) continue;
+      const st = downloadStatusMap[ep.vid_index] || downloadStatusMap[ep.vid];
+      if (st?.status !== 'completed') {
+        next.add(ep.vid);
+      }
+    }
+    setSelectedVids(next);
   };
 
   // Đảo chọn
@@ -289,6 +359,32 @@ function HongguoDownload({ onNavigate, active = true }) {
     }
   };
 
+  const completedCount = seriesData?.episodes
+    ? seriesData.episodes.filter((ep) => {
+        const st = downloadStatusMap[ep.vid_index] || downloadStatusMap[ep.vid];
+        return st?.status === 'completed';
+      }).length
+    : 0;
+
+  const downloadingCount = seriesData?.episodes
+    ? seriesData.episodes.filter((ep) => {
+        const st = downloadStatusMap[ep.vid_index] || downloadStatusMap[ep.vid];
+        return st?.status === 'downloading';
+      }).length
+    : 0;
+
+  const missingCount = seriesData?.episodes
+    ? seriesData.episodes.filter((ep) => {
+        if (ep.locked) return false;
+        const st = downloadStatusMap[ep.vid_index] || downloadStatusMap[ep.vid];
+        return st?.status !== 'completed';
+      }).length
+    : 0;
+
+  const selectedDoneCount = seriesData?.episodes
+    ? seriesData.episodes.filter((ep) => selectedVids.has(ep.vid) && (downloadStatusMap[ep.vid_index]?.status === 'completed' || downloadStatusMap[ep.vid]?.status === 'completed')).length
+    : 0;
+
   return (
     <div className="hongguo-container">
       {/* Khu vực Banner đầu trang */}
@@ -401,6 +497,7 @@ function HongguoDownload({ onNavigate, active = true }) {
                 <div className="series-tags">
                   <span className="badge">{mediaSourceLabel(seriesData.series_id, mediaSources)}</span>
                   <span className="badge">Tổng cộng {seriesData.total} tập</span>
+                  {completedCount > 0 && <span className="badge-new">Đã tải {completedCount}/{seriesData.total} tập</span>}
                   <span className="badge badge-secondary">Đã chọn {selectedVids.size} tập</span>
                 </div>
               </div>
@@ -430,7 +527,7 @@ function HongguoDownload({ onNavigate, active = true }) {
                   disabled={qualityLoading || submitting || selectedVids.size === 0}
                 >
                   <Download size={16} />
-                  <span>Tải về các tập đã chọn ({selectedVids.size}/{seriesData.total})</span>
+                  <span>Tải về các tập đã chọn ({selectedVids.size}/{seriesData.total}{selectedDoneCount > 0 ? `, ${selectedDoneCount} tải lại` : ''})</span>
                 </button>
                 {onNavigate && (
                   <button className="btn btn-outline" onClick={() => onNavigate('manager')}>
@@ -469,6 +566,15 @@ function HongguoDownload({ onNavigate, active = true }) {
           <div className="controls-row">
             <div className="select-buttons">
               <button className="btn-chip" onClick={handleSelectAll}>Chọn tất cả</button>
+              {completedCount > 0 && (
+                <button
+                  className="btn-chip btn-chip-missing"
+                  onClick={handleSelectMissing}
+                  title="Chỉ chọn các tập chưa tải về máy"
+                >
+                  Chưa tải ({missingCount})
+                </button>
+              )}
               <button className="btn-chip" onClick={handleInvertSelect}>Đảo lựa chọn</button>
               <button className="btn-chip" onClick={handleDeselectAll}>Hủy chọn tất cả</button>
               <span className="divider"></span>
@@ -492,25 +598,52 @@ function HongguoDownload({ onNavigate, active = true }) {
             </div>
           </div>
 
+          {/* Bảng chú giải màu sắc trạng thái tập */}
+          <div className="episode-legend" aria-hidden="true">
+            <span className="legend-item"><i className="legend-dot legend-unpicked" />Chưa chọn</span>
+            <span className="legend-item"><i className="legend-dot legend-picked" />Sẽ tải ({selectedVids.size})</span>
+            {completedCount > 0 && (
+              <span className="legend-item"><i className="legend-dot legend-completed" />Đã tải xong ({completedCount})</span>
+            )}
+            {downloadingCount > 0 && (
+              <span className="legend-item"><i className="legend-dot legend-downloading" />Đang tải ({downloadingCount})</span>
+            )}
+          </div>
+
           {/* Danh sách lưới tập phim */}
           <div className="episode-grid">
             {seriesData.episodes.map((ep) => {
               const isChecked = selectedVids.has(ep.vid);
+              const st = downloadStatusMap[ep.vid_index] || downloadStatusMap[ep.vid];
+              const isCompleted = st?.status === 'completed';
+              const isDownloading = st?.status === 'downloading';
+              let cardTitle = ep.locked
+                ? 'Cần mở khóa trên nền tảng nguồn'
+                : isCompleted
+                ? `Tập ${ep.vid_index} · Đã tải về máy${isChecked ? ' (chọn tải lại)' : ''}`
+                : isDownloading
+                ? `Tập ${ep.vid_index} · Đang tải ${st.progress || 0}%`
+                : undefined;
+
               return (
                 <button
                   type="button"
                   disabled={ep.locked === true}
-                  title={ep.locked ? 'Cần mở khóa trên nền tảng nguồn' : undefined}
+                  title={cardTitle}
                   aria-pressed={isChecked}
                   key={ep.vid}
-                  className={`episode-card ${isChecked ? 'selected' : ''}`}
+                  className={`episode-card ${isChecked ? 'selected' : ''} ${isCompleted ? 'is-completed' : ''} ${isDownloading ? 'is-downloading' : ''}`}
                   onClick={() => toggleVid(ep.vid)}
                 >
                   <div className="checkbox-icon">
                     {isChecked ? <CheckSquare size={18} className="icon-checked" /> : <Square size={18} className="icon-unchecked" />}
                   </div>
                   <div className="episode-info">
-                    <span className="episode-num">Tập {String(ep.vid_index).padStart(2, '0')}</span>
+                    <div className="episode-num-wrap">
+                      <span className="episode-num">Tập {String(ep.vid_index).padStart(2, '0')}</span>
+                      {isCompleted && <span className="ep-badge-status ep-badge-completed">Đã tải</span>}
+                      {isDownloading && <span className="ep-badge-status ep-badge-downloading">{st.progress ? `${st.progress}%` : 'Đang tải'}</span>}
+                    </div>
                     {ep.locked ? <span className="episode-title">Khóa · Cần mở khóa ở nguồn</span> : ep.title && <span className="episode-title">{ep.title}</span>}
                   </div>
                 </button>
