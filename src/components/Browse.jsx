@@ -7,6 +7,7 @@ import { rememberCatalogTitles } from '../searchHistory';
 import { translateGenre } from './genreMap';
 import { DramaTitle } from './TranslatedText';
 import DramaHoverCard from './DramaHoverCard';
+import { useHoverPopupEnabled } from '../hoverPopupPref';
 import SeriesDownloadDrawer from './SeriesDownloadDrawer';
 
 const PAGE_CACHE_TTL_MS = 60_000;
@@ -75,6 +76,15 @@ function Browse({ onNavigate, active = true }) {
   const [drawerItem, setDrawerItem] = useState(null); // { series_id, series_title, cover, description }
   const [hoveredDrama, setHoveredDrama] = useState(null);
   const hoverTimerRef = useRef(null);
+  const [popupEnabled] = useHoverPopupEnabled();
+
+  // Tắt popup từ thanh trên cùng: đóng popup đang mở
+  useEffect(() => {
+    if (!popupEnabled) {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      setHoveredDrama(null);
+    }
+  }, [popupEnabled]);
 
   const clearHoverTimer = () => {
     if (hoverTimerRef.current) {
@@ -85,6 +95,7 @@ function Browse({ onNavigate, active = true }) {
 
   const handleCardMouseEnter = (e, item) => {
     clearHoverTimer();
+    if (!popupEnabled) return;
     const rect = e.currentTarget.getBoundingClientRect();
     if (hoveredDrama && String(hoveredDrama.item?.series_id) === String(item?.series_id)) {
       return;

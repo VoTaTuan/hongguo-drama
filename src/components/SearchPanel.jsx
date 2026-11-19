@@ -9,6 +9,7 @@ import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { rankSearchResults } from './searchRanking.mjs';
 import { DramaTitle } from './TranslatedText';
 import DramaHoverCard from './DramaHoverCard';
+import { useHoverPopupEnabled } from '../hoverPopupPref';
 import { translateQueryToChinese, hasChinese } from '../services/translator';
 
 const SEARCH_SAFETY_TIMEOUT_MS = 25000;
@@ -43,6 +44,14 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
   const [pickingId, setPickingId] = useState('');
   const [hoveredDrama, setHoveredDrama] = useState(null);
   const hoverTimerRef = useRef(null);
+  const [popupEnabled] = useHoverPopupEnabled();
+
+  useEffect(() => {
+    if (!popupEnabled) {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      setHoveredDrama(null);
+    }
+  }, [popupEnabled]);
 
   const clearHoverTimer = () => {
     if (hoverTimerRef.current) {
@@ -53,6 +62,7 @@ function SearchPanel({ onSelectSeries, onSwitchToInput, active = true }) {
 
   const handleCardMouseEnter = (e, item) => {
     clearHoverTimer();
+    if (!popupEnabled) return;
     const rect = e.currentTarget.getBoundingClientRect();
     if (hoveredDrama && String(hoveredDrama.item?.series_id) === String(item?.series_id)) {
       return;

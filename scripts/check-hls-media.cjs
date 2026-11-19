@@ -35,11 +35,11 @@ assert.ok(ffmpeg && video, 'Set HONGGUO_FFMPEG and HONGGUO_VIDEO_FIXTURE');
   }
   for (const privateUrl of ['http://127.0.0.1/secret.ts','http://192.168.1.1/key','file:///etc/passwd']) {
     await assert.rejects(remuxHls({...options,output:output('private'),request:async(url,args) => url.endsWith('media.m3u8')
-      ? {status:200,headers:{},data:Readable.from([`#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXTINF:2,\n${privateUrl}\n#EXT-X-ENDLIST\n`]),url} : request(url,args)}), /公网|安全|地址|协议/);
+      ? {status:200,headers:{},data:Readable.from([`#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXTINF:2,\n${privateUrl}\n#EXT-X-ENDLIST\n`]),url} : request(url,args)}), /公网|安全|地址|协议|công cộng|an toàn|địa chỉ|giao thức/);
     assert.equal(fs.existsSync(output('private')), false);
   }
   await assert.rejects(remuxHls({...options,output:output('privatekey'),request:async(url,args)=>url.endsWith('media.m3u8')
-    ? {status:200,headers:{},data:Readable.from(['#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXT-X-KEY:METHOD=AES-128,URI="http://192.168.1.1/key"\n#EXTINF:2,\npart0.ts\n#EXT-X-ENDLIST\n']),url}:request(url,args)}),/公网|地址/);
+    ? {status:200,headers:{},data:Readable.from(['#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXT-X-KEY:METHOD=AES-128,URI="http://192.168.1.1/key"\n#EXTINF:2,\npart0.ts\n#EXT-X-ENDLIST\n']),url}:request(url,args)}),/公网|地址|công cộng|địa chỉ/);
   assert.equal(fs.existsSync(output('privatekey')),false);
   await assert.rejects(remuxHls({...options,output:output('missing'),request:async(url,args) => url.includes('/part') ? Promise.reject(new Error('missing segment')) : request(url,args)}), /missing segment|分片|媒体|phân đoạn|media/i);
   assert.equal(fs.existsSync(output('missing')), false);
@@ -73,6 +73,6 @@ assert.ok(ffmpeg && video, 'Set HONGGUO_FFMPEG and HONGGUO_VIDEO_FIXTURE');
     if (!url.includes('/part')) return request(url,args);
     return new Promise((resolve,reject) => { args.signal.addEventListener('abort',()=>reject(new Error('cancelled')), {once:true}); controller.abort(); });
   }});
-  await assert.rejects(pending, /取消|cancel/i); assert.equal(fs.existsSync(output('cancel')), false);
+  await assert.rejects(pending, /取消|cancel|hủy/i); assert.equal(fs.existsSync(output('cancel')), false);
   console.log('PASS HLS: encrypted master/variant/segments/key remux; real ffprobe; private/file URLs blocked; missing segment and cancellation clean output');
 })().catch(error => { console.error(error.stack); process.exitCode=1; }).finally(()=>fs.rmSync(root,{recursive:true,force:true}));

@@ -6,7 +6,7 @@
  *   - Cổng bị chiếm dụng: Tự động đổi sang cổng khả dụng tiếp theo (kèm thông báo)
  * Sau đó khởi động máy chủ phát triển Vite, chờ sẵn sàng rồi mở cửa sổ Electron.
  */
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const net = require('net');
 const path = require('path');
 
@@ -46,6 +46,19 @@ function waitPortReady(port, timeoutMs = 30000) {
   });
 }
 
+// Với shell:true, child.kill() chỉ dừng lớp vỏ (cmd.exe) còn tiến trình con (Vite, Electron) vẫn chạy ngầm
+// và chiếm cổng. Trên Windows phải dừng cả cây tiến trình.
+function killTree(child) {
+  if (!child || child.pid == null || child.exitCode !== null) return;
+  try {
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+    } else {
+      child.kill('SIGTERM');
+    }
+  } catch (_) { /* tiến trình có thể đã thoát */ }
+}
+
 async function main() {
   const occupied = await checkPort(PREFERRED_PORT);
   const port = occupied ? await findFreePort(PREFERRED_PORT + 1) : PREFERRED_PORT;
@@ -73,7 +86,7 @@ async function main() {
     await waitPortReady(port);
   } catch (e) {
     console.error('[Khởi động thất bại]', e.message);
-    vite.kill();
+    killTree(vite);
     process.exit(1);
   }
 
@@ -84,12 +97,13 @@ async function main() {
   });
 
   const cleanup = () => {
-    try { vite.kill(); } catch (_) {}
-    try { electron.kill(); } catch (_) {}
+    killTree(vite);
+    killTree(electron);
     process.exit(0);
   };
   process.on('SIGINT', cleanup);
   process.on('SIGTERM', cleanup);
+  process.on('SIGHUP', cleanup); // đóng cửa sổ console
 
   electron.on('exit', () => cleanup());
 }

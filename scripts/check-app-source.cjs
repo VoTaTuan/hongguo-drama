@@ -39,20 +39,18 @@ function fixture({ wrongVid = false, fallback = 'https://vod.snssdk.com/info', m
     assert.ok(config.signal);
     assert.equal(config.responseType, 'text');
     if (config.method === 'POST') {
-      assert.match(config.headers['User-Agent'], /^com\.phoenix\.read\/71532 /);
+      // 5.4: signed v5 playback request - final-query/gzip-body/timestamp binding is covered by playback-v5.test.cjs.
+      assert.match(config.headers['User-Agent'], /^com\.phoenix\.read\/73932 /);
+      assert.equal(config.headers['Content-Encoding'], 'gzip');
       const query = new URL(config.url).searchParams;
       const timestamp = Number(config.headers['x-khronos']);
-      assert.equal(query.get('ts'), String(timestamp));
+      assert.ok(Number.isSafeInteger(timestamp) && timestamp > 0);
+      if (query.has('ts')) assert.equal(query.get('ts'), String(timestamp));
       assert.equal(query.get('_rticket'), config.headers['x-ss-req-ticket']);
       assert.ok(Buffer.isBuffer(config.data));
-      assert.deepEqual(JSON.parse(config.data).mixed_video_id_map['1004'], ['11']);
-      assert.equal(context.branchOf(config.url, config.data, timestamp), 0);
-      const raw = Buffer.from(config.headers['x-gorgon'], 'hex');
-      assert.equal(raw.length, 26);
-      const random = raw[2] | (raw[3] << 8);
-      assert.equal(config.headers['x-gorgon'], context.xGorgon(new URL(config.url).search.slice(1), config.data, timestamp, random));
-      assert.notEqual(config.headers['x-gorgon'], context.xGorgon(new URL(config.url).search.slice(1), Buffer.from('altered body'), timestamp, random));
-      for (const name of ['x-medusa', 'x-helios', 'x-ladon', 'x-argus']) assert.ok(Buffer.from(config.headers[name], 'base64').length > 0);
+      assert.deepEqual(JSON.parse(require('node:zlib').gunzipSync(config.data)).mixed_video_id_map['1004'], ['11']);
+      assert.equal(config.headers['x-ss-stub'], crypto.createHash('md5').update(config.data).digest('hex').toUpperCase(), 'stub must hash the exact gzip bytes sent');
+      for (const name of ['x-medusa', 'x-helios']) assert.ok(Buffer.from(config.headers[name], 'base64').length > 0);
       assert.equal(config.headers.Cookie, undefined);
       assert.equal(config.headers.Authorization, undefined);
       const model = { video_model: JSON.stringify({ fallback_api: fallback }) };
@@ -73,6 +71,8 @@ function fixture({ wrongVid = false, fallback = 'https://vod.snssdk.com/info', m
       } };
       if (name === './sm3') return require(path.join(nativeDir, 'sm3'));
       if (name === './download-quality') return require(path.join(nativeDir, 'download-quality'));
+      if (name === './playback-v5') return require(path.join(nativeDir, 'playback-v5'));
+      if (name === 'node:zlib') return require('node:zlib');
       if (name === 'node:crypto') return { ...crypto, createHash(name, ...args) {
         assert.notEqual(name.toLowerCase(), 'sm3', 'must not depend on OpenSSL SM3');
         return crypto.createHash(name, ...args);

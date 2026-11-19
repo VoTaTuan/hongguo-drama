@@ -18,6 +18,7 @@ const document = { pictureInPictureElement: null };
 const context = { document, module: { exports: {} }, navigator: { platform: 'Mac' }, require: name => {
   if (name === 'react') return react;
   if (name.endsWith('useStealthWindow')) return () => ({ stealthMode: false, toggleStealth() {} });
+  if (name.endsWith('hoverPopupPref')) return { useHoverPopupEnabled: () => [true, () => {}] };
   return name;
 } };
 context.exports = context.module.exports;

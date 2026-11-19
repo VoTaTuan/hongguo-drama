@@ -776,6 +776,23 @@
   overflow: hidden;
 }
 
+/* Ảnh bìa và tên phim bấm được để mở bảng thông tin phim */
+.dm-film-cover.is-openable,
+.dm-film-open {
+  cursor: pointer;
+}
+.dm-film-cover.is-openable:hover img {
+  transform: scale(1.03);
+}
+.dm-film-cover.is-openable:focus-visible,
+.dm-film-open:focus-visible {
+  outline: 2px solid var(--primary, #c8404a);
+  outline-offset: -2px;
+}
+.dm-film-open:hover .dm-film-title {
+  text-decoration: underline;
+}
+
 .dm-film-cover img {
   width: 100%;
   height: 100%;
@@ -938,3 +955,71 @@
   color: var(--accent, #e53e3e);
 }
 
+
+/* Lý do thẻ phim không mở được bảng thông tin */
+.dm-film-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted, #7a7f8a);
+}
+
+/* Cảnh báo ổ đĩa sắp đầy */
+.dm-dash-item.is-low-disk .dm-dash-icon,
+.dm-dash-item.is-low-disk .dm-dash-value {
+  color: var(--danger, #d32f2f);
+}
+.dm-dash-item.is-low-disk .dm-dash-value {
+  font-weight: 600;
+}
+
+/* Menu chuột phải trên thẻ phim */
+.dm-card-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 200px;
+  max-width: 280px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--bg-card, #fff);
+  color: var(--text-primary, #1f2430);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+.dm-card-menu-title {
+  padding: 6px 10px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #7a7f8a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  margin-bottom: 2px;
+}
+.dm-card-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.dm-card-menu button:hover,
+.dm-card-menu button:focus-visible {
+  background: var(--bg-inset, rgba(0, 0, 0, 0.06));
+  outline: none;
+}
+.dm-card-menu button.is-danger {
+  color: var(--danger, #d32f2f);
+}

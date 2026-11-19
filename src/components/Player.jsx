@@ -82,6 +82,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
   const [rateNotice, setRateNotice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [merging, setMerging] = useState(false);
+  const [downloadingAll, setDownloadingAll] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);   // Bảng chọn phim
   const [pickerQuery, setPickerQuery] = useState('');
 
@@ -1298,6 +1299,24 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     showToast(firstError ? `${ok} tập gửi thành công, ${missing.length - ok} tập thất bại: ${firstError}` : `Đã thêm ${ok} tập vào hàng đợi tải`);
   };
 
+  // Tải toàn bộ các tập chưa tải (không khóa) của phim đang mở bằng một lần gửi hàng loạt
+  const downloadAll = async () => {
+    if (qualityLoading || downloadingAll) return;
+    const missing = episodes.filter((e) => !e.locked && e.status !== 'completed');
+    if (!missing.length) { showToast('Tất cả các tập có thể tải đã được tải xong'); return; }
+    setDownloadingAll(true);
+    try {
+      const res = await window.electronAPI.hongguoDownloadBatch({
+        seriesId: activeSeriesId,
+        seriesTitle: detail?.series_title || '',
+        quality: downloadQuality,
+        episodes: missing.map((e) => ({ vid: e.vid, vid_index: e.vid_index, title: e.title, cover: detail?.cover || '' })),
+      });
+      showToast(res?.success ? `Đã thêm ${res.count} tập vào hàng đợi tải` : (res?.error || 'Thêm vào tải về thất bại'));
+    } catch (error) { showToast(error.message || 'Thêm vào tải về thất bại, vui lòng thử lại'); }
+    finally { setDownloadingAll(false); }
+  };
+
   // Ghép nối một chạm cho bộ phim hiện tại (bật chọn định dạng)
   const openMergeDialog = () => {
     mergeDialogGenerationRef.current += 1;
@@ -1912,6 +1931,11 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           <button className="btn btn-outline" onClick={() => downloadMissing()} disabled={qualityLoading}>
             <Download size={15} />
             Tải các tập chưa hoàn thành
+          </button>
+          <button className="btn btn-outline" onClick={downloadAll} disabled={qualityLoading || downloadingAll || !episodes.length}
+            title="Thêm toàn bộ các tập chưa tải của phim này vào hàng đợi tải trong một lần">
+            <Download size={15} />
+            {downloadingAll ? 'Đang gửi...' : `Tải toàn bộ (${episodes.length} tập)`}
           </button>
           <button
             className="btn btn-primary"

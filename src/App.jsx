@@ -8,6 +8,7 @@ import Browse from './components/Browse';
 import PageMenu from './components/PageMenu';
 import WatchHistory from './components/WatchHistory';
 import { initializeTheme } from './theme';
+import { useHoverPopupEnabled } from './hoverPopupPref';
 import useStealthWindow from './components/useStealthWindow';
 import './components/StealthWindow.css';
 import AnnouncementNotice from './components/AnnouncementNotice';
@@ -37,6 +38,7 @@ export default function App() {
   const [borderless, setBorderless] = useState(false);
   const [episodesOpen, setEpisodesOpen] = useState(false);
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
+  const [popupEnabled, setPopupEnabled] = useHoverPopupEnabled();
   const [pinBusy, setPinBusy] = useState(false);
   const layoutLock = useRef(false);
   const [page, setPage] = useState('browse');
@@ -232,6 +234,16 @@ export default function App() {
             >
               <Key size={14} />
               <span>{licenseInfo?.is_active ? 'Bản quyền' : 'Kích hoạt'}</span>
+            </button>
+            <button className="btn btn-outline btn-sm popup-toggle" aria-pressed={popupEnabled}
+              aria-label={popupEnabled ? 'Tắt popup thông tin phim' : 'Bật popup thông tin phim'}
+              title={popupEnabled ? 'Tắt popup thông tin phim khi rê chuột' : 'Bật popup thông tin phim khi rê chuột'}
+              onClick={() => setPopupEnabled(!popupEnabled)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 22h8M12 18v4" />
+                {!popupEnabled && <path d="M3 3l18 18" />}
+              </svg>
+              <span>Popup: {popupEnabled ? 'Bật' : 'Tắt'}</span>
             </button>
             <button className="btn btn-outline btn-sm pin-toggle" aria-pressed={alwaysOnTop} disabled={pinBusy}
               aria-label={alwaysOnTop ? 'Bỏ ghim' : 'Ghim trên cùng'} title={alwaysOnTop ? 'Bỏ ghim' : 'Ghim trên cùng'}

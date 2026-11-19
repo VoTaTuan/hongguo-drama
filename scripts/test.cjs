@@ -9,6 +9,7 @@ const skip = new Set([
   'check-windows-release.cjs',
   'check-windows-installer.cjs',
   'check-hls-media.cjs',
+  'check-hls-parallel.cjs',
   'check-download-media-validity.cjs',
   'check-ffmpeg-mac.cjs',
   'check-merge.cjs',

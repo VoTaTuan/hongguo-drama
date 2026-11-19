@@ -250,7 +250,9 @@ function load(fetchPlayUrlSingle, overrides = {}) {
     await h.handlers['stop-download']({}, 'retry');
     await h.handlers['retry-task']({}, 'retry');
     assert.ok(h.run('runningDownloads.size') <= 1, 'only one task may own the destination');
-    resolve({ url: base + '/range' }); await sleep(80);
+    resolve({ url: base + '/range' });
+    // Poll instead of a fixed delay: the second run's disk and loopback I/O is slow on some Windows hosts.
+    for (let i = 0; i < 100 && h.run('downloadTasks[0].status') !== 'completed'; i++) await sleep(50);
     assert.equal(lookups, 2); assert.equal(h.run('downloadTasks[0].status'), 'completed');
     assert.equal(fs.readFileSync(path.join(root, 'retry.mp4'), 'utf8'), '0123456789');
     assert.equal(hits, before + 1, 'late cancelled lookup must not start a second media transfer');

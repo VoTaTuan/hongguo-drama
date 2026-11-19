@@ -526,6 +526,7 @@ function renderName(format, seriesTitle, vidIndex, epTitle) {
   const vars = {
     'series_title': String(seriesTitle || '').trim(),
     'vid_index': String(vidIndex).padStart(3, '0'),
+    'ep_no': String(vidIndex).padStart(2, '0'),
     'ep_title': String(epTitle || '').trim(),
   };
   const zhMap = {
@@ -2176,7 +2177,7 @@ function uniqueEpisodeFilename(settings, title, episode) {
   const index = String(episode.vid_index).padStart(3, '0');
   const format = settings.name_format || '';
   const rendered = renderName(format, title, episode.vid_index, episode.title) || title;
-  return `${rendered}${/集数|vid_index/.test(format) ? '' : `_Tập${index}`}.mp4`;
+  return `${rendered}${/集数|vid_index|ep_no/.test(format) ? '' : `_Tập${index}`}.mp4`;
 }
 
 function episodeFilePaths(file) {
@@ -2225,7 +2226,7 @@ function collectSeriesEpisodeFiles(seriesId, seriesTitle) {
   const registeredPaths = new Set([...downloadTasks.map(task => task.savePath), ...mergeTasks.map(task => task.output)].filter(Boolean));
   const episodePaths = new Set(tasks.map(task => task.savePath).filter(file => ownsEpisodeFiles(file, tasks)));
   const episodeNames = new Map();
-  const formats = new Set([getCurrentSettings().name_format, 'series_title vid_index', 'series_title vid_index ep_title', 'series_title', '剧名 集数', '剧名 集数 标题', '剧名']);
+  const formats = new Set([getCurrentSettings().name_format, 'series_title vid_index', 'series_title vid_index ep_title', 'series_title', 'Ep ep_no', '剧名 集数','剧名 集数 标题', '剧名']);
   const entry = seriesRegistry.find(series => String(series.series_id) === sid);
   // Khi các hồ sơ cùng tên dùng chung thư mục, tên tệp không thể chứng minh quyền sở hữu, chỉ tin vào bản ghi tác vụ rõ ràng.
   const ambiguousTitle = sharedDirectory && (seriesRegistry.some(series => String(series.series_id) !== sid && sanitizeFolderName(series.series_title) === sanitizeFolderName(seriesTitle))

@@ -51,6 +51,7 @@ function mountApp() {
   const context = { module: { exports: {} }, window: { electronAPI: api }, navigator: { platform: 'Mac' }, require: name => {
     if (name === 'react') return react;
     if (name.endsWith('useStealthWindow')) return () => ({ stealthMode: false });
+    if (name.endsWith('hoverPopupPref')) return { useHoverPopupEnabled: () => [true, () => {}] };
     return name;
   } };
   context.exports = context.module.exports;

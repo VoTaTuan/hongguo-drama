@@ -18,6 +18,8 @@ function load(axios, { realDevice = false, getPlaybackDevice, now } = {}) {
       if (name === 'node:crypto') return crypto;
       if (name === './sm3') return require('../src/native/sm3');
       if (name === './download-quality') return require('../src/native/download-quality');
+      if (name === './playback-v5') return require('../src/native/playback-v5');
+      if (name === 'node:zlib') return require('node:zlib');
       if (name === './playback-device') return getPlaybackDevice ? { getPlaybackDevice } : realDevice ? require('../src/native/playback-device')
         : { getPlaybackDevice: async () => ({ device_id: '1000000000000001', iid: '1000000000000002', cdid: 'fixture' }) };
       if (name === 'axios') return axios;
@@ -108,20 +110,20 @@ function row(definition, width, height, suffix) {
     return identities[rejected ? 1 : 0];
   } });
   assert.equal((await recovery.fetchAppPlayUrl(vid)).url, plain.main_url, 'empty model response renews the device and recovers');
-  assert.equal(recoverCalls, 2);
+  assert.equal(recoverCalls, 3, 'empty model: same device on the alternate route first, then one device renewal');
   assert.equal(renewals, 1);
   for (const status of [200, 403, 404]) {
     let calls = 0, refreshed = 0;
     const unavailable = load(async () => { calls++; return { status, headers: {}, data: '' }; },
       { getPlaybackDevice: async (_request, rejected) => { if (rejected) refreshed++; return identities[rejected ? 1 : 0]; } });
     await assert.rejects(unavailable.fetchAppPlayUrl(vid), error => status === 200 ? error.code === 'EMPTY_RESPONSE' : error.status === status);
-    assert.equal(calls, status === 200 ? 2 : 1, 'one recovery only; HTTP rejection must not rotate devices');
+    assert.equal(calls, status === 200 ? 3 : 1, 'one alternate route plus one recovery only; HTTP rejection must not rotate devices');
     assert.equal(refreshed, status === 200 ? 1 : 0);
   }
   let cooldownCalls = 0;
   await assert.rejects(load(async () => { cooldownCalls++; return { status: 200, headers: {}, data: '' }; },
     { getPlaybackDevice: async () => identities[0] }).fetchAppPlayUrl(vid), error => error.code === 'EMPTY_RESPONSE');
-  assert.equal(cooldownCalls, 2, 'cooldown permits one alternate route without registering another device');
+  assert.equal(cooldownCalls, 3, 'empty responses try v5 main host, v5 alternate host, then the legacy fallback, without registering another device');
   let clock = Date.now(), slowCalls = 0;
   const slowRegistration = load(async config => {
     slowCalls++;
@@ -133,18 +135,18 @@ function row(definition, width, height, suffix) {
   const hosts = [];
   const alternate = load(async config => {
     hosts.push(new URL(config.url).hostname);
-    if (hosts.length === 1) return { status: 200, headers: {}, data: '' };
-    assert.equal(config.headers.Connection, 'close');
+    if (hosts.length <= 2) { assert.equal(config.headers.Connection, undefined, 'v5 routes keep default connection handling'); return { status: 200, headers: {}, data: '' }; }
+    assert.equal(config.headers.Connection, 'close', 'legacy fallback is the third and last route');
     return inlineResponse([plain]);
   }, { getPlaybackDevice: async () => identities[0] });
   assert.equal((await alternate.fetchAppPlayUrl(vid)).url, plain.main_url);
-  assert.deepEqual(hosts, ['api5-normal-sinfonlineb.fqnovel.com', 'api5-normal-hl.fqnovel.com']);
+  assert.deepEqual(hosts, ['api5-normal-sinfonlineb.fqnovel.com', 'api5-normal-sinfonlinea.fqnovel.com', 'api5-normal-hl.fqnovel.com']);
   let inlineCalls = 0;
   const direct = load(async config => {
     inlineCalls++;
     assert.equal(new URL(config.url).searchParams.get('device_id'), '1000000000000001');
     assert.ok(config.headers['x-medusa']);
-    assert.ok(config.headers['x-gorgon']);
+    assert.ok(config.headers['x-ss-stub'] && config.headers['x-khronos'], 'v5 signature headers are sent');
     assert.equal(config.headers.Cookie, undefined);
     return inlineResponse([plain]);
   });

@@ -7,6 +7,8 @@ const axios = require('axios');
 const { webMediaRequestOptions } = require('./web-media-guard');
 const diskJobs = new Set();
 const DISK_RESERVE = 512 * 1024 * 1024;
+// Segments are small and latency-bound: fetch several at once. Playlists, keys and maps stay sequential.
+const SEGMENT_CONCURRENCY = 6;
 
 async function requestHls(url, { signal, headers }) {
   return axios({ url, method:'GET', responseType:'stream', timeout:30000,
@@ -18,7 +20,8 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
   if (!ffmpeg) throw new Error('Không tìm thấy FFmpeg, không thể chuẩn bị video HLS');
   webMediaRequestOptions(url);
   const controller = new AbortController(), files = new Map();
-  let temporary, child, failure, killed, killTimer, spaceTimer, diskJob, writer;
+  let temporary, child, failure, killed, killTimer, spaceTimer, diskJob;
+  const writers = new Set(), active = new Set();
   let received = 0, lastProgress = 0, stagedBytes = 0, committedBytes = 0, remuxing = false;
   const capacityBytes = Number.isFinite(tempCapacityBytes) && tempCapacityBytes >= 0 ? tempCapacityBytes : Infinity;
   const stopChild = () => {
@@ -84,7 +87,12 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
           check(); const value = line.trim();
           if (!value) { rewritten.push(line); continue; }
           if (!value.startsWith('#')) {
-            rewritten.push(await stage(new URL(value,base).href,variant,chain)); variant = false; continue;
+            const target = new URL(value,base).href;
+            if (variant) { rewritten.push(await stage(target,true,chain)); variant = false; continue; }
+            // Media segment: local path is reserved synchronously, so the manifest keeps its order while downloads overlap.
+            while (active.size >= SEGMENT_CONCURRENCY) { await Promise.race(active); check(); }
+            const job = stage(target,false,chain).catch(fail).finally(() => active.delete(job));
+            active.add(job); rewritten.push(files.get(target)); continue;
           }
           variant = value.startsWith('#EXT-X-STREAM-INF:');
           if (value.startsWith('#EXT-X-DEFINE:')) throw new Error('Không hỗ trợ danh sách HLS chứa biến địa chỉ động');
@@ -94,14 +102,16 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
           for (const match of matches) {
             const file = await stage(new URL(match[1],base).href,/^#EXT-X-(?:MEDIA|I-FRAME-STREAM-INF):/.test(value),chain);
             if (/^#EXT-X-(?:SESSION-)?KEY:/.test(value) && fs.statSync(file).size !== 16) throw new Error('Độ dài khóa HLS không hợp lệ');
-            result = result.replace(match[0],`URI="${file}"`);
+            // FFmpeg's HLS parser strips backslashes inside URI="...", which breaks Windows paths (C:\Users\... -> C:Users...).
+            const uri = file.replace(/\\/g,'/');
+            result = result.replace(match[0],() => `URI="${uri}"`);
           }
           rewritten.push(result);
         }
         const manifest = rewritten.join('\n'), size = Buffer.byteLength(manifest);
         ensureCapacity(size); stagedBytes += size;
         await fsp.writeFile(local,manifest,{mode:0o600});
-        committedBytes = stagedBytes;
+        committedBytes += size;
       } else {
         if (/text\/html|application\/json/i.test(type)) throw new Error('Phân đoạn HLS trả về trang lỗi');
         let bytes = 0;
@@ -111,9 +121,10 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
           stagedBytes += chunk.length; bytes += chunk.length; received += chunk.length;
           if (Date.now()-lastProgress >= 150) { onProgress?.(received); lastProgress = Date.now(); }
         });
-        writer = fs.createWriteStream(local,{mode:0o600});
-        await pipeline(upstream.data,writer,{signal:controller.signal});
-        committedBytes = stagedBytes; writer = null;
+        const writer = fs.createWriteStream(local,{mode:0o600}); writers.add(writer);
+        try { await pipeline(upstream.data,writer,{signal:controller.signal}); }
+        finally { writers.delete(writer); }
+        committedBytes += bytes;
         if (!bytes || (Number(upstream.headers['content-length']) && bytes !== Number(upstream.headers['content-length']))) throw new Error('Tải phân đoạn HLS không hoàn chỉnh');
         onProgress?.(received);
       }
@@ -127,7 +138,9 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
     await fsp.mkdir(outputDir, { recursive: true });
     temporary = await fsp.mkdtemp(path.join(outputDir, '.hongguo-hls-'));
     diskJob = { device: fs.statSync(temporary).dev, remaining(extra = 0) {
-      const pending = Math.max(0, stagedBytes - committedBytes - (writer?.bytesWritten || 0));
+      let writtenInFlight = 0;
+      for (const active of writers) writtenInFlight += active.bytesWritten || 0;
+      const pending = Math.max(0, stagedBytes - committedBytes - writtenInFlight);
       let outputBytes = 0;
       if (remuxing) { try { outputBytes = fs.statSync(output).size; } catch (error) { if (error.code !== 'ENOENT') throw error; } }
       // Actual free space already excludes written bytes; reserve only queued writes and the remaining MP4.
@@ -137,6 +150,7 @@ async function remuxHls({ url, output, ffmpeg, signal, cancelToken, request = re
     if (!(capacityBytes > 0)) throw new Error('Không đủ dung lượng lưu tạm HLS');
     ensureCapacity(0);
     const input = await stage(url,true);
+    while (active.size) await Promise.race(active);
     check(); ensureCapacity(0);
     remuxing = true;
     spaceTimer = setInterval(() => { try { ensureCapacity(0); } catch (error) { fail(error); } }, 1000);

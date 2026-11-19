@@ -18,6 +18,12 @@ const STATUS_ORDER = {
 };
 
 const isWaitingRetry = task => task.status === 'failed' && !!task.retryAt;
+
+// Cảnh báo khi ổ đĩa tải về còn ít dung lượng trống.
+const LOW_DISK_BYTES = 5 * 1024 ** 3;
+
+// Lý do thẻ không mở được bảng thông tin (phim không thuộc nguồn Hồng Quả).
+const NO_INFO_REASON = 'Phim từ nguồn khác Hồng Quả nên không mở được bảng thông tin và tải thêm tại đây.';
 const needsManualRetry = task => task.status === 'stopped' || task.status === 'failed' && !isWaitingRetry(task);
 
 function sortTasks(list) {
@@ -74,6 +80,24 @@ function DownloadManager({ onNavigate, active = true }) {
   const [systemStats, setSystemStats] = useState({ totalSpeed: 0, activeDownloads: 0, queuedCount: 0, freeBytes: null });
   const [orderVersion, setOrderVersion] = useState(0);
   const [loadError, setLoadError] = useState('');
+  const [cardMenu, setCardMenu] = useState(null); // menu chuột phải trên thẻ phim: { x, y, group }
+
+  // Menu chuột phải đóng khi bấm ra ngoài, nhấn Esc, cuộn hoặc đổi cỡ cửa sổ.
+  useEffect(() => {
+    if (!cardMenu) return undefined;
+    const close = () => setCardMenu(null);
+    const onKey = (event) => { if (event.key === 'Escape') close(); };
+    window.addEventListener('click', close);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', close);
+    window.addEventListener('scroll', close, true);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', close, true);
+    };
+  }, [cardMenu]);
   const toastTimerRef = useRef(null);
   const lastSpeedRef = useRef({ value: 0, at: 0 });
   const moreActionsRef = useRef(null);
@@ -580,6 +604,26 @@ function DownloadManager({ onNavigate, active = true }) {
     if (group.seriesId) setMergeSeriesId(String(group.seriesId));
   };
 
+  // Phát tập đã tải đầu tiên; resume để trình phát tiếp tục từ lịch sử xem nếu có.
+  const playSeries = async (group) => {
+    const done = group.tasks.filter(t => t.status === 'completed' && Number.isFinite(Number(t.hongguoInfo?.vid_index)));
+    if (!done.length) { showToast('Chưa có tập nào đã tải để xem', 'error'); return; }
+    const vidIndex = Math.min(...done.map(t => Number(t.hongguoInfo.vid_index)));
+    try {
+      const res = await window.electronAPI.playSeries({ seriesId: group.seriesId, vidIndex, resume: true });
+      if (!res?.success) showToast(res?.error || 'Mở trình phát thất bại', 'error');
+    } catch (error) {
+      showToast('Mở trình phát thất bại: ' + error.message, 'error');
+    }
+  };
+
+  // Tổng dung lượng đã tải trên toàn bộ tác vụ (không phụ thuộc bộ lọc đang chọn).
+  const totalDownloadedBytes = useMemo(
+    () => tasks.reduce((sum, t) => sum + (t.status === 'completed' ? (t.totalBytes || 0) : (t.receivedBytes || 0)), 0),
+    [tasks]
+  );
+  const lowDisk = Number.isFinite(systemStats.freeBytes) && systemStats.freeBytes < LOW_DISK_BYTES;
+
   const handleCleanTempFiles = async () => {
     try {
       showToast('Đang quét và dọn dẹp tệp tạm mồ côi…', 'info');
@@ -842,11 +886,22 @@ function DownloadManager({ onNavigate, active = true }) {
               <span className="dm-dash-value">{queue.active} / {queue.maxConcurrent} luồng {queue.queued > 0 ? `(${queue.queued} chờ)` : ''}</span>
             </div>
           </div>
-          <div className="dm-dash-item">
+          <div className={`dm-dash-item ${lowDisk ? 'is-low-disk' : ''}`} role={lowDisk ? 'alert' : undefined}>
             <span className="dm-dash-icon"><Folder size={15} /></span>
             <div className="dm-dash-info">
               <span className="dm-dash-label">Ổ đĩa tải về</span>
-              <span className="dm-dash-value">{systemStats.freeBytes ? `Còn trống ${fmtBytes(systemStats.freeBytes)}` : 'Sẵn sàng'}</span>
+              <span className="dm-dash-value">
+                {lowDisk
+                  ? `Sắp đầy: chỉ còn ${fmtBytes(systemStats.freeBytes)} (dưới ${fmtBytes(LOW_DISK_BYTES)})`
+                  : systemStats.freeBytes ? `Còn trống ${fmtBytes(systemStats.freeBytes)}` : 'Sẵn sàng'}
+              </span>
+            </div>
+          </div>
+          <div className="dm-dash-item">
+            <span className="dm-dash-icon"><Download size={15} /></span>
+            <div className="dm-dash-info">
+              <span className="dm-dash-label">Đã tải về</span>
+              <span className="dm-dash-value" title="Tổng dung lượng các tập đã tải và đang tải dở">{fmtBytes(totalDownloadedBytes)}</span>
             </div>
           </div>
           <div className="dm-dash-actions">
@@ -929,10 +984,31 @@ function DownloadManager({ onNavigate, active = true }) {
               const firstError = group.tasks.find((t) => t.status === 'failed' && !isWaitingRetry(t) && t.error)?.error;
               const canDownload = /^\d+$/.test(group.seriesId);
               const stateClass = percent === 100 ? 'is-completed' : needsRetry ? 'has-stopped' : isSeriesActive ? 'is-active' : '';
+              // Ảnh bìa và tên phim mở cùng bảng thông tin với nút "Tải"; chỉ có tác dụng với phim có mã nguồn Hồng Quả.
+              const openInfo = () => setDrawerItem({ series_id: group.seriesId, series_title: group.seriesTitle, cover: group.cover });
+              const canPlay = group.completedCount > 0 && !!group.seriesId && group.seriesId !== 'unknown';
+              // Nút chính theo trạng thái: đang tải -> Tạm dừng; dừng/lỗi -> Tiếp tục; tải đủ -> Xem; còn lại -> Tải.
+              const primary = isSeriesActive ? 'pause' : needsRetry ? 'resume' : (percent === 100 && canPlay) ? 'play' : 'download';
+              const openProps = canDownload ? {
+                role: 'button', tabIndex: 0, onClick: openInfo,
+                onKeyDown: (event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openInfo(); } },
+              } : {};
 
               return (
-                <article key={group.seriesId} className={`dm-film-card ${stateClass} ${allSelectedInSeries ? 'selected' : ''}`}>
-                  <div className="dm-film-cover">
+                <article
+                  key={group.seriesId}
+                  className={`dm-film-card ${stateClass} ${allSelectedInSeries ? 'selected' : ''}`}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    setCardMenu({ x: Math.max(0, Math.min(event.clientX, (window.innerWidth || 1280) - 210)), y: Math.max(0, Math.min(event.clientY, (window.innerHeight || 800) - 230)), group });
+                  }}
+                >
+                  <div
+                    className={`dm-film-cover ${canDownload ? 'is-openable' : ''}`}
+                    {...openProps}
+                    title={canDownload ? 'Mở bảng thông tin phim' : undefined}
+                    aria-label={canDownload ? `Mở thông tin phim ${group.seriesTitle}` : undefined}
+                  >
                     {group.cover ? (
                       <img src={group.cover} alt="" loading="lazy" />
                     ) : (
@@ -945,14 +1021,16 @@ function DownloadManager({ onNavigate, active = true }) {
                       className="dm-film-select"
                       aria-pressed={allSelectedInSeries}
                       aria-label={`Chọn tất cả tập của ${group.seriesTitle}`}
-                      onClick={() => toggleSelectSeries(group)}
+                      onClick={(event) => { event?.stopPropagation?.(); toggleSelectSeries(group); }}
                     >
                       {allSelectedInSeries ? <CheckSquare size={16} /> : <Square size={16} />}
                     </button>
                   </div>
 
                   <div className="dm-film-body">
-                    <DramaTitle title={group.seriesTitle} as="h3" className="dm-film-title">{group.seriesTitle}</DramaTitle>
+                    <div className={canDownload ? 'dm-film-open' : undefined} {...openProps} title={canDownload ? 'Mở bảng thông tin phim' : undefined}>
+                      <DramaTitle title={group.seriesTitle} as="h3" className="dm-film-title">{group.seriesTitle}</DramaTitle>
+                    </div>
 
                     <div className="dm-film-facts">
                       <span className="dm-film-eps" title="Số tập đã tải / tổng số tập">{group.completedCount}/{totalEpisodes} tập</span>
@@ -986,23 +1064,40 @@ function DownloadManager({ onNavigate, active = true }) {
                     {firstError && <div className="dm-error" role="alert" title={firstError}>{firstError}</div>}
 
                     <div className="dm-film-actions">
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm dm-film-download"
-                        disabled={!canDownload}
-                        onClick={() => setDrawerItem({ series_id: group.seriesId, series_title: group.seriesTitle, cover: group.cover })}
-                        title={canDownload ? 'Mở bảng thông tin phim để chọn tập và tải' : 'Phim này không có mã nguồn Hồng Quả nên không thể mở bảng tải'}
-                      >
-                        <Download size={13} /> Tải
-                      </button>
-                      {needsRetry && (
-                        <button type="button" className="icon-btn" title="Tiếp tục tải các tập đang dừng/lỗi của bộ phim này" onClick={() => resumeSeries(group)}>
-                          <Play size={16} />
+                      {primary === 'pause' && (
+                        <button type="button" className="btn btn-primary btn-sm dm-film-download" title="Tạm dừng tải các tập của bộ phim này" onClick={() => pauseSeries(group)}>
+                          <Pause size={13} /> Tạm dừng
                         </button>
                       )}
-                      {isSeriesActive && (
-                        <button type="button" className="icon-btn" title="Tạm dừng tải các tập của bộ phim này" onClick={() => pauseSeries(group)}>
-                          <Pause size={16} />
+                      {primary === 'resume' && (
+                        <button type="button" className="btn btn-primary btn-sm dm-film-download" title="Tiếp tục tải các tập đang dừng/lỗi của bộ phim này" onClick={() => resumeSeries(group)}>
+                          <Play size={13} /> Tiếp tục
+                        </button>
+                      )}
+                      {primary === 'play' && (
+                        <button type="button" className="btn btn-primary btn-sm dm-film-download" title="Xem phim trong trình phát của ứng dụng" onClick={() => playSeries(group)}>
+                          <Play size={13} /> Xem
+                        </button>
+                      )}
+                      {primary === 'download' && (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm dm-film-download"
+                          disabled={!canDownload}
+                          onClick={openInfo}
+                          title={canDownload ? 'Mở bảng thông tin phim để chọn tập và tải' : NO_INFO_REASON}
+                        >
+                          <Download size={13} /> Tải
+                        </button>
+                      )}
+                      {primary !== 'download' && canDownload && (
+                        <button type="button" className="icon-btn" title="Mở bảng thông tin phim để chọn tập và tải thêm" onClick={openInfo}>
+                          <Download size={16} />
+                        </button>
+                      )}
+                      {primary !== 'play' && canPlay && (
+                        <button type="button" className="icon-btn" title="Xem các tập đã tải trong trình phát" onClick={() => playSeries(group)}>
+                          <Play size={16} />
                         </button>
                       )}
                       {retrying > 0 && (
@@ -1032,6 +1127,7 @@ function DownloadManager({ onNavigate, active = true }) {
                         <Trash2 size={16} />
                       </button>
                     </div>
+                    {!canDownload && <div className="dm-film-hint" role="note">{NO_INFO_REASON}</div>}
                   </div>
                 </article>
               );
@@ -1153,6 +1249,23 @@ function DownloadManager({ onNavigate, active = true }) {
           </div>
         )}
       </div>
+
+      {cardMenu && (() => {
+        const { group } = cardMenu;
+        const canDownloadMenu = /^\d+$/.test(group.seriesId);
+        const canPlayMenu = group.completedCount > 0 && !!group.seriesId && group.seriesId !== 'unknown';
+        const act = (fn) => () => { setCardMenu(null); fn(); };
+        return (
+          <div className="dm-card-menu" role="menu" style={{ left: cardMenu.x, top: cardMenu.y }} onClick={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()}>
+            <div className="dm-card-menu-title" title={group.seriesTitle}>{group.seriesTitle}</div>
+            {canPlayMenu && <button type="button" role="menuitem" onClick={act(() => playSeries(group))}><Play size={14} /> Xem phim</button>}
+            {canDownloadMenu && <button type="button" role="menuitem" onClick={act(() => setDrawerItem({ series_id: group.seriesId, series_title: group.seriesTitle, cover: group.cover }))}><Download size={14} /> Thông tin phim / tải thêm</button>}
+            <button type="button" role="menuitem" onClick={act(() => openSeriesFolder(group))}><Folder size={14} /> Mở thư mục chứa video</button>
+            {group.completedCount > 1 && <button type="button" role="menuitem" onClick={act(() => quickMergeSeries(group))}><Layers size={14} /> Ghép các tập đã tải</button>}
+            <button type="button" role="menuitem" className="is-danger" onClick={act(() => askDelete(group.tasks, `Xóa toàn bộ tác vụ của《${group.seriesTitle}》`))}><Trash2 size={14} /> Xóa tác vụ của phim này</button>
+          </div>
+        );
+      })()}
 
       <SeriesDownloadDrawer
         item={drawerItem}

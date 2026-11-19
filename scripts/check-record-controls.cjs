@@ -69,7 +69,7 @@ test('search x deletes a term without selecting it or starting a search', async 
   const h = fixture(), search = h.load('searchHistory.js');
   search.saveSearchTerm('甲'); search.saveSearchTerm('乙');
   const media = { sources: [{ id: 'hongguo', label: '红果' }], revision: 0, loading: false };
-  const ui = h.mount('components/SearchPanel.jsx', { '../searchHistory': search, './useMediaSources': { default: () => media, __esModule: true } });
+  const ui = h.mount('components/SearchPanel.jsx', { '../hoverPopupPref': { useHoverPopupEnabled: () => [true, () => {}] }, '../searchHistory': search, './useMediaSources': { default: () => media, __esModule: true } });
   const remove = ui.find(n => n.props['aria-label'] === '删除搜索历史：甲' || n.props['aria-label'] === 'Xóa lịch sử tìm kiếm: 甲');
   assert.ok(remove);
   remove.props.onClick(); await ui.flush();

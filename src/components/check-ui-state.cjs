@@ -926,7 +926,7 @@ async function mount(file, api, props = {}, storage = null) {
       const app = await mount('../App', { getAppInfo: async () => ({}), onNavigate: fn => { navigate = fn; return () => {}; } });
       const ui = await mount('HongguoDownload', { playSeries: async p => { played = p; navigate({ page: 'player', payload: p }); return { success: true }; }, hongguoDownloadBatch: async () => { downloaded = true; } });
       const data = detail(id); data.episodes[0].locked = true;
-      ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); ui.render();
+      await ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); await ui.flush();
       const button = ui.button('立即播放'); assert.ok(button, 'selected-series header must expose play');
       await button.props.onClick(); await ui.flush(); app.render();
       assert.equal(played.seriesId, id); assert.equal(played.vidIndex, 2); assert.equal(downloaded, false);
@@ -937,14 +937,14 @@ async function mount(file, api, props = {}, storage = null) {
   await test('download play disables fully locked series', async () => {
     let called = false; const data = detail('hema:123'); data.episodes.forEach(ep => { ep.locked = true; });
     const ui = await mount('HongguoDownload', { playSeries: async () => { called = true; } });
-    ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); ui.render();
+    await ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); await ui.flush();
     const button = ui.button('立即播放'); assert.ok(button); assert.equal(button.props.disabled, true);
     await button.props.onClick(); assert.equal(called, false); ui.unmount();
   });
   await test('download play prevents duplicate requests and exposes failures', async () => {
     const pending = deferred(); let calls = 0;
     const ui = await mount('HongguoDownload', { playSeries: () => { calls++; return pending.promise; } });
-    ui.find(n => n.props.onSelectSeries).props.onSelectSeries(detail('123')); ui.render();
+    await ui.find(n => n.props.onSelectSeries).props.onSelectSeries(detail('123')); await ui.flush();
     const button = ui.button('立即播放'); assert.ok(button); button.props.onClick(); button.props.onClick(); ui.render();
     assert.equal(calls, 1); assert.ok(ui.find(n => n.type === 'button' && n.props.disabled && n.children.some(c => c?.children?.includes('正在打开…'))));
     pending.resolve({ success: false, error: '打开失败示例' }); await ui.flush();
@@ -961,7 +961,7 @@ async function mount(file, api, props = {}, storage = null) {
   await test('download includes App fallback episodes by default and bounds enormous ranges', async () => {
     const data = detail('A'); data.web_accessible_episodes = 1; data.episodes[0].web_available = true; data.episodes[1].web_available = false;
     const ui = await mount('HongguoDownload', {});
-    ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); ui.render();
+    await ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); await ui.flush();
     assert.ok(ui.button('下载选中集数 (2/2)'), 'web-unavailable episodes remain selected for the App fallback');
     assert.ok(ui.text().includes('网页源提供前 1 集，后续集数自动尝试 App 片源'));
     ui.find(n => n.props['aria-label'] === '选择集数范围').props.onChange({ target: { value: '1-999999999' } }); ui.render();
@@ -973,7 +973,7 @@ async function mount(file, api, props = {}, storage = null) {
     const searchResult = ui.find(n => n.props.onSelectSeries).props.onSelectSeries;
     ui.button('搜索剧集').props.onClick();
     // React does not rerender when setTab receives the same value.
-    searchResult(detail('A')); ui.render();
+    await searchResult(detail('A')); await ui.flush();
     assert.ok(ui.text().includes('《A》')); ui.unmount();
   });
   await test('browse categories: comic then real returns cached cards and ignores late comic', async () => {
@@ -1651,7 +1651,7 @@ async function mount(file, api, props = {}, storage = null) {
   await test('xifan locked episodes are excluded from every download selection', async () => {
     const data = detail('xifan:test:A'); data.episodes[0].locked = true; let submitted;
     const ui = await mount('HongguoDownload', { hongguoDownloadBatch: async p => { submitted = p; return { success: true, count: p.episodes.length }; } });
-    ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); ui.render();
+    await ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); await ui.flush();
     assert.ok(ui.button('下载选中集数 (1/2)'), 'default must exclude locked');
     for (const label of ['全选', '前 10 集', '前 30 集', '后 30 集']) { ui.button(label).props.onClick(); ui.render(); assert.ok(ui.button('下载选中集数 (1/2)'), label); }
     ui.button('反选').props.onClick(); ui.render(); assert.ok(ui.button('下载选中集数 (0/2)'));
@@ -1670,8 +1670,8 @@ async function mount(file, api, props = {}, storage = null) {
       ...api,
     });
     await ui.flush();
-    const select = id => { ui.find(n => n.props.onSelectSeries).props.onSelectSeries(detail(id)); ui.render(); };
-    select(seriesId);
+    const select = async id => { await ui.find(n => n.props.onSelectSeries).props.onSelectSeries(detail(id)); await ui.flush(); };
+    await select(seriesId);
     return { ui, requests, saved, select, unsubscribed: () => unsubscribed,
       emit: (request, result = {}) => { assert.equal(typeof listener, 'function', 'must subscribe to text export results'); listener({ requestId: request.requestId, seriesId: request.seriesId, kinds: request.export, comments: { ok: 2, fail: 0, skipped: 0, partial: 0 }, ...result }); ui.render(); },
       check: (label, checked) => {
@@ -1816,7 +1816,7 @@ async function mount(file, api, props = {}, storage = null) {
   });
   await test('download keeps its search panel mounted while selecting episodes', async () => {
     const ui = await mount('HongguoDownload', {});
-    ui.find(n => n.props.onSelectSeries).props.onSelectSeries(detail('A')); ui.render();
+    await ui.find(n => n.props.onSelectSeries).props.onSelectSeries(detail('A')); await ui.flush();
     assert.ok(ui.find(n => n.props.onSelectSeries), 'search results must survive selecting a series');
     ui.button('搜索剧集').props.onClick(); ui.render();
     assert.ok(ui.button('下载选中集数 (2/2)'), 'episode selection must survive returning to search');
@@ -1850,7 +1850,7 @@ async function mount(file, api, props = {}, storage = null) {
     const data = detail('range'); data.total = 3; data.episodes.push(episode(3));
     const ui = await mount(file, { getSeriesList: async () => [], browseCategories: async () => [], browseList: async () => ({ success: true, results: [{ series_id: 'range', series_title: 'range' }] }), searchResolve: async () => ok(data), getSeriesEpisodes: async () => ok(data) });
     if (file === 'Browse') { await ui.flush(); ui.find(n => n.props.className === 'browse-card').props.onClick(); await ui.flush(); }
-    else { ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); ui.render(); }
+    else { await ui.find(n => n.props.onSelectSeries).props.onSelectSeries(data); await ui.flush(); }
     const input = () => ui.find(n => n.props['aria-label'] === '选择集数范围');
     input().props.onChange({ target: { value: '1，3' } }); ui.render(); ui.button('应用').props.onClick(); ui.render();
     const selected = () => ui.nodes().filter(n => n.props['aria-pressed'] === true && /episode-card|ep-chip/.test(n.props.className || '')).length;

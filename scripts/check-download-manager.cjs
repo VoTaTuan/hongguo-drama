@@ -268,8 +268,67 @@ const runningMerge = () => ({ id: 'm', status: 'running', total: 2, done: 0, pro
     assert.equal(rows(ui).length, 1, 'all episodes of one movie share one card');
     const text = ui.text(); assert.ok(text.includes('Phim 123') && text.includes('/10 tập') && text.includes('1080P'));
     const drawer = ui.find(n => n.props.item !== undefined && n.props.onQueued); assert.ok(drawer, 'shared drawer is mounted'); assert.equal(drawer.props.item, null);
-    ui.nodes().find(n => n.type === 'button' && n.children.some(c => typeof c === 'object' && c.type === 'span') === false && /Tải/.test(n.children.map(c => c?.children?.join?.('') ?? c).join(''))).props.onClick(); ui.render();
+    // An active series promotes Pause to the primary button; opening the shared drawer stays one click away through the info button.
+    ui.nodes().find(n => n.type === 'button' && /Mở bảng thông tin phim/.test(n.props.title || '')).props.onClick(); ui.render();
     assert.equal(ui.find(n => n.props.item !== undefined && n.props.onQueued).props.item.series_id, '123'); ui.unmount();
+  });
+  const primaryOf = ui => ui.nodes().find(n => n.type === 'button' && /\bdm-film-download\b/.test(n.props.className || ''));
+  const labelOf = n => n.children.map(c => c?.children?.join?.('') ?? c).join('').trim();
+  for (const [label, build, expectedTitle, expectedText] of [
+    ['downloading', () => [task(1, 'completed', '123'), task(2, 'downloading', '123')], 'Tạm dừng tải', 'Tạm dừng'],
+    ['stopped or failed', () => [task(1, 'completed', '123'), task(2, 'stopped', '123')], 'Tiếp tục tải', 'Tiếp tục'],
+    ['fully downloaded', () => [task(1, 'completed', '123'), task(2, 'completed', '123')], 'Xem phim trong trình phát', 'Xem'],
+    ['partly downloaded and idle', () => [task(1, 'completed', '123')], 'Mở bảng thông tin phim để chọn tập và tải', 'Tải'],
+  ]) await test(`card primary button follows state: ${label}`, async () => {
+    const tasks = build(); tasks.forEach(t => { t.hongguoInfo.total_episodes = label === 'partly downloaded and idle' ? 10 : tasks.length; });
+    const ui = mount({ getDownloadTasks: async () => tasks }); await ui.flush();
+    const button = primaryOf(ui);
+    assert.ok(button, 'every card has one primary button');
+    assert.ok(button.props.title.startsWith(expectedTitle), button.props.title);
+    assert.ok(labelOf(button).includes(expectedText), labelOf(button));
+    ui.unmount();
+  });
+  await test('Xem plays the lowest downloaded episode and asks the player to resume', async () => {
+    const calls = []; const tasks = [task(3, 'completed', '123'), task(2, 'completed', '123'), task(5, 'downloading', '123')];
+    const ui = mount({ getDownloadTasks: async () => tasks, playSeries: async payload => { calls.push(payload); return { success: true }; } }); await ui.flush();
+    const watch = ui.nodes().find(n => n.type === 'button' && /Xem các tập đã tải/.test(n.props.title || ''));
+    assert.ok(watch, 'a partially downloaded card still offers Xem as a secondary button'); await watch.props.onClick(); await ui.flush();
+    assert.deepEqual(JSON.parse(JSON.stringify(calls)), [{ seriesId: '123', vidIndex: 2, resume: true }]); ui.unmount();
+  });
+  await test('non-Hongguo cards explain why the info panel is unavailable and cover click does nothing', async () => {
+    const tasks = [task(1, 'completed', 'xifan:test:A')];
+    const ui = mount({ getDownloadTasks: async () => tasks }); await ui.flush();
+    assert.ok(ui.text().includes('nguồn khác Hồng Quả'), 'the reason must be visible, not only a disabled button');
+    const cover = ui.find(n => /dm-film-cover/.test(n.props.className || ''));
+    assert.equal(cover.props.onClick, undefined); assert.equal(cover.props.role, undefined); ui.unmount();
+  });
+  await test('right-click menu offers card actions and closes after choosing one', async () => {
+    const calls = []; const tasks = [task(1, 'completed', '123'), task(2, 'completed', '123')];
+    const ui = mount({ getDownloadTasks: async () => tasks, openFolder: async id => { calls.push(id); return { success: true }; } }); await ui.flush();
+    assert.ok(!ui.find(n => n.props.className === 'dm-card-menu'), 'menu starts closed');
+    let prevented = false; rows(ui)[0].props.onContextMenu({ preventDefault() { prevented = true; }, clientX: 40, clientY: 60 }); ui.render();
+    assert.ok(prevented, 'native menu is replaced'); assert.ok(ui.find(n => n.props.className === 'dm-card-menu'), 'menu opens');
+    const items = ui.nodes().filter(n => n.type === 'button' && n.props.role === 'menuitem'); const labels = items.map(labelOf);
+    for (const wanted of ['Xem phim', 'Thông tin phim', 'Mở thư mục', 'Ghép các tập', 'Xóa tác vụ']) assert.ok(labels.some(l => l.includes(wanted)), `missing menu item ${wanted} in ${labels.join('|')}`);
+    items.find(n => /Mở thư mục/.test(labelOf(n))).props.onClick(); await ui.flush();
+    assert.deepEqual(calls, ['t1']); assert.ok(!ui.find(n => n.props.className === 'dm-card-menu'), 'menu closes after an action');
+    ui.unmount();
+  });
+  await test('Escape closes the right-click menu', async () => {
+    const ui = mount({ getDownloadTasks: async () => [task(1, 'completed', '123')] }); await ui.flush();
+    rows(ui)[0].props.onContextMenu({ preventDefault() {}, clientX: 1, clientY: 1 }); ui.render(); await ui.flush();
+    assert.ok(ui.find(n => n.props.className === 'dm-card-menu'));
+    ui.dispatch('window', 'keydown', { key: 'Escape' }); ui.render();
+    assert.ok(!ui.find(n => n.props.className === 'dm-card-menu')); ui.unmount();
+  });
+  await test('dashboard warns when the download drive is nearly full and shows the downloaded total', async () => {
+    const tasks = [task(1, 'completed', '123'), task(2, 'completed', '123')]; tasks.forEach(t => { t.totalBytes = 1048576; });
+    const stats = freeBytes => async () => ({ totalSpeed: 0, activeDownloads: 0, queuedCount: 0, freeBytes });
+    const low = mount({ getDownloadTasks: async () => tasks, getDownloadSystemStats: stats(1024 ** 3) }); await low.flush();
+    assert.ok(low.text().includes('Sắp đầy'), 'less than 5 GB free must be flagged'); assert.ok(low.find(n => /is-low-disk/.test(n.props.className || '')));
+    assert.ok(low.text().includes('Đã tải về') && /2(?:\.0)? MB/.test(low.text()), 'total downloaded size is shown'); low.unmount();
+    const ok = mount({ getDownloadTasks: async () => tasks, getDownloadSystemStats: stats(50 * 1024 ** 3) }); await ok.flush();
+    assert.ok(!ok.text().includes('Sắp đầy')); assert.ok(!ok.find(n => /is-low-disk/.test(n.props.className || ''))); ok.unmount();
   });
   for (const rejected of [false, true]) await test(`delete ${rejected ? 'rejection' : 'failure response'} is visible and preserves selection`, async () => {
     const ui = mount({ getDownloadTasks: async () => [task(1, 'completed')], deleteTasksWithFiles: async () => { if (rejected) throw new Error('删除失败示例'); return { success: false, error: '删除失败示例' }; } });

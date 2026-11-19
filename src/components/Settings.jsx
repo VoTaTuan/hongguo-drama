@@ -13,6 +13,8 @@ import { Settings, Folder, Check, Globe, X, RefreshCw, AlertCircle, Download, Pl
 const FORMAT_PRESETS = [
   { label: 'TênPhim_TậpN', value: 'series_title vid_index' },
   { label: 'TênPhim_TậpN_TiêuĐề', value: 'series_title vid_index ep_title' },
+  { label: 'Chỉ số tập (001)', value: 'vid_index' },
+  { label: 'Ep 01', value: 'Ep ep_no' },
 ];
 
 const SETTINGS_SUB_TABS = [
@@ -430,7 +432,7 @@ function SettingsPage({ active = true, preview = false, appInfo = null }) {
               onChange={(e) => update('name_format', e.target.value)}
             />
             <p className="settings-hint">
-              Biến khả dụng: <code>series_title</code> (Tên phim) · <code>vid_index</code> (Tập, vd 001) · <code>ep_title</code> (Tiêu đề)
+              Biến khả dụng: <code>series_title</code> (Tên phim) · <code>vid_index</code> (Tập, vd 001) · <code>ep_no</code> (Tập, vd 01) · <code>ep_title</code> (Tiêu đề)
               . Mỗi tập giữ số tập riêng biệt, tránh ghi đè do trùng tên.
             </p>
           </div>
