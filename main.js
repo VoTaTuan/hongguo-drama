@@ -738,6 +738,27 @@ function sourceFailureIsTransient(error) {
     || /^(?:TIMEOUT|NETWORK_ERROR|HTTP_(?:408|5dd))$/.test(item.code));
 }
 
+/** App trả phản hồi rỗng: máy chủ không cấp nguồn, các tập còn lại của bộ nhiều khả năng cũng vậy. */
+function sourceRefusedByServer(error) {
+  return error?.code === 'SOURCE_UNAVAILABLE' && Array.isArray(error.sources)
+    && error.sources.some(item => item.source === 'app' && item.code === 'EMPTY_RESPONSE');
+}
+
+/** Giữ lại các tập đang chờ của cùng bộ để không gửi thêm yêu cầu; chỉ chạy tiếp khi người dùng bấm. */
+function holdPendingSeriesTasks(failedTask) {
+  const seriesId = String(failedTask.hongguoInfo?.series_id || '');
+  if (!seriesId) return;
+  for (const task of downloadTasks) {
+    if (task.status !== 'pending' || runningDownloads.has(task.id)
+      || String(task.hongguoInfo?.series_id || '') !== seriesId) continue;
+    task.status = 'stopped';
+    task.error = 'Đã dừng vì máy chủ không cấp nguồn cho một tập cùng bộ. Bấm Tiếp tục nếu muốn thử lại.';
+    task.endTime = Date.now();
+    downloadQueue = downloadQueue.filter(item => item.id !== task.id);
+    sendToRenderer('download-stopped', { id: task.id, qualityNotice: '' });
+  }
+}
+
 // QUY TẮC: Không bao giờ tự tải. Mọi lượt tải, tiếp tục hoặc thử lại chỉ bắt đầu khi người dùng bấm.
 // Khởi động lại ứng dụng, lỗi mạng hoặc lỗi nguồn không được phép tự đưa tác vụ vào hàng đợi.
 
@@ -1087,8 +1108,11 @@ async function executeHongguoDownload(task) {
         sendToRenderer('download-stopped', { id, qualityNotice: '' });
       }
     } else {
-      task.status = 'failed'; task.error = error.message; task.endTime = Date.now();
+      const refused = sourceRefusedByServer(error);
+      task.status = 'failed'; task.endTime = Date.now();
+      task.error = refused ? `Máy chủ không cấp nguồn cho tập này. ${error.message}` : error.message;
       sendToRenderer('download-failed', { id, error: task.error, retryAt: null, sourceRetries: 0, qualityNotice: '' });
+      if (refused) holdPendingSeriesTasks(task);
     }
     saveDownloadTasks();
   } finally {

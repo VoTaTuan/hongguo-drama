@@ -117,6 +117,24 @@ const checks = [
     assert.equal(h.run('activeDownloads'), 0);
     assert.ok(h.saved().every(task => task.status !== 'pending' && !task.retryAt), 'the held state is persisted');
   }],
+  ['an empty App response holds only the pending episodes of the same series', async () => {
+    for (const [appCode, expected] of [['EMPTY_RESPONSE', 'stopped'], ['BUSINESS_REJECTED', 'pending']]) {
+      const h = fixture();
+      h.state.result = unavailable([{ source: 'web', code: 'HTTP_404' }, { source: 'app', code: appCode }]);
+      h.run(`downloadTasks.push(
+        { id: 'same', type: 'hongguo', status: 'pending', hongguoInfo: { series_id: '1' } },
+        { id: 'other', type: 'hongguo', status: 'pending', hongguoInfo: { series_id: '2' } });
+        downloadQueue = downloadTasks.slice(1);`);
+      await h.download();
+      const rows = Object.fromEntries(h.run('downloadTasks').map(task => [task.id, task]));
+      assert.equal(rows.t1.status, 'failed', appCode);
+      assert.equal(rows.same.status, expected, appCode);
+      assert.equal(rows.other.status, 'pending', appCode);
+      assert.equal(h.run("downloadQueue.some(task => task.id === 'same')"), expected === 'pending', appCode);
+      assert.equal(h.saved().find(task => task.id === 'same').status, expected, appCode);
+      assert.equal(h.live().length, 0, appCode);
+    }
+  }],
   ['an explicit user retry is still the way to download again', async () => {
     const h = fixture();
     h.run('var __pumps = 0; pumpQueue = () => { __pumps++; };');
